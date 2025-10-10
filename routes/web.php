@@ -1,7 +1,9 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Models\Area;
 
 Route::get('/', function () {
-    return view('login');
+    $areas = \App\Models\Area::all();
+    return view('login', compact('areas'));
 });

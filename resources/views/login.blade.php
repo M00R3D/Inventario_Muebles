@@ -180,7 +180,12 @@
             </div>
             <div class="form-group">
                 <label for="area_id">Área</label>
-                <input type="number" name="area_id" id="area_id" min="1" required>
+                <select name="area_id" id="area_id" required style="width:100%;padding:0.5rem 0.8rem;border-radius:0.4rem;border:1px solid #c7d2fe;background:#f8fafc;">
+                    <option value="">Selecciona un área</option>
+                    @foreach($areas as $area)
+                        <option value="{{ $area->id }}">{{ $area->nombre }}</option>
+                    @endforeach
+                </select>
             </div>
             <button type="submit" class="btn btn-alt">Registrarse</button>
             <span class="toggle-link" onclick="toggleForm(false)">¿Ya tienes cuenta? Inicia sesión</span>
