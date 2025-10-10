@@ -12,9 +12,8 @@ class MuebleController extends Controller
      */
     public function index()
     {
-        // Listar muebles con su usuario responsable
         $muebles = Mueble::with('usuario')->get();
-        return view('muebles.index', compact('muebles'));
+        return response()->json($muebles);
     }
 
     /**
@@ -32,7 +31,6 @@ class MuebleController extends Controller
      */
     public function store(Request $request)
     {
-        // Guardar nuevo mueble
         $request->validate([
             'codigo' => 'required|string|max:50|unique:muebles,codigo',
             'descripcion' => 'nullable|string|max:500',
@@ -43,10 +41,8 @@ class MuebleController extends Controller
             'persona_id' => 'required|exists:usuarios,id',
             'estado' => 'required|in:bueno,regular,malo,en_reparacion',
         ]);
-
-        Mueble::create($request->all());
-
-        return redirect()->route('muebles.index')->with('success', 'Mueble creado correctamente');
+        $mueble = Mueble::create($request->all());
+        return response()->json($mueble, 201);
     }
 
     /**
@@ -54,8 +50,8 @@ class MuebleController extends Controller
      */
     public function show(Mueble $mueble)
     {
-        // Mostrar detalles de un mueble
-        return view('muebles.show', compact('mueble'));
+        $mueble->load('usuario');
+        return response()->json($mueble);
     }
 
     /**
@@ -73,7 +69,6 @@ class MuebleController extends Controller
      */
     public function update(Request $request, Mueble $mueble)
     {
-        // Actualizar mueble
         $request->validate([
             'codigo' => 'required|string|max:50|unique:muebles,codigo,' . $mueble->id,
             'descripcion' => 'nullable|string|max:500',
@@ -84,10 +79,8 @@ class MuebleController extends Controller
             'persona_id' => 'required|exists:usuarios,id',
             'estado' => 'required|in:bueno,regular,malo,en_reparacion',
         ]);
-
         $mueble->update($request->all());
-
-        return redirect()->route('muebles.index')->with('success', 'Mueble actualizado correctamente');
+        return response()->json($mueble);
     }
 
     /**
@@ -95,8 +88,7 @@ class MuebleController extends Controller
      */
     public function destroy(Mueble $mueble)
     {
-        // Eliminar mueble
         $mueble->delete();
-        return redirect()->route('muebles.index')->with('success', 'Mueble eliminado correctamente');
+        return response()->json(['message' => 'Mueble eliminado correctamente']);
     }
 }

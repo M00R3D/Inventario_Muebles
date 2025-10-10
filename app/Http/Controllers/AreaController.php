@@ -11,9 +11,8 @@ class AreaController extends Controller
      */
     public function index()
     {
-        // Listar todas las áreas
         $areas = Area::all();
-        return view('areas.index', compact('areas'));
+        return response()->json($areas);
     }
 
     /**
@@ -30,16 +29,11 @@ class AreaController extends Controller
      */
     public function store(Request $request)
     {
-        // Validar y guardar nueva área
         $request->validate([
             'nombre' => 'required|string|max:100',
         ]);
-
-        Area::create([
-            'nombre' => $request->nombre,
-        ]);
-
-        return redirect()->route('areas.index')->with('success', 'Área creada correctamente');
+        $area = Area::create(['nombre' => $request->nombre]);
+        return response()->json($area, 201);
     }
 
     /**
@@ -47,8 +41,7 @@ class AreaController extends Controller
      */
     public function show(Area $area)
     {
-        // Mostrar detalles de un área
-        return view('areas.show', compact('area'));
+        return response()->json($area);
     }
 
     /**
@@ -65,16 +58,11 @@ class AreaController extends Controller
      */
     public function update(Request $request, Area $area)
     {
-        // Validar y actualizar área
         $request->validate([
             'nombre' => 'required|string|max:100',
         ]);
-
-        $area->update([
-            'nombre' => $request->nombre,
-        ]);
-
-        return redirect()->route('areas.index')->with('success', 'Área actualizada correctamente');
+        $area->update(['nombre' => $request->nombre]);
+        return response()->json($area);
     }
 
     /**
@@ -82,8 +70,7 @@ class AreaController extends Controller
      */
     public function destroy(Area $area)
     {
-        // Eliminar área
         $area->delete();
-        return redirect()->route('areas.index')->with('success', 'Área eliminada correctamente');
+        return response()->json(['message' => 'Área eliminada correctamente']);
     }
 }

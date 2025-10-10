@@ -13,9 +13,8 @@ class SolicitudController extends Controller
      */
     public function index()
     {
-        // Listar solicitudes con mueble y usuario relacionados
         $solicitudes = Solicitud::with(['mueble', 'usuario'])->get();
-        return view('solicitudes.index', compact('solicitudes'));
+        return response()->json($solicitudes);
     }
 
     /**
@@ -34,7 +33,6 @@ class SolicitudController extends Controller
      */
     public function store(Request $request)
     {
-        // Guardar nueva solicitud
         $request->validate([
             'fecha_inicio' => 'nullable|date',
             'fecha_fin' => 'nullable|date|after_or_equal:fecha_inicio',
@@ -43,10 +41,8 @@ class SolicitudController extends Controller
             'persona_id' => 'required|exists:usuarios,id',
             'estado' => 'required|in:pendiente,aprobada,rechazada',
         ]);
-
-        Solicitud::create($request->all());
-
-        return redirect()->route('solicitudes.index')->with('success', 'Solicitud creada correctamente');
+        $solicitud = Solicitud::create($request->all());
+        return response()->json($solicitud, 201);
     }
 
     /**
@@ -54,8 +50,8 @@ class SolicitudController extends Controller
      */
     public function show(Solicitud $solicitud)
     {
-        // Mostrar detalles de una solicitud
-        return view('solicitudes.show', compact('solicitud'));
+        $solicitud->load(['mueble', 'usuario']);
+        return response()->json($solicitud);
     }
 
     /**
@@ -74,7 +70,6 @@ class SolicitudController extends Controller
      */
     public function update(Request $request, Solicitud $solicitud)
     {
-        // Actualizar solicitud
         $request->validate([
             'fecha_inicio' => 'nullable|date',
             'fecha_fin' => 'nullable|date|after_or_equal:fecha_inicio',
@@ -83,10 +78,8 @@ class SolicitudController extends Controller
             'persona_id' => 'required|exists:usuarios,id',
             'estado' => 'required|in:pendiente,aprobada,rechazada',
         ]);
-
         $solicitud->update($request->all());
-
-        return redirect()->route('solicitudes.index')->with('success', 'Solicitud actualizada correctamente');
+        return response()->json($solicitud);
     }
 
     /**
@@ -94,8 +87,7 @@ class SolicitudController extends Controller
      */
     public function destroy(Solicitud $solicitud)
     {
-        // Eliminar solicitud
         $solicitud->delete();
-        return redirect()->route('solicitudes.index')->with('success', 'Solicitud eliminada correctamente');
+        return response()->json(['message' => 'Solicitud eliminada correctamente']);
     }
 }

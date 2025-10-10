@@ -13,9 +13,8 @@ class UsuarioController extends Controller
      */
     public function index()
     {
-        // Listar usuarios
         $usuarios = Usuario::with('area')->get();
-        return view('usuarios.index', compact('usuarios'));
+        return response()->json($usuarios);
     }
 
     /**
@@ -33,7 +32,6 @@ class UsuarioController extends Controller
      */
     public function store(Request $request)
     {
-        // Guardar nuevo usuario
         $request->validate([
             'nombre' => 'required|string|max:100',
             'apellido' => 'required|string|max:100',
@@ -42,17 +40,15 @@ class UsuarioController extends Controller
             'rol' => 'required|in:admin,empleado,tecnico',
             'area_id' => 'required|exists:areas,id',
         ]);
-
-        Usuario::create([
+        $usuario = Usuario::create([
             'nombre' => $request->nombre,
             'apellido' => $request->apellido,
             'email' => $request->email,
-            'password' => Hash::make($request->password),
+            'password' => \Hash::make($request->password),
             'rol' => $request->rol,
             'area_id' => $request->area_id,
         ]);
-
-        return redirect()->route('usuarios.index')->with('success', 'Usuario creado correctamente');
+        return response()->json($usuario, 201);
     }
 
     /**
@@ -60,8 +56,8 @@ class UsuarioController extends Controller
      */
     public function show(Usuario $usuario)
     {
-        // Mostrar detalles de un usuario
-        return view('usuarios.show', compact('usuario'));
+        $usuario->load('area');
+        return response()->json($usuario);
     }
 
     /**
@@ -79,7 +75,6 @@ class UsuarioController extends Controller
      */
     public function update(Request $request, Usuario $usuario)
     {
-        // Actualizar usuario
         $request->validate([
             'nombre' => 'required|string|max:100',
             'apellido' => 'required|string|max:100',
@@ -87,7 +82,6 @@ class UsuarioController extends Controller
             'rol' => 'required|in:admin,empleado,tecnico',
             'area_id' => 'required|exists:areas,id',
         ]);
-
         $usuario->update([
             'nombre' => $request->nombre,
             'apellido' => $request->apellido,
@@ -95,15 +89,10 @@ class UsuarioController extends Controller
             'rol' => $request->rol,
             'area_id' => $request->area_id,
         ]);
-
-        // Si se envía un nuevo password
         if ($request->filled('password')) {
-            $usuario->update([
-                'password' => Hash::make($request->password),
-            ]);
+            $usuario->update(['password' => \Hash::make($request->password)]);
         }
-
-        return redirect()->route('usuarios.index')->with('success', 'Usuario actualizado correctamente');
+        return response()->json($usuario);
     }
 
     /**
@@ -111,8 +100,7 @@ class UsuarioController extends Controller
      */
     public function destroy(Usuario $usuario)
     {
-        // Eliminar usuario
         $usuario->delete();
-        return redirect()->route('usuarios.index')->with('success', 'Usuario eliminado correctamente');
+        return response()->json(['message' => 'Usuario eliminado correctamente']);
     }
 }
