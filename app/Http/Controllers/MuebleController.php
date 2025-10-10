@@ -1,8 +1,8 @@
 <?php
-
+// app/Http/Controllers/MuebleController.php
 namespace App\Http\Controllers;
-
 use App\Models\Mueble;
+use App\Models\Usuario;
 use Illuminate\Http\Request;
 
 class MuebleController extends Controller
@@ -12,7 +12,9 @@ class MuebleController extends Controller
      */
     public function index()
     {
-        //
+        // Listar muebles con su usuario responsable
+        $muebles = Mueble::with('usuario')->get();
+        return view('muebles.index', compact('muebles'));
     }
 
     /**
@@ -20,7 +22,9 @@ class MuebleController extends Controller
      */
     public function create()
     {
-        //
+        // Mostrar formulario de creación
+        $usuarios = Usuario::all();
+        return view('muebles.create', compact('usuarios'));
     }
 
     /**
@@ -28,7 +32,21 @@ class MuebleController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        // Guardar nuevo mueble
+        $request->validate([
+            'codigo' => 'required|string|max:50|unique:muebles,codigo',
+            'descripcion' => 'nullable|string|max:500',
+            'fecha_registro' => 'nullable|date',
+            'monto_unitario' => 'required|numeric|min:0',
+            'nota' => 'nullable|string|max:500',
+            'ruta_img' => 'nullable|string|max:200',
+            'persona_id' => 'required|exists:usuarios,id',
+            'estado' => 'required|in:bueno,regular,malo,en_reparacion',
+        ]);
+
+        Mueble::create($request->all());
+
+        return redirect()->route('muebles.index')->with('success', 'Mueble creado correctamente');
     }
 
     /**
@@ -36,7 +54,8 @@ class MuebleController extends Controller
      */
     public function show(Mueble $mueble)
     {
-        //
+        // Mostrar detalles de un mueble
+        return view('muebles.show', compact('mueble'));
     }
 
     /**
@@ -44,7 +63,9 @@ class MuebleController extends Controller
      */
     public function edit(Mueble $mueble)
     {
-        //
+        // Mostrar formulario de edición
+        $usuarios = Usuario::all();
+        return view('muebles.edit', compact('mueble', 'usuarios'));
     }
 
     /**
@@ -52,7 +73,21 @@ class MuebleController extends Controller
      */
     public function update(Request $request, Mueble $mueble)
     {
-        //
+        // Actualizar mueble
+        $request->validate([
+            'codigo' => 'required|string|max:50|unique:muebles,codigo,' . $mueble->id,
+            'descripcion' => 'nullable|string|max:500',
+            'fecha_registro' => 'nullable|date',
+            'monto_unitario' => 'required|numeric|min:0',
+            'nota' => 'nullable|string|max:500',
+            'ruta_img' => 'nullable|string|max:200',
+            'persona_id' => 'required|exists:usuarios,id',
+            'estado' => 'required|in:bueno,regular,malo,en_reparacion',
+        ]);
+
+        $mueble->update($request->all());
+
+        return redirect()->route('muebles.index')->with('success', 'Mueble actualizado correctamente');
     }
 
     /**
@@ -60,6 +95,8 @@ class MuebleController extends Controller
      */
     public function destroy(Mueble $mueble)
     {
-        //
+        // Eliminar mueble
+        $mueble->delete();
+        return redirect()->route('muebles.index')->with('success', 'Mueble eliminado correctamente');
     }
 }
