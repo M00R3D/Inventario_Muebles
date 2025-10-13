@@ -81,19 +81,28 @@
                 </div>
 
                 <div style="flex:1 1 220px;min-width:180px;">
-                    <label>Contraseña <small id="pwd-note" style="color:#6b7280;font-weight:600;">(requerida al crear, opcional al editar)</small></label>
+                    <label>
+                        Contraseña
+                        <small id="pwd-note" style="color:#6b7280;font-weight:600;display:inline-block;margin-left:6px;">(Obligatoria al crear)</small>
+                    </label>
+
+                    <div id="pwd-edit-row" style="display:none;align-items:center;gap:8px;margin-bottom:6px;">
+                        <input type="checkbox" id="chk-change-password" />
+                        <label for="chk-change-password" style="margin:0;font-weight:600;color:#374151;">Cambiar contraseña</label>
+                    </div>
+
                     <input name="password" id="f-password" type="password" style="width:100%;padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
                 </div>
             </div>
 
             <div style="display:flex;gap:8px;margin-top:12px;">
-                <button type="submit" class="btn" style="background:#06b6d4;color:#fff;padding:8px 12px;border-radius:8px;border:0;cursor:pointer;">Guardar</button>
+                <button type="submit" id="btn-save" class="btn" style="background:#06b6d4;color:#fff;padding:8px 12px;border-radius:8px;border:0;cursor:pointer;">Guardar</button>
                 <button id="btn-cancel" type="button" style="background:#ef4444;color:#fff;padding:8px 12px;border-radius:8px;border:0;cursor:pointer;">Cancelar</button>
             </div>
         </form>
     </div>
 
-    <div style="overflow-x:auto;background:#fff;border-radius:10px;padding:8px;box-shadow:0 6px 18px rgba(0,0,0,0.06);">
+    <div id="users-table" style="overflow-x:auto;background:#fff;border-radius:10px;padding:8px;box-shadow:0 6px 18px rgba(0,0,0,0.06);">
         <table style="width:100%;border-collapse:collapse;min-width:720px;">
             <thead>
                 <tr style="text-align:left;color:#374151;border-bottom:1px solid #e5e7eb;">
@@ -145,16 +154,26 @@
     </div>
 </div>
 @endsection
+
 @section('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function(){
     const card = document.getElementById('user-form-card');
+    const usersTable = document.getElementById('users-table');
     const btnNew = document.getElementById('btn-new');
     const btnCancel = document.getElementById('btn-cancel');
     const form = document.getElementById('user-form');
     const methodInput = document.getElementById('form-method');
     const idInput = document.getElementById('user-id');
     const title = document.getElementById('form-title');
+    const pwdNote = document.getElementById('pwd-note');
+    const pwdEditRow = document.getElementById('pwd-edit-row');
+    const chkChangePassword = document.getElementById('chk-change-password');
+    const pwdInput = document.getElementById('f-password');
+
+    function hideTable() { if (usersTable) usersTable.style.display = 'none'; }
+    function showTable() { if (usersTable) usersTable.style.display = 'block'; }
+
     function openCreate() {
         title.textContent = 'Nuevo usuario';
         form.action = "{{ url('/usuarios') }}";
@@ -162,10 +181,18 @@ document.addEventListener('DOMContentLoaded', function(){
         idInput.value = '';
         form.querySelectorAll('input[type="text"], input[type="email"], input[type="password"]').forEach(i=> i.value = '');
         form.querySelectorAll('select').forEach(s=> s.selectedIndex = 0);
-        document.getElementById('pwd-note').style.display = 'inline';
+        pwdNote.textContent = '(Obligatoria al crear)';
+        pwdNote.style.display = 'inline-block';
+        pwdEditRow.style.display = 'none';
+        pwdInput.disabled = false;
+        pwdInput.required = true;
+        chkChangePassword.checked = false;
+
         card.style.display = 'block';
+        hideTable();
         card.scrollIntoView({behavior:'smooth', block:'center'});
     }
+
     function openEdit(user) {
         title.textContent = 'Editar usuario — ID '+user.id;
         form.action = "{{ url('/usuarios') }}/" + user.id;
@@ -176,13 +203,36 @@ document.addEventListener('DOMContentLoaded', function(){
         document.getElementById('f-email').value = user.email || '';
         document.getElementById('f-rol').value = user.rol || '';
         document.getElementById('f-area').value = user.area_id || '';
-        document.getElementById('f-password').value = '';
-        document.getElementById('pwd-note').style.display = 'inline';
+        pwdNote.style.display = 'none';
+        pwdEditRow.style.display = 'flex';
+        chkChangePassword.checked = false;
+        pwdInput.value = '';
+        pwdInput.disabled = true;
+        pwdInput.required = false;
+
         card.style.display = 'block';
+        hideTable();
         card.scrollIntoView({behavior:'smooth', block:'center'});
     }
+    if (chkChangePassword) {
+        chkChangePassword.addEventListener('change', function(){
+            if (this.checked) {
+                pwdInput.disabled = false;
+                pwdInput.required = true;
+            } else {
+                pwdInput.disabled = true;
+                pwdInput.required = false;
+                pwdInput.value = '';
+            }
+        });
+    }
+
     if (btnNew) btnNew.addEventListener('click', openCreate);
-    if (btnCancel) btnCancel.addEventListener('click', ()=> card.style.display = 'none');
+    if (btnCancel) btnCancel.addEventListener('click', function(){
+        card.style.display = 'none';
+        showTable();
+    });
+
     document.querySelectorAll('.btn-edit').forEach(btn=>{
         btn.addEventListener('click', function(){
             try {
@@ -196,34 +246,34 @@ document.addEventListener('DOMContentLoaded', function(){
     if (form) {
         form.addEventListener('submit', async function(evt) {
             evt.preventDefault();
-            const submitBtn = form.querySelector('button[type="submit"]');
+            const submitBtn = document.getElementById('btn-save') || form.querySelector('button[type="submit"]');
             const originalText = submitBtn ? submitBtn.textContent : null;
             if (submitBtn) {
                 submitBtn.disabled = true;
                 submitBtn.textContent = 'Guardando...';
             }
+
             const fd = new FormData(form);
+
             try {
                 const resp = await fetch(form.action, {
                     method: 'POST',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
                     body: fd,
                     credentials: 'same-origin'
                 });
+
                 const contentType = resp.headers.get('content-type') || '';
                 let data = null;
-                if (contentType.includes('application/json')) {
-                    data = await resp.json();
-                } else {
-                    data = await resp.text();
-                }
+                if (contentType.includes('application/json')) data = await resp.json();
+                else data = await resp.text();
+
                 if (resp.ok) {
                     alert('Operación realizada correctamente.');
                     window.location.href = "{{ url('/usuarios') }}";
                     return;
                 }
+
                 if (resp.status === 422 && data && data.errors) {
                     const messages = Object.values(data.errors).flat().join('\\n');
                     alert('Errores de validación:\\n' + messages);
