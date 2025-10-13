@@ -5,9 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Login | Inventario Muebles</title>
     <style>
-        /* asegurar cálculo de tamaños consistente */
         *, *::before, *::after { box-sizing: border-box; }
-
         :root{
             --bg-1: #e0e7ff;
             --bg-2: #f0fdfa;
@@ -20,7 +18,6 @@
             --shadow: 0 8px 28px rgba(15,23,42,0.06);
             --ease: cubic-bezier(.16,.84,.44,1);
         }
-
         html { font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; font-size: 16px; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
         body {
             min-height: 100vh;
@@ -32,13 +29,9 @@
             box-sizing: border-box;
             font-size: clamp(14px, 1.8vw, 16px);
         }
-
-        /* contenedor fijo pero totalmente responsivo:
-           - width 100% y max-width evita que los inputs se salgan
-           - margen lateral para breathing room en pantallas pequeñas */
         .login-container {
             width: 100%;
-            max-width: 520px; /* ajusta si quieres más estrecho */
+            max-width: 520px;
             margin: 0 1rem;
             background: var(--card-bg);
             padding: clamp(0.9rem, 3.2vw, 1.8rem);
@@ -79,15 +72,13 @@
         .fields {
             display: grid;
             gap: 0.9rem;
-            min-width: 0; /* evita overflow en children de grid */
+            min-width: 0; 
         }
-
-        /* two-column for name/apellido on wider screens */
         .field-grid {
             display: grid;
             grid-template-columns: 1fr;
             gap: 0.9rem;
-            min-width: 0; /* importante para evitar overflow de inputs */
+            min-width: 0;
         }
         @media (min-width: 640px){
             .field-grid { grid-template-columns: 1fr 1fr; }
@@ -118,7 +109,7 @@
             transition: box-shadow 220ms var(--ease), border-color 220ms var(--ease), transform 220ms var(--ease);
             box-shadow: 0 1px 0 rgba(15,23,42,0.02) inset;
             appearance: none;
-            overflow-wrap: anywhere; /* evita que textos largos rompan el layout */
+            overflow-wrap: anywhere;
         }
         input:focus, select:focus {
             border-color: var(--accent-1);
@@ -174,64 +165,47 @@
             transition: color 180ms var(--ease), transform 180ms var(--ease);
         }
         .toggle-link:hover { color: var(--accent-2); transform: translateY(-2px); }
-
-        /* subtle entrance animation */
-        .fade-in {
-            animation: floatIn 560ms var(--ease) both;
-        }
+        .fade-in {animation: floatIn 560ms var(--ease) both;}
         @keyframes floatIn {
             from { opacity: 0; transform: translateY(18px) scale(0.998); }
             to { opacity: 1; transform: translateY(0) scale(1); }
         }
-
-        /* Accessibility: respect user reduced motion */
         @media (prefers-reduced-motion: reduce) {
             .login-container, .form, .fade-in, .btn, input, select { transition: none !important; animation: none !important; transform: none !important; }
         }
     </style>
 
     <script>
-        // Smooth toggle using CSS classes so animations stay GPU-accelerated and accessible.
         function toggleForm(showRegister) {
             const login = document.getElementById('login-form');
             const register = document.getElementById('register-form');
-
             if (showRegister) {
-                // show register
                 login.classList.add('hidden');
                 login.setAttribute('aria-hidden', 'true');
-
-                // ensure register is visible before triggering animation
                 register.style.display = 'block';
                 setTimeout(() => {
                     register.classList.remove('hidden');
                     register.setAttribute('aria-hidden', 'false');
                 }, 20);
-
-                // hide login after transition to remove tab stops
                 setTimeout(() => { login.style.display = 'none'; }, 420);
             } else {
                 register.classList.add('hidden');
                 register.setAttribute('aria-hidden', 'true');
-
                 login.style.display = 'block';
                 setTimeout(() => {
                     login.classList.remove('hidden');
                     login.setAttribute('aria-hidden', 'false');
                 }, 20);
-
                 setTimeout(() => { register.style.display = 'none'; }, 420);
             }
         }
 
         window.addEventListener('DOMContentLoaded', function() {
-            // prepare initial states: login visible, register hidden but present for animation
             const login = document.getElementById('login-form');
             const register = document.getElementById('register-form');
             login.style.display = 'block';
             login.classList.remove('hidden');
             login.setAttribute('aria-hidden', 'false');
-
             register.style.display = 'none';
             register.classList.add('hidden');
             register.setAttribute('aria-hidden', 'true');
@@ -246,8 +220,6 @@
                 {{ session('error') }}
             </div>
         @endif
-
-        <!-- Login Form -->
         <form id="login-form" class="form" method="POST" action="{{ url('/login') }}" aria-hidden="false">
             @csrf
             <div class="fields">
@@ -263,8 +235,6 @@
             <button type="submit" class="btn">Ingresar</button>
             <span class="toggle-link" role="button" tabindex="0" onclick="toggleForm(true)" onkeypress="if(event.key==='Enter')toggleForm(true)">¿No tienes cuenta? Regístrate</span>
         </form>
-
-        <!-- Register Form -->
         <form id="register-form" class="form hidden" method="POST" action="{{ url('/register') }}" style="display:none;" aria-hidden="true">
             @csrf
             <div class="fields">
@@ -278,7 +248,6 @@
                         <input type="text" name="apellido" id="apellido" required autocomplete="family-name">
                     </div>
                 </div>
-
                 <div class="form-group">
                     <label for="email_reg">Correo electrónico</label>
                     <input type="email" name="email" id="email_reg" required autocomplete="email">
@@ -287,7 +256,6 @@
                     <label for="password_reg">Contraseña</label>
                     <input type="password" name="password" id="password_reg" required autocomplete="new-password">
                 </div>
-
                 <div class="field-grid">
                     <div class="form-group">
                         <label for="rol">Rol</label>
@@ -298,7 +266,6 @@
                             <option value="tecnico">Técnico</option>
                         </select>
                     </div>
-
                     <div class="form-group">
                         <label for="area_id">Área</label>
                         <select name="area_id" id="area_id" required>
@@ -310,7 +277,6 @@
                     </div>
                 </div>
             </div>
-
             <button type="submit" class="btn btn-alt">Registrarse</button>
             <span class="toggle-link" role="button" tabindex="0" onclick="toggleForm(false)" onkeypress="if(event.key==='Enter')toggleForm(false)">¿Ya tienes cuenta? Inicia sesión</span>
         </form>

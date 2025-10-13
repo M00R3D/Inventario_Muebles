@@ -1,9 +1,10 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Models\Area;
+use App\Http\Controllers\AuthController;
 
-Route::get('/', function () {
-    $areas = \App\Models\Area::all();
-    return view('login', compact('areas'));
-});
+Route::get('/', [AuthController::class, 'showLogin']);
+Route::post('/login', [AuthController::class, 'login']);
+Route::post('/register', [AuthController::class, 'register']);
+Route::get('/dashboard', [AuthController::class, 'dashboard']);
+Route::get('/logout', [AuthController::class, 'logout']);
