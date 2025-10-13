@@ -71,9 +71,12 @@ class UsuarioController extends Controller
         }
         return response()->json($usuario);
     }
-    public function destroy(Usuario $usuario)
+    public function destroy(Request $request, Usuario $usuario)
     {
         $usuario->delete();
-        return response()->json(['message' => 'Usuario eliminado correctamente']);
+        if ($request->wantsJson() || $request->is('api/*')) {
+            return response()->json(['message' => 'Usuario eliminado correctamente']);
+        }
+        return redirect('/usuarios')->with('success', 'Usuario eliminado correctamente');
     }
 }
