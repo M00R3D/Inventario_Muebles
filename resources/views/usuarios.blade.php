@@ -13,6 +13,41 @@
 @section('content')
 @php $areas = $areas ?? \App\Models\Area::all(); @endphp
 
+<style>
+#notifications { position:fixed; top:84px; right:20px; z-index:140; display:flex; flex-direction:column; gap:8px; }
+#notifications .notif { min-width:220px; max-width:420px; padding:10px 14px; border-radius:10px; color:#fff; font-weight:700; transform:translateY(-6px); opacity:0; transition:transform .28s cubic-bezier(.16,.84,.44,1), opacity .28s ease; box-shadow:0 8px 24px rgba(2,6,23,0.08); }
+#notifications .notif.visible { transform:none; opacity:1; }
+#notifications .notif-success { background: linear-gradient(90deg,#10b981,#059669); }
+#notifications .notif-error { background: linear-gradient(90deg,#ef4444,#b91c1c); }
+#notifications .notif-info { background: linear-gradient(90deg,#6366f1,#06b6d4); }
+.modal-card { transition: transform .28s cubic-bezier(.16,.84,.44,1), opacity .28s ease, max-height .28s ease, padding .28s ease; transform-origin: top center; opacity:1; max-height:1200px; overflow:hidden; }
+.modal-card.closing { transform: scaleY(0.86) translateY(-6px); opacity:0; padding-top:2px; padding-bottom:2px; max-height:0; overflow:hidden; }
+.modal-card.collapsed { transform: scaleY(0.98); opacity:0; max-height:0; padding-top:0; padding-bottom:0; overflow:hidden; }
+#users-table {
+    transition: transform .28s cubic-bezier(.16,.84,.44,1), opacity .28s ease, max-height .28s ease, padding .28s ease;
+    transform-origin: top center;
+    opacity: 1;
+    max-height: 2000px;
+    overflow: hidden;
+}
+#users-table.closing {
+    transform: scaleY(0.96) translateY(-6px);
+    opacity: 0;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    max-height: 0;
+    pointer-events: none;
+}
+#users-table.collapsed {
+    transform: scaleY(0.98);
+    opacity: 0;
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    overflow: hidden;
+}
+</style>
+
 <div style="padding:16px;max-width:1100px;margin:0 auto;">
     <header style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap;">
         <div>
@@ -30,15 +65,16 @@
         </div>
     </header>
 
+    <div id="notifications" aria-live="polite"></div>
+
     @if(session('success'))
         <div style="background:#ecfdf5;color:#065f46;padding:10px;border-radius:8px;margin-bottom:12px;font-weight:700;">
             {{ session('success') }}
         </div>
     @endif
 
-    <div id="user-form-card" style="display:none;background:#fff;border-radius:10px;padding:12px;box-shadow:0 6px 18px rgba(0,0,0,0.06);margin-bottom:12px;">
+    <div id="user-form-card" class="modal-card collapsed" style="display:none;background:#fff;border-radius:10px;padding:12px;box-shadow:0 6px 18px rgba(0,0,0,0.06);margin-bottom:12px;">
         <h2 id="form-title" style="margin:0 0 8px 0;font-size:1.05rem;">Nuevo usuario</h2>
-
         <form id="user-form" method="POST" action="{{ url('/usuarios') }}">
             @csrf
             <input type="hidden" name="_method" id="form-method" value="POST">
@@ -170,9 +206,54 @@ document.addEventListener('DOMContentLoaded', function(){
     const pwdEditRow = document.getElementById('pwd-edit-row');
     const chkChangePassword = document.getElementById('chk-change-password');
     const pwdInput = document.getElementById('f-password');
+    const notifications = document.getElementById('notifications');
+    function hideTable() {
+        if (!usersTable) return;
+        if (usersTable.classList.contains('closing') || getComputedStyle(usersTable).display === 'none') return;
+        usersTable.classList.add('closing');
+        const onEnd = function() {
+            usersTable.style.display = 'none';
+            usersTable.classList.remove('closing');
+            usersTable.classList.add('collapsed');
+            usersTable.removeEventListener('transitionend', onEnd);
+        };
+        usersTable.addEventListener('transitionend', onEnd);
+    }
+    function showTable() {
+        if (!usersTable) return;
+        if (getComputedStyle(usersTable).display !== 'none') {
+            usersTable.classList.remove('collapsed');
+            return;
+        }
+        usersTable.style.display = 'block';
+        usersTable.classList.add('collapsed');
+        requestAnimationFrame(()=> {
+            usersTable.classList.remove('collapsed');
+        });
+    }
+    function showNotification(message, type = 'info', timeout = 3500) {
+        if (!notifications) return;
+        const el = document.createElement('div');
+        el.className = 'notif notif-'+type;
+        el.innerText = message;
+        notifications.appendChild(el);
+        requestAnimationFrame(()=> el.classList.add('visible'));
+        setTimeout(()=> {
+            el.classList.remove('visible');
+            el.addEventListener('transitionend', ()=> el.remove(), { once: true });
+        }, timeout);
+    }
 
-    function hideTable() { if (usersTable) usersTable.style.display = 'none'; }
-    function showTable() { if (usersTable) usersTable.style.display = 'block'; }
+    function closeModalAnimated() {
+        if (!card) return;
+        card.classList.add('closing');
+        card.addEventListener('transitionend', function handler() {
+            card.style.display = 'none';
+            card.classList.remove('closing');
+            showTable(); 
+            card.removeEventListener('transitionend', handler);
+        });
+    }
 
     function openCreate() {
         title.textContent = 'Nuevo usuario';
@@ -186,11 +267,15 @@ document.addEventListener('DOMContentLoaded', function(){
         pwdEditRow.style.display = 'none';
         pwdInput.disabled = false;
         pwdInput.required = true;
-        chkChangePassword.checked = false;
+        if (chkChangePassword) chkChangePassword.checked = false;
 
         card.style.display = 'block';
+        card.classList.add('collapsed');
         hideTable();
-        card.scrollIntoView({behavior:'smooth', block:'center'});
+        requestAnimationFrame(()=> {
+            card.classList.remove('collapsed');
+            card.scrollIntoView({behavior:'smooth', block:'center'});
+        });
     }
 
     function openEdit(user) {
@@ -205,15 +290,20 @@ document.addEventListener('DOMContentLoaded', function(){
         document.getElementById('f-area').value = user.area_id || '';
         pwdNote.style.display = 'none';
         pwdEditRow.style.display = 'flex';
-        chkChangePassword.checked = false;
+        if (chkChangePassword) chkChangePassword.checked = false;
         pwdInput.value = '';
         pwdInput.disabled = true;
         pwdInput.required = false;
 
         card.style.display = 'block';
+        card.classList.add('collapsed');
         hideTable();
-        card.scrollIntoView({behavior:'smooth', block:'center'});
+        requestAnimationFrame(()=> {
+            card.classList.remove('collapsed');
+            card.scrollIntoView({behavior:'smooth', block:'center'});
+        });
     }
+
     if (chkChangePassword) {
         chkChangePassword.addEventListener('change', function(){
             if (this.checked) {
@@ -229,8 +319,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
     if (btnNew) btnNew.addEventListener('click', openCreate);
     if (btnCancel) btnCancel.addEventListener('click', function(){
-        card.style.display = 'none';
-        showTable();
+        closeModalAnimated();
     });
 
     document.querySelectorAll('.btn-edit').forEach(btn=>{
@@ -240,9 +329,11 @@ document.addEventListener('DOMContentLoaded', function(){
                 openEdit(user);
             } catch(e) {
                 console.error('invalid user json', e);
+                showNotification('Error interno: datos de usuario inválidos', 'error');
             }
         });
     });
+
     if (form) {
         form.addEventListener('submit', async function(evt) {
             evt.preventDefault();
@@ -269,21 +360,22 @@ document.addEventListener('DOMContentLoaded', function(){
                 else data = await resp.text();
 
                 if (resp.ok) {
-                    alert('Operación realizada correctamente.');
-                    window.location.href = "{{ url('/usuarios') }}";
+                    showNotification('Operación realizada correctamente.', 'success', 1400);
+                    closeModalAnimated();
+                    setTimeout(()=> window.location.href = "{{ url('/usuarios') }}", 700);
                     return;
                 }
 
                 if (resp.status === 422 && data && data.errors) {
-                    const messages = Object.values(data.errors).flat().join('\\n');
-                    alert('Errores de validación:\\n' + messages);
+                    const messages = Object.values(data.errors).flat().join('\n');
+                    showNotification('Errores de validación: ' + messages, 'error', 5000);
                 } else {
                     const msg = (data && data.message) ? data.message : 'Error al guardar el usuario.';
-                    alert(msg);
+                    showNotification(msg, 'error', 4000);
                 }
             } catch (err) {
                 console.error(err);
-                alert('Error de red o del servidor. Revisa la consola.');
+                showNotification('Error de red o del servidor. Revisa la consola.', 'error', 4000);
             } finally {
                 if (submitBtn) {
                     submitBtn.disabled = false;
@@ -295,135 +387,3 @@ document.addEventListener('DOMContentLoaded', function(){
 });
 </script>
 @endsection
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const sidebarToggle = document.getElementById('sidebar-toggle');
-        const sidebar = document.getElementById('sidebar');
-        sidebarToggle.addEventListener('click', function() {
-            sidebar.classList.toggle('active');});
-        document.addEventListener('click', function(event) {
-            if (!sidebar.contains(event.target) && !sidebarToggle.contains(event.target)) {
-                sidebar.classList.remove('active');}
-        });
-    });
-    </script>
-</body>
-</html>
-<style>
-    body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-    background-color: #f4f4f4;
-}
-.dashboard-container {
-    display: flex;
-}
-.sidebar {
-    width: 250px;
-    background-color: #333;
-    color: #fff;
-    height: 100vh;
-    padding: 20px;
-}
-.sidebar h2 {
-    color: #fff;
-    text-align: center;
-}
-.sidebar ul {
-    list-style: none;
-    padding: 0;
-}
-.sidebar ul li {
-    margin: 15px 0;
-}
-.sidebar ul li a {
-    color: #fff;
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-}
-.sidebar ul li a:hover {
-    background-color: #575757;
-    padding: 10px;
-    border-radius: 5px;
-}
-.sidebar ul li a .icon {
-    margin-right: 10px;
-}
-.content {
-    flex: 1;
-    padding: 20px;
-}
-.header {
-    background-color: #fff;
-    padding: 10px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-.header h1 {
-    margin: 0;
-}
-@media (max-width: 768px) {
-  body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-    background-color: #f4f4f4;
-}
-.dashboard-container {
-    display: flex;
-}
-.sidebar {
-    width: 250px;
-    background-color: #333;
-    color: #fff;
-    height: 100vh;
-    padding: 20px;
-}
-.sidebar h2 {
-    color: #fff;
-    text-align: center;
-}
-.sidebar ul {
-    list-style: none;
-    padding: 0;
-}
-.sidebar ul li {
-    margin: 15px 0;
-}
-.sidebar ul li a {
-    color: #fff;
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-}
-.sidebar ul li a:hover {
-    background-color: #575757;
-    padding: 10px;
-    border-radius: 5px;
-}
-.sidebar ul li a .icon {
-    margin-right: 10px;
-}
-.content {
-    flex: 1;
-    padding: 20px;
-}
-.header {
-    background-color: #fff;
-    padding: 10px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-.header h1 {
-    margin: 0;
-}
-@media (max-width: 768px) {
-    .sidebar {
-        width: 100%;
-        height: auto;
-    }
-    .dashboard-container {
-        flex-direction: column;
-    }
-}
-</style>
