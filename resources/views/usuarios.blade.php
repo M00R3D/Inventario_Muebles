@@ -7,19 +7,92 @@
 </head>
 <body>
 @extends('layouts.app')
+
 @section('title','Usuarios | Inventario Muebles')
+
 @section('content')
-<div class="page-container" style="padding:16px;max-width:1100px;margin:0 auto;">
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap;">
-        <h1 style="margin:0;font-size:1.25rem;">Usuarios</h1>
-        <div style="text-align:right;">
+@php $areas = $areas ?? \App\Models\Area::all(); @endphp
+
+<div style="padding:16px;max-width:1100px;margin:0 auto;">
+    <header style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap;">
+        <div>
+            <h1 style="margin:0;font-size:1.25rem;">Usuarios</h1>
             @if(auth()->check())
                 <div style="font-weight:700;color:#111;">Conectado: {{ auth()->user()->nombre }} {{ auth()->user()->apellido }}</div>
                 <div style="font-size:0.9rem;color:#6b7280;">{{ auth()->user()->email }}</div>
             @endif
         </div>
-        <a href="{{ url('/usuarios/create') }}" class="btn" style="background:#6366f1;color:#fff;padding:8px 12px;border-radius:8px;text-decoration:none;">Nuevo usuario</a>
+
+        <div style="display:flex;gap:10px;align-items:center;">
+            <button id="btn-new" class="btn" type="button" style="background:#6366f1;color:#fff;padding:8px 12px;border-radius:8px;border:0;cursor:pointer;">
+                Nuevo usuario
+            </button>
+        </div>
+    </header>
+
+    @if(session('success'))
+        <div style="background:#ecfdf5;color:#065f46;padding:10px;border-radius:8px;margin-bottom:12px;font-weight:700;">
+            {{ session('success') }}
+        </div>
+    @endif
+
+    <div id="user-form-card" style="display:none;background:#fff;border-radius:10px;padding:12px;box-shadow:0 6px 18px rgba(0,0,0,0.06);margin-bottom:12px;">
+        <h2 id="form-title" style="margin:0 0 8px 0;font-size:1.05rem;">Nuevo usuario</h2>
+
+        <form id="user-form" method="POST" action="{{ url('/usuarios') }}">
+            @csrf
+            <input type="hidden" name="_method" id="form-method" value="POST">
+            <input type="hidden" name="id" id="user-id" value="">
+
+            <div style="display:flex;flex-wrap:wrap;gap:10px;">
+                <div style="flex:1;min-width:180px;">
+                    <label>Nombre</label>
+                    <input name="nombre" id="f-nombre" type="text" required style="width:100%;padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
+                </div>
+
+                <div style="flex:1;min-width:180px;">
+                    <label>Apellido</label>
+                    <input name="apellido" id="f-apellido" type="text" required style="width:100%;padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
+                </div>
+
+                <div style="flex:1 1 280px;min-width:200px;">
+                    <label>Correo electrónico</label>
+                    <input name="email" id="f-email" type="email" required style="width:100%;padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
+                </div>
+
+                <div style="flex:1 1 160px;min-width:140px;">
+                    <label>Rol</label>
+                    <select name="rol" id="f-rol" required style="width:100%;padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
+                        <option value="">Selecciona</option>
+                        <option value="admin">Administrador</option>
+                        <option value="empleado">Empleado</option>
+                        <option value="tecnico">Técnico</option>
+                    </select>
+                </div>
+
+                <div style="flex:1 1 160px;min-width:140px;">
+                    <label>Área</label>
+                    <select name="area_id" id="f-area" required style="width:100%;padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
+                        <option value="">Selecciona</option>
+                        @foreach($areas as $area)
+                            <option value="{{ $area->id }}">{{ $area->nombre }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div style="flex:1 1 220px;min-width:180px;">
+                    <label>Contraseña <small id="pwd-note" style="color:#6b7280;font-weight:600;">(requerida al crear, opcional al editar)</small></label>
+                    <input name="password" id="f-password" type="password" style="width:100%;padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
+                </div>
+            </div>
+
+            <div style="display:flex;gap:8px;margin-top:12px;">
+                <button type="submit" class="btn" style="background:#06b6d4;color:#fff;padding:8px 12px;border-radius:8px;border:0;cursor:pointer;">Guardar</button>
+                <button id="btn-cancel" type="button" style="background:#ef4444;color:#fff;padding:8px 12px;border-radius:8px;border:0;cursor:pointer;">Cancelar</button>
+            </div>
+        </form>
     </div>
+
     <div style="overflow-x:auto;background:#fff;border-radius:10px;padding:8px;box-shadow:0 6px 18px rgba(0,0,0,0.06);">
         <table style="width:100%;border-collapse:collapse;min-width:720px;">
             <thead>
@@ -44,7 +117,13 @@
                         <td style="padding:10px 12px;vertical-align:middle;">{{ $u->area->nombre ?? '-' }}</td>
                         <td style="padding:10px 12px;vertical-align:middle;">
                             <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                                <a href="{{ url('/usuarios/'.$u->id.'/edit') }}" style="background:#06b6d4;color:#fff;padding:6px 10px;border-radius:8px;text-decoration:none;font-size:0.9rem;">Editar</a>
+                                <button type="button"
+                                        class="btn-edit"
+                                        data-user='@json($u)'
+                                        style="background:#06b6d4;color:#fff;padding:6px 10px;border-radius:8px;border:0;cursor:pointer;font-size:0.9rem;">
+                                    Editar
+                                </button>
+
                                 <form action="{{ url('/usuarios/'.$u->id) }}" method="POST" style="display:inline;">
                                     @csrf
                                     @method('DELETE')
@@ -64,12 +143,107 @@
             </tbody>
         </table>
     </div>
-    @if(method_exists($usuarios, 'links'))
-        <div style="margin-top:12px;">
-            {{ $usuarios->links() }}
-        </div>
-    @endif
 </div>
+@endsection
+@section('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    const card = document.getElementById('user-form-card');
+    const btnNew = document.getElementById('btn-new');
+    const btnCancel = document.getElementById('btn-cancel');
+    const form = document.getElementById('user-form');
+    const methodInput = document.getElementById('form-method');
+    const idInput = document.getElementById('user-id');
+    const title = document.getElementById('form-title');
+    function openCreate() {
+        title.textContent = 'Nuevo usuario';
+        form.action = "{{ url('/usuarios') }}";
+        methodInput.value = 'POST';
+        idInput.value = '';
+        form.querySelectorAll('input[type="text"], input[type="email"], input[type="password"]').forEach(i=> i.value = '');
+        form.querySelectorAll('select').forEach(s=> s.selectedIndex = 0);
+        document.getElementById('pwd-note').style.display = 'inline';
+        card.style.display = 'block';
+        card.scrollIntoView({behavior:'smooth', block:'center'});
+    }
+    function openEdit(user) {
+        title.textContent = 'Editar usuario — ID '+user.id;
+        form.action = "{{ url('/usuarios') }}/" + user.id;
+        methodInput.value = 'PUT';
+        idInput.value = user.id;
+        document.getElementById('f-nombre').value = user.nombre || '';
+        document.getElementById('f-apellido').value = user.apellido || '';
+        document.getElementById('f-email').value = user.email || '';
+        document.getElementById('f-rol').value = user.rol || '';
+        document.getElementById('f-area').value = user.area_id || '';
+        document.getElementById('f-password').value = '';
+        document.getElementById('pwd-note').style.display = 'inline';
+        card.style.display = 'block';
+        card.scrollIntoView({behavior:'smooth', block:'center'});
+    }
+    if (btnNew) btnNew.addEventListener('click', openCreate);
+    if (btnCancel) btnCancel.addEventListener('click', ()=> card.style.display = 'none');
+    document.querySelectorAll('.btn-edit').forEach(btn=>{
+        btn.addEventListener('click', function(){
+            try {
+                const user = JSON.parse(this.getAttribute('data-user'));
+                openEdit(user);
+            } catch(e) {
+                console.error('invalid user json', e);
+            }
+        });
+    });
+    if (form) {
+        form.addEventListener('submit', async function(evt) {
+            evt.preventDefault();
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalText = submitBtn ? submitBtn.textContent : null;
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Guardando...';
+            }
+            const fd = new FormData(form);
+            try {
+                const resp = await fetch(form.action, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: fd,
+                    credentials: 'same-origin'
+                });
+                const contentType = resp.headers.get('content-type') || '';
+                let data = null;
+                if (contentType.includes('application/json')) {
+                    data = await resp.json();
+                } else {
+                    data = await resp.text();
+                }
+                if (resp.ok) {
+                    alert('Operación realizada correctamente.');
+                    window.location.href = "{{ url('/usuarios') }}";
+                    return;
+                }
+                if (resp.status === 422 && data && data.errors) {
+                    const messages = Object.values(data.errors).flat().join('\\n');
+                    alert('Errores de validación:\\n' + messages);
+                } else {
+                    const msg = (data && data.message) ? data.message : 'Error al guardar el usuario.';
+                    alert(msg);
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Error de red o del servidor. Revisa la consola.');
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    if (originalText) submitBtn.textContent = originalText;
+                }
+            }
+        });
+    }
+});
+</script>
 @endsection
     <script>
     document.addEventListener('DOMContentLoaded', function() {
