@@ -4,168 +4,98 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Login | Inventario Muebles</title>
-    <style>
-        *, *::before, *::after { box-sizing: border-box; }
-        :root{
-            --bg-1: #e0e7ff;
-            --bg-2: #f0fdfa;
-            --card-bg: rgba(255,255,255,0.98);
-            --accent-1: #6366f1;
-            --accent-2: #38bdf8;
-            --accent-register-a: #f472b6;
-            --accent-register-b: #34d399;
-            --muted: #6b7280;
-            --text: #0f172a;
-            --radius: 12px;
-            --input-bg: #f8fafc;
-            --shadow: 0 8px 28px rgba(15,23,42,0.06);
-            --ease: cubic-bezier(.16,.84,.44,1);
-        }
+<style>
+    /* sencillo, sin grid — todo con flexbox y reglas que evitan overflow */
+    *, *::before, *::after { box-sizing: border-box; }
+    :root{
+        --bg-1:#e0e7ff; --bg-2:#f0fdfa; --card:#fff; --accent:#6366f1;
+        --muted:#6b7280; --radius:12px; --input-bg:#f8fafc; --shadow:0 8px 28px rgba(15,23,42,0.06);
+    }
 
-        html { height: 100%; font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
-        body {
-            min-height: 100vh;
-            margin: 0;
-            background: linear-gradient(135deg,var(--bg-1) 0%, var(--bg-2) 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 1rem;
-            color: var(--text);
-            font-size: clamp(13px, 1.6vw, 16px);
-        }
+    html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;}
+    body{
+        min-height:100vh;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        padding:1rem;
+        background:linear-gradient(135deg,var(--bg-1),var(--bg-2));
+        color:#0f172a;
+        overflow:hidden; /* sin scrollbar visible en el documento */
+    }
 
-        /* Card: grid with two rows (title + content) to avoid overlap */
-        .login-container {
-            width: clamp(320px, 86vw, 720px);
-            max-width: 720px;
-            background: var(--card-bg);
-            padding: clamp(0.6rem, 2.4vw, 1.2rem);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            display: grid;
-            grid-template-rows: auto 1fr;
-            gap: clamp(0.5rem, 1.6vw, 0.9rem);
-            align-items: start;
-            justify-items: center;
-            max-height: calc(100vh - 2rem);
-            overflow: visible;
-            transition: transform 240ms var(--ease), box-shadow 240ms var(--ease);
-        }
+    /* tarjeta principal: scroll interno oculto si hace falta */
+    .login-container{
+        width:100%;
+        max-width:720px;
+        background:var(--card);
+        padding:1rem;
+        border-radius:var(--radius);
+        box-shadow:var(--shadow);
+        display:flex;
+        flex-direction:column;
+        gap:0.9rem;
+        max-height:calc(100vh - 2rem);
+        overflow:auto; /* si contenido es muy largo, se desplaza aquí */
+        -ms-overflow-style:none; scrollbar-width:none;
+    }
+    .login-container::-webkit-scrollbar{ display:none; }
 
-        .login-title {
-            margin: 0;
-            font-weight: 700;
-            font-size: clamp(1rem, 2.2vw, 1.4rem);
-            text-align: center;
-            padding-bottom: clamp(12px, 1.6vw, 40px); /* space so forms never overlap */
-            width: 100%;
-            color: var(--text);
-        }
+    .login-title{ margin:0; font-weight:700; font-size:1.25rem; text-align:center; }
 
-        /* form stack: keeps forms in flow; min-height changes via JS classes .login-active/.register-active */
-        .form-stack {
-            width: 100%;
-            position: relative;
-            display: block;
-            min-height: 180px;
-        }
-        .form-stack.login-active { min-height: 160px; }
-        .form-stack.register-active { min-height: 420px; }
+    /* stack de formularios simple: uno visible, otro oculto */
+    .form-stack{ width:100%; display:flex; flex-direction:column; gap:1rem; }
+    .form{ width:100%; display:flex; flex-direction:column; gap:0.9rem; padding:0; box-sizing:border-box; }
+    .form.hidden{ opacity:0; transform:translateY(6px); pointer-events:none; height:0; overflow:hidden; }
 
-        /* Forms: centered, responsive, smooth crossfade (opacity + blur + translate) */
-        .form {
-            width: 100%;
-            max-width: 560px;
-            margin: 0 auto;
-            transition: opacity 380ms var(--ease), transform 380ms var(--ease), filter 380ms var(--ease), max-height 380ms var(--ease);
-            opacity: 1;
-            transform: translateY(0);
-            filter: blur(0);
-            max-height: 100%;
-            overflow: visible;
-            will-change: opacity, transform, filter;
-            background: transparent;
-        }
-        .form.hidden {
-            opacity: 0;
-            transform: translateY(10px) scale(0.998);
-            filter: blur(6px);
-            max-height: 0;
-            pointer-events: none;
-            visibility: visible; /* JS will set display:none after animation */
-        }
+    /* campos: columna única por defecto; filas de 2 columnas con .row */
+    .fields{ display:flex; flex-direction:column; gap:0.75rem; width:100%; }
+    .row{ display:flex; gap:0.75rem; }
+    .row > *{ flex:1; min-width:0; } /* min-width:0 evita overflow en inputs largos */
 
-        /* On wide screens allow the subtle overlay for crossfade but keep title spacing so no overlap */
-        @media (min-width: 720px) {
-            .form-stack .form {
-                position: absolute;
-                left: 50%;
-                transform: translateX(-50%);
-                top: 0;
-            }
-            .form-stack.login-active { min-height: 160px; }
-        }
-        @media (max-width: 719px) {
-            .form-stack .form { position: relative; top: auto; transform: none; margin-bottom: 0.5rem; }
-            .form.hidden { transform: translateY(6px); }
-            /* avoid cutting the card on short viewports */
-            .login-container { max-height: calc(100vh - 1.2rem); padding-top: 0.6rem; padding-bottom: 0.6rem; }
-            body { align-items: flex-start; padding-top: 0.6rem; padding-bottom: 0.6rem; }
-        }
+    label{ display:block; margin-bottom:6px; color:var(--muted); font-weight:600; font-size:0.95rem; }
 
-        .fields { display: grid; gap: 0.7rem; width: 100%; }
-        .field-grid { display: grid; grid-template-columns: 1fr; gap: 0.7rem; width: 100%; }
-        @media (min-width: 640px) { .field-grid { grid-template-columns: 1fr 1fr; } }
+    input, select, textarea{
+        width:100%;
+        max-width:100%;
+        min-width:0;
+        border:1px solid rgba(0,0,0,0.06);
+        border-radius:10px;
+        padding:0.6rem;
+        background:var(--input-bg);
+        font-size:1rem;
+    }
 
-        label { display:block; color:var(--muted); margin-bottom:0.2rem; font-weight:600; font-size:0.95em; }
-        input, select {
-            width: 100%;
-            border: 1px solid rgba(99,102,241,0.10);
-            border-radius: 10px;
-            padding: clamp(0.44rem, 1.6vw, 0.66rem);
-            font-size: clamp(0.9rem, 1.8vw, 0.98rem);
-            background: var(--input-bg);
-            box-shadow: inset 0 1px 0 rgba(0,0,0,0.02);
-        }
-        input:focus, select:focus {
-            border-color: var(--accent-1);
-            outline: none;
-            box-shadow: 0 6px 22px rgba(99,102,241,0.06);
-            background: #fff;
-        }
+    input:focus, select:focus{ outline:none; box-shadow:0 6px 22px rgba(99,102,241,0.06); border-color:var(--accent); background:#fff; }
 
-        .btn, .btn-alt {
-            width: 100%;
-            padding: clamp(0.56rem, 1.8vw, 0.72rem);
-            border-radius: 10px;
-            font-size: clamp(0.95rem, 1.8vw, 1.02rem);
-            border: none;
-            color: #fff;
-            font-weight:700;
-            cursor: pointer;
-            transition: transform 160ms var(--ease), box-shadow 160ms var(--ease);
-        }
+    .btn, .btn-alt{
+        width:100%;
+        padding:0.7rem;
+        border-radius:10px;
+        border:none;
+        color:#fff;
+        font-weight:700;
+        font-size:1rem;
+        cursor:pointer;
+    }
+    .btn{ background:linear-gradient(90deg,var(--accent),#38bdf8); }
+    .btn-alt{ background:linear-gradient(90deg,#f472b6,#34d399); }
 
-        .btn {
-            background: linear-gradient(90deg, var(--accent-1) 0%, var(--accent-2) 100%);
-            box-shadow: 0 8px 24px rgba(56,189,248,0.08);
-        }
-        .btn:hover { transform: translateY(-3px); box-shadow: 0 18px 48px rgba(56,189,248,0.12); }
+    .toggle-link{ display:block; text-align:center; color:var(--accent); text-decoration:underline; cursor:pointer; margin-top:0.25rem; }
 
-        .btn-alt {
-            background: linear-gradient(90deg, var(--accent-register-a) 0%, var(--accent-register-b) 100%);
-            box-shadow: 0 8px 24px rgba(52,211,153,0.06);
-        }
-        .btn-alt:hover { transform: translateY(-3px); box-shadow: 0 18px 48px rgba(52,211,153,0.12); }
+    .alert{ background:#fee2e2; color:#b91c1c; padding:0.5rem; border-radius:8px; text-align:center; font-weight:600; }
 
-        .toggle-link { margin-top: 0.6rem; font-size: clamp(0.9rem,1.6vw,0.98rem); color: var(--accent-1); cursor:pointer; text-decoration:underline; text-align:center; display:block; }
-        .alert { background:#fee2e2; color:#b91c1c; padding:0.5rem; border-radius:8px; text-align:center; font-weight:600; }
+    /* responsive: en pantallas pequeñas las filas pasan a columna */
+    @media (max-width:640px){
+        .row{ flex-direction:column; }
+        .login-container{ padding:0.75rem; max-height:calc(100vh - 1rem); }
+        body{ align-items:flex-start; padding-top:0.6rem; padding-bottom:0.6rem; }
+    }
 
-        @media (prefers-reduced-motion: reduce) {
-            .login-container, .form, .btn, input, select { transition: none !important; animation: none !important; transform: none !important; }
-        }
-    </style>
+    @media (prefers-reduced-motion: reduce){
+        .login-container, .form, .btn, input, select{ transition:none !important; transform:none !important; animation:none !important; }
+    }
+</style>
 
     <script>
         function setInert(el, inert) {
