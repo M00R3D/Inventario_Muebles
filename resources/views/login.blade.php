@@ -5,13 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Login | Inventario Muebles</title>
 <style>
-    /* sencillo, sin grid — todo con flexbox y reglas que evitan overflow */
     *, *::before, *::after { box-sizing: border-box; }
     :root{
         --bg-1:#e0e7ff; --bg-2:#f0fdfa; --card:#fff; --accent:#6366f1;
         --muted:#6b7280; --radius:12px; --input-bg:#f8fafc; --shadow:0 8px 28px rgba(15,23,42,0.06);
     }
-
     html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;}
     body{
         min-height:100vh;
@@ -21,10 +19,8 @@
         padding:1rem;
         background:linear-gradient(135deg,var(--bg-1),var(--bg-2));
         color:#0f172a;
-        overflow:hidden; /* sin scrollbar visible en el documento */
+        overflow:hidden;
     }
-
-    /* tarjeta principal: scroll interno oculto si hace falta */
     .login-container{
         width:100%;
         max-width:720px;
@@ -36,25 +32,18 @@
         flex-direction:column;
         gap:0.9rem;
         max-height:calc(100vh - 2rem);
-        overflow:auto; /* si contenido es muy largo, se desplaza aquí */
+        overflow:auto; 
         -ms-overflow-style:none; scrollbar-width:none;
     }
     .login-container::-webkit-scrollbar{ display:none; }
-
     .login-title{ margin:0; font-weight:700; font-size:1.25rem; text-align:center; }
-
-    /* stack de formularios simple: uno visible, otro oculto */
     .form-stack{ width:100%; display:flex; flex-direction:column; gap:1rem; }
     .form{ width:100%; display:flex; flex-direction:column; gap:0.9rem; padding:0; box-sizing:border-box; }
     .form.hidden{ opacity:0; transform:translateY(6px); pointer-events:none; height:0; overflow:hidden; }
-
-    /* campos: columna única por defecto; filas de 2 columnas con .row */
     .fields{ display:flex; flex-direction:column; gap:0.75rem; width:100%; }
     .row{ display:flex; gap:0.75rem; }
-    .row > *{ flex:1; min-width:0; } /* min-width:0 evita overflow en inputs largos */
-
+    .row > *{ flex:1; min-width:0; } 
     label{ display:block; margin-bottom:6px; color:var(--muted); font-weight:600; font-size:0.95rem; }
-
     input, select, textarea{
         width:100%;
         max-width:100%;
@@ -65,9 +54,7 @@
         background:var(--input-bg);
         font-size:1rem;
     }
-
     input:focus, select:focus{ outline:none; box-shadow:0 6px 22px rgba(99,102,241,0.06); border-color:var(--accent); background:#fff; }
-
     .btn, .btn-alt{
         width:100%;
         padding:0.7rem;
@@ -80,18 +67,13 @@
     }
     .btn{ background:linear-gradient(90deg,var(--accent),#38bdf8); }
     .btn-alt{ background:linear-gradient(90deg,#f472b6,#34d399); }
-
     .toggle-link{ display:block; text-align:center; color:var(--accent); text-decoration:underline; cursor:pointer; margin-top:0.25rem; }
-
     .alert{ background:#fee2e2; color:#b91c1c; padding:0.5rem; border-radius:8px; text-align:center; font-weight:600; }
-
-    /* responsive: en pantallas pequeñas las filas pasan a columna */
     @media (max-width:640px){
         .row{ flex-direction:column; }
         .login-container{ padding:0.75rem; max-height:calc(100vh - 1rem); }
         body{ align-items:flex-start; padding-top:0.6rem; padding-bottom:0.6rem; }
     }
-
     @media (prefers-reduced-motion: reduce){
         .login-container, .form, .btn, input, select{ transition:none !important; transform:none !important; animation:none !important; }
     }
@@ -103,10 +85,8 @@
                 if ('inert' in HTMLElement.prototype) {
                     el.inert = !!inert;
                 } else {
-                    // fallback: set an attribute so styles / scripts can detect it
                     if (inert) el.setAttribute('data-inert','true');
                     else el.removeAttribute('data-inert');
-                    // also remove from tab order as a basic fallback
                     el.querySelectorAll('a,button,input,select,textarea,[tabindex]').forEach(node=>{
                         if (inert) {
                             if (!node.hasAttribute('data-old-tabindex')) node.setAttribute('data-old-tabindex', node.getAttribute('tabindex') ?? '');
@@ -128,40 +108,31 @@
                 // ignore
             }
         }
-
         function hideElement(el) {
-            // if hidden element (or a descendant) has focus, move focus to document body first
             if (el.contains(document.activeElement)) {
                 document.activeElement.blur();
-                // try to focus an obvious control: first visible toggle-link or first input of the other form
                 const fallback = document.querySelector('.toggle-link, #login-form input, #register-form input');
                 if (fallback) fallback.focus?.();
             }
             el.classList.add('hidden');
             el.setAttribute('aria-hidden', 'true');
             setInert(el, true);
-            // keep display until animation finishes, then hide
             setTimeout(()=> { el.style.display = 'none'; }, 420);
         }
-
         function showElement(el) {
             el.style.display = 'block';
-            // ensure it's not inert/hidden before focusing
             setTimeout(()=>{
                 el.classList.remove('hidden');
                 el.removeAttribute('aria-hidden');
                 setInert(el, false);
-                // focus first input/select/button inside shown element for accessibility
                 const first = el.querySelector('input,select,button,[tabindex]');
                 if (first) first.focus();
             }, 20);
         }
-
         function toggleForm(showRegister) {
             const login = document.getElementById('login-form');
             const register = document.getElementById('register-form');
             const stack = document.querySelector('.form-stack');
-
             if (showRegister) {
                 hideElement(login);
                 showElement(register);
@@ -174,19 +145,15 @@
                 stack?.classList.add('login-active');
             }
         }
-
         window.addEventListener('DOMContentLoaded', function() {
             const login = document.getElementById('login-form');
             const register = document.getElementById('register-form');
             const stack = document.querySelector('.form-stack');
-
             @if($errors->any() || old('nombre') || old('email') || session('show_register'))
-                // show register
                 login.style.display = 'none';
                 login.classList.add('hidden');
                 login.setAttribute('aria-hidden','true');
                 setInert(login, true);
-
                 register.style.display = 'block';
                 setTimeout(function(){
                     register.classList.remove('hidden');
@@ -198,12 +165,10 @@
                     stack?.classList.add('register-active');
                 }, 20);
             @else
-                // show login
                 register.style.display = 'none';
                 register.classList.add('hidden');
                 register.setAttribute('aria-hidden','true');
                 setInert(register, true);
-
                 login.style.display = 'block';
                 setTimeout(function(){
                     login.classList.remove('hidden');

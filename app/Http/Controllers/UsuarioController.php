@@ -11,10 +11,17 @@ class UsuarioController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $usuarios = Usuario::with('area')->get();
-        return response()->json($usuarios);
+        $usuarios = Usuario::with('area')->orderBy('id','asc')->get();
+
+        // si la petición es API/JSON, devolver JSON (mantener compatibilidad apiResource)
+        if ($request->wantsJson() || $request->is('api/*')) {
+            return response()->json($usuarios);
+        }
+
+        // petición web: devolver la vista usuarios.blade.php con los datos
+        return view('usuarios', compact('usuarios'));
     }
 
     /**
