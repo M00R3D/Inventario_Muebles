@@ -172,7 +172,8 @@
                                 <form action="{{ url('/usuarios/'.$u->id) }}" method="POST" style="display:inline;">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" onclick="return confirm('¿Eliminar usuario {{ addslashes($u->nombre.' '.$u->apellido) }}?');"
+                                    <button type="submit"
+                                            data-confirm="¿Eliminar usuario {{ addslashes($u->nombre.' '.$u->apellido) }}?"
                                             style="background:#ef4444;color:#fff;padding:6px 10px;border-radius:8px;border:none;cursor:pointer;font-size:0.9rem;">
                                         Eliminar
                                     </button>
@@ -385,5 +386,69 @@ document.addEventListener('DOMContentLoaded', function(){
         });
     }
 });
+</script>
+
+<div id="confirm-overlay" style="display:none;position:fixed;inset:0;background:rgba(2,6,23,0.45);align-items:center;justify-content:center;z-index:9999;padding:1rem;">
+  <div style="background:#fff;padding:14px;border-radius:12px;box-shadow:0 8px 28px rgba(15,23,42,0.06);width:clamp(280px,420px,520px);text-align:left;">
+    <h3 id="confirm-title" style="margin:0 0 8px 0;font-weight:700;font-size:1.05rem;">Confirmar</h3>
+    <p id="confirm-msg" style="color:#6b7280;margin-bottom:12px;font-size:0.98rem;">¿Estás seguro?</p>
+    <div style="display:flex;gap:.5rem;justify-content:flex-end;">
+      <button type="button" id="confirm-cancel" style="background:#06b6d4;color:#fff;padding:8px 12px;border-radius:8px;border:0;cursor:pointer;">Cancelar</button>
+      <button type="button" id="confirm-ok" style="background:linear-gradient(90deg,#ef4444,#f97316);color:#fff;padding:8px 12px;border-radius:8px;border:0;cursor:pointer;">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  let pending = null;
+  const overlay = document.getElementById('confirm-overlay');
+  const msgEl = document.getElementById('confirm-msg');
+  const btnOk = document.getElementById('confirm-ok');
+  const btnCancel = document.getElementById('confirm-cancel');
+
+  function showConfirm(text, onConfirm){
+    msgEl.textContent = text || '¿Estás seguro?';
+    overlay.style.display = 'flex';
+    pending = onConfirm;
+    btnCancel.focus();
+  }
+  function hideConfirm(){
+    overlay.style.display = 'none';
+    pending = null;
+  }
+
+  btnCancel.addEventListener('click', hideConfirm);
+  btnOk.addEventListener('click', function(){
+    if(typeof pending === 'function') pending();
+    hideConfirm();
+  });
+
+  overlay.addEventListener('click', function(e){
+    if(e.target === overlay) hideConfirm();
+  });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape') hideConfirm();
+  });
+
+  document.addEventListener('click', function(e){
+    const el = e.target.closest('[data-confirm]');
+    if(!el) return;
+    e.preventDefault();
+    const text = el.getAttribute('data-confirm') || '¿Estás seguro?';
+    const form = el.closest('form');
+    showConfirm(text, function(){
+      if(form) form.submit();
+      else {
+        const a = el.closest('a');
+        if(a && a.href) {
+          window.location.href = a.href;
+        } else {
+          el.click();
+        }
+      }
+    });
+  }, true);
+})();
 </script>
 @endsection

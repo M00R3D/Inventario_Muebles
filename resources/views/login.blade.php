@@ -69,6 +69,12 @@
     .btn-alt{ background:linear-gradient(90deg,#f472b6,#34d399); }
     .toggle-link{ display:block; text-align:center; color:var(--accent); text-decoration:underline; cursor:pointer; margin-top:0.25rem; }
     .alert{ background:#fee2e2; color:#b91c1c; padding:0.5rem; border-radius:8px; text-align:center; font-weight:600; }
+    .confirm-overlay{ position:fixed; inset:0; background:rgba(2,6,23,0.45); display:none; align-items:center; justify-content:center; z-index:9999; padding:1rem; }
+    .confirm-card{ background:var(--card); padding:1rem; border-radius:12px; box-shadow:var(--shadow); width:clamp(280px,420px,520px); text-align:left; }
+    .confirm-title{ margin:0 0 .25rem 0; font-weight:700; font-size:1.05rem; }
+    .confirm-msg{ color:var(--muted); margin-bottom:1rem; font-size:0.98rem; }
+    .confirm-actions{ display:flex; gap:.5rem; justify-content:flex-end; }
+    .btn-danger{ background:linear-gradient(90deg,#ef4444,#f97316); }
     @media (max-width:640px){
         .row{ flex-direction:column; }
         .login-container{ padding:0.75rem; max-height:calc(100vh - 1rem); }
@@ -267,5 +273,52 @@
             </form>
         </div>
     </div>
-</body>
-</html>
+
+<div id="confirm-overlay" class="confirm-overlay" role="dialog" aria-modal="true" aria-hidden="true" style="display:none;">
+  <div class="confirm-card" role="document" aria-labelledby="confirm-title">
+    <h2 id="confirm-title" class="confirm-title">Confirmar eliminación</h2>
+    <p id="confirm-msg" class="confirm-msg">¿Estás seguro que deseas eliminar este elemento?</p>
+    <div class="confirm-actions">
+      <button type="button" id="confirm-cancel" class="btn btn-alt">Cancelar</button>
+      <button type="button" id="confirm-ok" class="btn btn-danger">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  let pendingAction = null;
+
+  function showConfirm(message, onConfirm){
+    const overlay = document.getElementById('confirm-overlay');
+    document.getElementById('confirm-msg').textContent = message || '¿Estás seguro que deseas eliminar este elemento?';
+    overlay.style.display = 'flex';
+    overlay.setAttribute('aria-hidden','false');
+    document.getElementById('confirm-cancel').focus();
+    pendingAction = onConfirm;
+  }
+  function hideConfirm(){
+    const overlay = document.getElementById('confirm-overlay');
+    overlay.style.display = 'none';
+    overlay.setAttribute('aria-hidden','true');
+    pendingAction = null;
+  }
+
+  document.getElementById('confirm-cancel').addEventListener('click', hideConfirm);
+  document.getElementById('confirm-ok').addEventListener('click', function(){
+    if(typeof pendingAction === 'function') pendingAction();
+    hideConfirm();
+  });
+
+  document.getElementById('confirm-overlay').addEventListener('click', function(e){
+    if(e.target === this) hideConfirm();
+  });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape') hideConfirm();
+  });
+
+  document.addEventListener('click', function(e){
+    const el = e.target.closest('[data-confirm]');
+    if(!el) return;
+    e.preventDefault();
+    const msg = el.getAttribute('data-confirm') || '¿Estás seguro?'
