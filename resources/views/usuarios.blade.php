@@ -65,6 +65,46 @@
         </div>
     </header>
 
+    <form id="users-filters" method="GET" action="{{ url('/usuarios') }}" autocomplete="off" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:end;">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+            <div>
+                <label style="display:block;font-weight:600;font-size:0.9rem;">Nombre</label>
+                <input name="nombre" type="search" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off" value="{{ request('nombre') }}" placeholder="buscar nombre" style="padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
+            </div>
+            <div>
+                <label style="display:block;font-weight:600;font-size:0.9rem;">Apellido</label>
+                <input name="apellido" type="search" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off" value="{{ request('apellido') }}" placeholder="buscar apellido" style="padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
+            </div>
+            <div>
+                <label style="display:block;font-weight:600;font-size:0.9rem;">Email</label>
+                <input name="email" type="search" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off" value="{{ request('email') }}" placeholder="buscar email" style="padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
+            </div>
+            <div>
+                <label style="display:block;font-weight:600;font-size:0.9rem;">Rol</label>
+                <select name="rol" autocomplete="off" style="padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
+                    <option value="">Todos</option>
+                    <option value="admin" {{ request('rol')=='admin' ? 'selected' : '' }}>Administrador</option>
+                    <option value="empleado" {{ request('rol')=='empleado' ? 'selected' : '' }}>Empleado</option>
+                    <option value="tecnico" {{ request('rol')=='tecnico' ? 'selected' : '' }}>Técnico</option>
+                </select>
+            </div>
+            <div>
+                <label style="display:block;font-weight:600;font-size:0.9rem;">Área</label>
+                <select name="area_id" autocomplete="off" style="padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
+                    <option value="">Todas</option>
+                    @foreach($areas as $area)
+                        <option value="{{ $area->id }}" {{ request('area_id') == $area->id ? 'selected' : '' }}>{{ $area->nombre }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+
+        <div style="display:flex;gap:8px;">
+            <button type="submit" style="background:#06b6d4;color:#fff;padding:8px 12px;border-radius:8px;border:0;cursor:pointer;font-weight:700;">Buscar</button>
+            <button type="button" id="btn-clear-filters" style="background:#ef4444;color:#fff;padding:8px 12px;border-radius:8px;border:0;cursor:pointer;font-weight:700;">Limpiar</button>
+        </div>
+    </form>
+
     <div id="notifications" aria-live="polite"></div>
 
     @if(session('success'))
@@ -197,6 +237,7 @@
 document.addEventListener('DOMContentLoaded', function(){
     const card = document.getElementById('user-form-card');
     const usersTable = document.getElementById('users-table');
+    const filters = document.getElementById('users-filters');
     const btnNew = document.getElementById('btn-new');
     const btnCancel = document.getElementById('btn-cancel');
     const form = document.getElementById('user-form');
@@ -224,12 +265,14 @@ document.addEventListener('DOMContentLoaded', function(){
         if (!usersTable) return;
         if (getComputedStyle(usersTable).display !== 'none') {
             usersTable.classList.remove('collapsed');
+            if (filters) filters.style.display = 'flex';
             return;
         }
         usersTable.style.display = 'block';
         usersTable.classList.add('collapsed');
         requestAnimationFrame(()=> {
             usersTable.classList.remove('collapsed');
+            if (filters) filters.style.display = 'flex';
         });
     }
     function showNotification(message, type = 'info', timeout = 3500) {
@@ -251,7 +294,7 @@ document.addEventListener('DOMContentLoaded', function(){
         card.addEventListener('transitionend', function handler() {
             card.style.display = 'none';
             card.classList.remove('closing');
-            showTable(); 
+            showTable();
             card.removeEventListener('transitionend', handler);
         });
     }
@@ -273,6 +316,7 @@ document.addEventListener('DOMContentLoaded', function(){
         card.style.display = 'block';
         card.classList.add('collapsed');
         hideTable();
+        if (filters) filters.style.display = 'none';
         requestAnimationFrame(()=> {
             card.classList.remove('collapsed');
             card.scrollIntoView({behavior:'smooth', block:'center'});
@@ -299,6 +343,7 @@ document.addEventListener('DOMContentLoaded', function(){
         card.style.display = 'block';
         card.classList.add('collapsed');
         hideTable();
+        if (filters) filters.style.display = 'none';
         requestAnimationFrame(()=> {
             card.classList.remove('collapsed');
             card.scrollIntoView({behavior:'smooth', block:'center'});
@@ -383,6 +428,19 @@ document.addEventListener('DOMContentLoaded', function(){
                     if (originalText) submitBtn.textContent = originalText;
                 }
             }
+        });
+    }
+
+    const btnClear = document.getElementById('btn-clear-filters');
+    if (btnClear) {
+        btnClear.addEventListener('click', function(){
+            const form = document.getElementById('users-filters');
+            if (!form) return;
+            form.querySelectorAll('input,select').forEach(i=>{
+                if (i.type === 'checkbox' || i.type === 'radio') i.checked = false;
+                else i.value = '';
+            });
+            form.submit();
         });
     }
 });

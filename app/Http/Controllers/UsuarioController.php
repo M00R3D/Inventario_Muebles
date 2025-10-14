@@ -9,11 +9,19 @@ class UsuarioController extends Controller
 {
     public function index(Request $request)
     {
-        $usuarios = Usuario::with('area')->orderBy('id','asc')->get();
+        $query = Usuario::with('area')->orderBy('id','asc');
+        if ($request->filled('nombre')) {$query->where('nombre', 'like', '%' . $request->nombre . '%');}
+        if ($request->filled('apellido')) {$query->where('apellido', 'like', '%' . $request->apellido . '%');}
+        if ($request->filled('email')) {$query->where('email', 'like', '%' . $request->email . '%');}
+        if ($request->filled('rol')) {$query->where('rol', $request->rol);}
+        if ($request->filled('area_id')) {$query->where('area_id', $request->area_id);}
+        $usuarios = $query->get();
         if ($request->wantsJson() || $request->is('api/*')) {
             return response()->json($usuarios);
         }
-        return view('usuarios', compact('usuarios'));
+
+        $areas = Area::all();
+        return view('usuarios', compact('usuarios', 'areas'));
     }
     public function create()
     {
