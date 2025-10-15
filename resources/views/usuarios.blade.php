@@ -52,6 +52,21 @@
     padding-bottom: 0;
     overflow: hidden;
 }
+
+.btn-edit{
+  background: linear-gradient(90deg,#6366f1,#06b6d4);
+  color: #fff;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 0;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 10px 28px rgba(99,102,241,0.10);
+  transition: transform .12s ease, box-shadow .12s ease, opacity .12s ease;
+}
+.btn-edit:hover{ transform: translateY(-3px); }
+.btn-edit:active{ transform: translateY(-1px); }
+.btn-edit:focus{ outline:3px solid rgba(99,102,241,0.12); outline-offset:2px; }
 </style>
 
 <div style="padding:16px;max-width:1100px;margin:0 auto;">

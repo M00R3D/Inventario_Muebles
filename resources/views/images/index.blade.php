@@ -11,6 +11,37 @@
 .preview img { width:100%; height:100%; object-fit:cover; display:block; }
 .dir-list { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
 .dir-item { background:#f8fafc;padding:6px 10px;border-radius:8px;color:#374151;font-weight:600; }
+
+#file-input{
+  display:inline-block;
+  border-radius:8px;
+  overflow:hidden;
+  cursor:pointer;
+  font-weight:700;
+  background:transparent;
+  color:inherit;
+}
+#file-input::-webkit-file-upload-button{
+  padding:8px 12px;
+  border-radius:8px;
+  background: linear-gradient(90deg,#06b6d4,#0ea5e9);
+  color:#fff;
+  border:0;
+  cursor:pointer;
+  font-weight:700;
+  box-shadow: 0 8px 20px rgba(6,182,212,0.12);
+}
+#file-input::file-selector-button{
+  padding:8px 12px;
+  border-radius:8px;
+  background: linear-gradient(90deg,#06b6d4,#0ea5e9);
+  color:#fff;
+  border:0;
+  cursor:pointer;
+  font-weight:700;
+  box-shadow: 0 8px 20px rgba(6,182,212,0.12);
+}
+#file-input:hover::-webkit-file-upload-button{ transform: translateY(-2px); }
 </style>
 
 <div style="max-width:1000px;margin:18px auto;padding:12px;">
