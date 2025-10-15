@@ -10,7 +10,6 @@
                 <li><a href="{{ url('/usuarios') }}"><span class="icon">👥</span><span class="label">Usuarios</span></a></li>
                 <li><a href="{{ url('/muebles') }}"><span class="icon">🪑</span><span class="label">Inventario</span></a></li>
                 <li><a href="{{ url('/solicitudes') }}"><span class="icon">📩</span><span class="label">Solicitudes</span></a></li>
-                <li><a href="{{ url('/logout') }}"><span class="icon">⎋</span><span class="label">Cerrar sesión</span></a></li>
             </ul>
         </nav>
     </div>

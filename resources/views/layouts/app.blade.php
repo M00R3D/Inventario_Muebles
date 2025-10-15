@@ -20,6 +20,28 @@
         .sidebar .icon{width:28px;text-align:center}
         .dashboard-content{flex:1;padding:20px}
         .card{background:var(--card);border-radius:8px;padding:16px;box-shadow:0 1px 2px rgba(0,0,0,0.04)}
+        .btn-logout{
+            background: linear-gradient(90deg,#ef4444,#b91c1c);
+            color:#fff;
+            padding:6px 10px;
+            border-radius:8px;
+            border:0;
+            font-weight:700;
+            text-decoration:none;
+            display:inline-flex;
+            align-items:center;
+            gap:8px;
+            cursor:pointer;
+            transition:transform .12s ease, box-shadow .12s ease, opacity .12s ease;
+        }
+        .btn-logout:hover{ transform:translateY(-2px); box-shadow:0 8px 18px rgba(185,28,28,0.18); }
+        .btn-logout:active{ transform:translateY(-1px) scale(0.998); }
+        .btn-logout:focus{ outline:3px solid rgba(239,68,68,0.18); outline-offset:2px; }
+        #confirm-overlay{display:none;position:fixed;inset:0;background:rgba(2,6,23,0.45);align-items:center;justify-content:center;z-index:9999;padding:1rem;}
+        #confirm-card{background:#fff;padding:12px;border-radius:12px;box-shadow:0 8px 28px rgba(15,23,42,0.06);width:clamp(280px,420px,520px);text-align:left;}
+        #confirm-title{margin:0 0 .5rem 0;font-weight:700;font-size:1.05rem;}
+        #confirm-msg{color:var(--muted);margin-bottom:12px;font-size:0.98rem;}
+        .confirm-actions{display:flex;gap:.5rem;justify-content:flex-end;}
         @media (max-width:768px){
             .dashboard-container{flex-direction:column}
             .sidebar{width:100%;position:fixed;left:0;top:52px;transform:translateY(-120%);z-index:40;border-bottom-left-radius:8px;border-bottom-right-radius:8px}
@@ -35,13 +57,19 @@
             <button id="sidebar-toggle" aria-controls="sidebar" aria-expanded="true">☰</button>
             <span>Inventario Muebles</span>
         </div>
-        <div class="user-info" style="color:var(--muted)">
-            <?php if(isset($usuario)): ?>
-                <?php echo e($usuario->nombre ?? ''); ?> <?php echo e($usuario->apellido ?? ''); ?>
-            <?php elseif(session()->has('usuario_id')): ?>
-                <?php $u = \App\Models\Usuario::find(session('usuario_id')); ?>
-                <?php echo e($u->nombre ?? ''); ?> <?php echo e($u->apellido ?? ''); ?>
-            <?php endif; ?>
+        <div class="user-info" style="color:var(--muted);">
+            <div class="user-name">
+                <?php if(isset($usuario)): ?>
+                    <?php echo 'Bienvenido,'; ?><?php echo e($usuario->nombre ?? ''); ?> <?php echo e($usuario->apellido ?? ''); ?>
+                <?php elseif(session()->has('usuario_id')): ?>
+                    <?php $u = \App\Models\Usuario::find(session('usuario_id')); ?>
+                    <?php echo 'Bienvenido,'; ?> <?php echo e($u->nombre ?? ''); ?> <?php echo e($u->apellido ?? ''); ?>
+                <?php endif; ?>
+            </div>
+            <a href="<?php echo e(url('/logout')); ?>" class="btn-logout" title="Cerrar sesión" aria-label="Cerrar sesión" data-confirm="¿Deseas cerrar sesión ahora?">
+                <span style="font-size:14px;line-height:1;display:inline-block;">⎋</span>
+                <span>Cerrar sesión</span>
+            </a>
         </div>
     </header>
 
@@ -51,6 +79,16 @@
             @yield('content')
         </main>
     </div>
+    <div id="confirm-overlay" role="dialog" aria-modal="true" aria-hidden="true">
+        <div id="confirm-card" role="document" aria-labelledby="confirm-title">
+            <h3 id="confirm-title">Confirmar</h3>
+            <p id="confirm-msg">¿Estás seguro?</p>
+            <div class="confirm-actions">
+                <button type="button" id="confirm-cancel" style="background:#06b6d4;color:#fff;padding:8px 12px;border-radius:8px;border:0;cursor:pointer;">Cancelar</button>
+                <button type="button" id="confirm-ok" style="background:linear-gradient(90deg,#ef4444,#f97316);color:#fff;padding:8px 12px;border-radius:8px;border:0;cursor:pointer;">Confirmar</button>
+            </div>
+        </div>
+    </div>
 
     <script>
     (function(){
@@ -58,6 +96,52 @@
         const toggle = document.getElementById('sidebar-toggle');
         const storageKey = 'sidebar_collapsed_v1';
         if(!toggle || !sidebar) return;
+        (function(){
+            const overlay = document.getElementById('confirm-overlay');
+            const msg = document.getElementById('confirm-msg');
+            const btnOk = document.getElementById('confirm-ok');
+            const btnCancel = document.getElementById('confirm-cancel');
+            let pendingEl = null;
+            function show(text, el){
+                pendingEl = el || null;
+                msg.textContent = text || '¿Estás seguro?';
+                overlay.style.display = 'flex';
+                overlay.setAttribute('aria-hidden','false');
+                btnCancel.focus();
+            }
+            function hide(){
+                overlay.style.display = 'none';
+                overlay.setAttribute('aria-hidden','true');
+                pendingEl = null;
+            }
+            document.addEventListener('click', function(e){
+                const el = e.target.closest('[data-confirm]');
+                if(!el) return;
+                e.preventDefault();
+                const text = el.getAttribute('data-confirm') || '¿Estás seguro?';
+                show(text, el);
+            }, true);
+
+            btnCancel.addEventListener('click', hide);
+            btnOk.addEventListener('click', function(){
+                if(!pendingEl) return hide();
+                if(pendingEl.tagName === 'A' && pendingEl.href){
+                    window.location.href = pendingEl.href;
+                } else {
+                    const form = pendingEl.closest('form');
+                    if(form) form.submit();
+                    else pendingEl.click();
+                }
+                hide();
+            });
+
+            overlay.addEventListener('click', function(ev){
+                if(ev.target === overlay) hide();
+            });
+            document.addEventListener('keydown', function(ev){
+                if(ev.key === 'Escape') hide();
+            });
+        })();
 
         function setCollapsed(collapsed){
             if(collapsed){
