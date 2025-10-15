@@ -30,14 +30,22 @@
 
         <div style="flex:1;min-width:240px;">
           <label>Solicitante</label>
-          <select name="persona_id" required style="width:100%;padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
-            <option value="">Selecciona</option>
-            @foreach($usuarios as $u)
-              <option value="{{ $u->id }}" {{ (!empty($currentUser) && $currentUser->id == $u->id) ? 'selected' : '' }}>
-                {{ $u->nombre }} {{ $u->apellido }}
-              </option>
-            @endforeach
-          </select>
+
+          @if(!empty($currentUser) && ($currentUser->rol ?? '') !== 'admin')
+            <input type="hidden" name="persona_id" value="{{ $currentUser->id }}">
+            <div style="padding:8px;border-radius:8px;border:1px solid #e5e7eb;background:#fafafa;font-weight:700;">
+              {{ $currentUser->nombre }} {{ $currentUser->apellido }} (Conectado)
+            </div>
+          @else
+            <select name="persona_id" required style="width:100%;padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
+              <option value="">Selecciona</option>
+              @foreach($usuarios as $u)
+                <option value="{{ $u->id }}" {{ (!empty($currentUser) && $currentUser->id == $u->id) ? 'selected' : '' }}>
+                  {{ $u->nombre }} {{ $u->apellido }}
+                </option>
+              @endforeach
+            </select>
+          @endif
 
           <label style="margin-top:8px;">Fecha inicio</label>
           <input type="date" name="fecha_inicio" style="width:100%;padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
@@ -49,11 +57,16 @@
           <textarea name="nota" rows="4" style="width:100%;padding:8px;border-radius:8px;border:1px solid #e5e7eb;"></textarea>
 
           <label style="margin-top:8px;">Estado</label>
-          <select name="estado" required style="width:100%;padding:8px;border-radius:8px;border:1px solid #e5e7eb;margin-bottom:12px;">
-            <option value="pendiente">Pendiente</option>
-            <option value="aprobada">Aprobada</option>
-            <option value="rechazada">Rechazada</option>
-          </select>
+          @if(!empty($currentUser) && ($currentUser->rol ?? '') !== 'admin')
+            <input type="hidden" name="estado" value="pendiente">
+            <div style="padding:8px;border-radius:8px;border:1px solid #e5e7eb;background:#fff9ed;font-weight:700;color:#92400e;">Pendiente (automático)</div>
+          @else
+            <select name="estado" required style="width:100%;padding:8px;border-radius:8px;border:1px solid #e5e7eb;margin-bottom:12px;">
+              <option value="pendiente">Pendiente</option>
+              <option value="aprobada">Aprobada</option>
+              <option value="rechazada">Rechazada</option>
+            </select>
+          @endif
 
           <div style="display:flex;gap:8px;">
             <button type="submit" style="background:#06b6d4;color:#fff;padding:8px 12px;border-radius:8px;border:0;cursor:pointer;">Crear solicitud</button>

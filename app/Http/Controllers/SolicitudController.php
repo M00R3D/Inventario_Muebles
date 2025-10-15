@@ -34,7 +34,15 @@ class SolicitudController extends Controller
             'persona_id' => 'required|exists:usuarios,id',
             'estado' => 'required|in:pendiente,aprobada,rechazada',
         ]);
-        $solicitud = Solicitud::create($request->all());
+
+        $currentUser = session()->has('usuario_id') ? Usuario::find(session('usuario_id')) : null;
+        $isAdmin = $currentUser && ($currentUser->rol === 'admin');
+        $data = $request->all();
+        if ($currentUser && ! $isAdmin) {
+            $data['persona_id'] = $currentUser->id;
+            $data['estado'] = 'pendiente';
+        }
+        $solicitud = Solicitud::create($data);
         if ($request->wantsJson() || $request->is('api/*')) {return response()->json($solicitud, 201);}
         return redirect('/solicitudes')->with('success', 'Solicitud creada correctamente');
     }
