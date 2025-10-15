@@ -41,7 +41,11 @@
     border-radius: var(--radius);
     box-shadow: var(--shadow);
     transform-origin: left center;
-    overflow: visible;
+    position: sticky;
+    top: 52px; 
+    height: calc(100vh - 52px);
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
 }
 .sidebar.open{ transform: translateY(0); }
 .sidebar-card{
