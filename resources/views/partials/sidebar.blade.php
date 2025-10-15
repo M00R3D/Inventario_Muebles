@@ -1,4 +1,11 @@
 <!DOCTYPE html>
+@php
+    $current = null;
+    if (session()->has('usuario_id')) {
+        $current = \App\Models\Usuario::find(session('usuario_id'));
+    }
+    $isAdmin = $current && ($current->rol === 'admin');
+@endphp
 <div class="sidebar" id="sidebar" role="navigation" aria-label="Barra lateral">
     <div class="sidebar-card">
         <header class="sidebar-header">
@@ -9,7 +16,9 @@
                 <li><a href="{{ url('/dashboard') }}"><span class="icon">🏠</span><span class="label">Dashboard</span></a></li>
                 <li><a href="{{ url('/usuarios') }}"><span class="icon">👥</span><span class="label">Usuarios</span></a></li>
                 <li><a href="{{ url('/muebles') }}"><span class="icon">🪑</span><span class="label">Inventario</span></a></li>
-                <li><a href="{{ url('/imagenes') }}"><span class="icon">🖼️</span><span class="label">Imágenes</span></a></li>
+                @if($isAdmin)
+                    <li><a href="{{ url('/imagenes') }}"><span class="icon">🖼️</span><span class="label">Imágenes</span></a></li>
+                @endif
                 <li><a href="{{ url('/solicitudes') }}"><span class="icon">📩</span><span class="label">Solicitudes</span></a></li>
             </ul>
         </nav>
