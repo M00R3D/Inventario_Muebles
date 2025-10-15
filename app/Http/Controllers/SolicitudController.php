@@ -5,32 +5,22 @@ use App\Models\Solicitud;
 use App\Models\Mueble;
 use App\Models\Usuario;
 use Illuminate\Http\Request;
-
 class SolicitudController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function index(Request $request)
     {
-        $solicitudes = Solicitud::with(['mueble', 'usuario'])->get();
-        return response()->json($solicitudes);
+        $solicitudes = Solicitud::with(['mueble', 'usuario'])->orderBy('id','desc')->get();
+        if ($request->wantsJson() || $request->is('api/*')) {return response()->json($solicitudes);}
+        $muebles = Mueble::all();
+        $usuarios = Usuario::all();
+        return view('solicitudes.index', compact('solicitudes','muebles','usuarios'));
     }
-
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
-        // Mostrar formulario de creación
         $muebles = Mueble::all();
         $usuarios = Usuario::all();
         return view('solicitudes.create', compact('muebles', 'usuarios'));
     }
-
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
         $request->validate([
@@ -42,32 +32,20 @@ class SolicitudController extends Controller
             'estado' => 'required|in:pendiente,aprobada,rechazada',
         ]);
         $solicitud = Solicitud::create($request->all());
-        return response()->json($solicitud, 201);
+        if ($request->wantsJson() || $request->is('api/*')) {return response()->json($solicitud, 201);}
+        return redirect('/solicitudes')->with('success', 'Solicitud creada correctamente');
     }
-
-    /**
-     * Display the specified resource.
-     */
     public function show(Solicitud $solicitud)
     {
         $solicitud->load(['mueble', 'usuario']);
         return response()->json($solicitud);
     }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(Solicitud $solicitud)
     {
-        // Mostrar formulario de edición
         $muebles = Mueble::all();
         $usuarios = Usuario::all();
         return view('solicitudes.edit', compact('solicitud', 'muebles', 'usuarios'));
     }
-
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, Solicitud $solicitud)
     {
         $request->validate([
@@ -79,15 +57,22 @@ class SolicitudController extends Controller
             'estado' => 'required|in:pendiente,aprobada,rechazada',
         ]);
         $solicitud->update($request->all());
-        return response()->json($solicitud);
+        if ($request->wantsJson() || $request->is('api/*')) {return response()->json($solicitud);}
+        return redirect('/solicitudes')->with('success', 'Solicitud actualizada correctamente');
     }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Solicitud $solicitud)
+    public function destroy(Request $request, Solicitud $solicitud)
     {
         $solicitud->delete();
-        return response()->json(['message' => 'Solicitud eliminada correctamente']);
+        if ($request->wantsJson() || $request->is('api/*')) {return response()->json(['message' => 'Solicitud eliminada correctamente']);}
+        return redirect('/solicitudes')->with('success', 'Solicitud eliminada correctamente');
+    }
+    public function changeEstado(Request $request, Solicitud $solicitud)
+    {
+        $request->validate([
+            'estado' => 'required|in:pendiente,aprobada,rechazada',
+        ]);
+        $solicitud->update(['estado' => $request->estado]);
+        if ($request->wantsJson() || $request->is('api/*')) {return response()->json(['message' => 'Estado actualizado', 'solicitud' => $solicitud]);}
+        return redirect('/solicitudes')->with('success', 'Estado actualizado correctamente');
     }
 }

@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UsuarioController;
 use App\Http\Controllers\MuebleController;
 use App\Http\Controllers\ImageController;
+use App\Http\Controllers\SolicitudController;
 
 Route::get('/', [AuthController::class, 'showLogin']);
 Route::post('/login', [AuthController::class, 'login']);
@@ -29,3 +30,11 @@ Route::delete('/muebles/{mueble}', [MuebleController::class, 'destroy']);
 Route::get('/imagenes', [ImageController::class, 'index']);
 Route::get('/imagenes/list', [ImageController::class, 'list']);
 Route::post('/imagenes/upload', [ImageController::class, 'upload']);
+
+Route::get('/solicitudes', [SolicitudController::class, 'index']);
+Route::get('/solicitudes/create', [SolicitudController::class, 'create']);
+Route::post('/solicitudes', [SolicitudController::class, 'store']);
+Route::get('/solicitudes/{solicitud}/edit', [SolicitudController::class, 'edit']);
+Route::put('/solicitudes/{solicitud}', [SolicitudController::class, 'update']);
+Route::delete('/solicitudes/{solicitud}', [SolicitudController::class, 'destroy']);
+Route::post('/solicitudes/{solicitud}/estado', [SolicitudController::class, 'changeEstado'])->name('solicitudes.changeEstado');
