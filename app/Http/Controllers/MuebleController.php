@@ -15,6 +15,13 @@ class MuebleController extends Controller
         if ($request->filled('persona_id')) {$query->where('persona_id', $request->persona_id);}
         if ($request->filled('desde')) {$query->whereDate('fecha_registro', '>=', $request->desde);}
         if ($request->filled('hasta')) {$query->whereDate('fecha_registro', '<=', $request->hasta);}
+        $currentUser = null;
+        $isAdmin = false;
+        if (session()->has('usuario_id')) {
+            $currentUser = Usuario::find(session('usuario_id'));
+            $isAdmin = $currentUser && ($currentUser->rol === 'admin');
+        }
+        if (! $isAdmin) {$query->where('estado', '!=', 'en_reparacion');}
         $muebles = $query->get();
         if ($request->wantsJson() || $request->is('api/*')) {return response()->json($muebles);}
         $usuarios = Usuario::all();
@@ -27,8 +34,7 @@ class MuebleController extends Controller
             if (is_dir($path)) $dirs[] = $e;
         }
         sort($dirs);
-
-        return view('muebles.index', compact('muebles', 'usuarios', 'dirs'));
+        return view('muebles.index', compact('muebles', 'usuarios', 'dirs', 'currentUser', 'isAdmin'));
     }
     public function create()
     {

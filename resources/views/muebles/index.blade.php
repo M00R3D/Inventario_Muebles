@@ -52,7 +52,9 @@
     </div>
 
     <div style="display:flex;gap:8px;align-items:center">
-      <button id="btn-new" class="btn" type="button" style="background:linear-gradient(90deg,var(--accent1),var(--accent2));color:#fff;padding:8px 12px;border-radius:10px;border:0;cursor:pointer;font-weight:800">Nuevo mueble</button>
+      @if(!empty($isAdmin) && $isAdmin)
+        <button id="btn-new" class="btn" type="button" style="background:linear-gradient(90deg,var(--accent1),var(--accent2));color:#fff;padding:8px 12px;border-radius:10px;border:0;cursor:pointer;font-weight:800">Nuevo mueble</button>
+      @endif
     </div>
   </div>
 
@@ -248,16 +250,20 @@
                <?php endif; ?>
              </div>
              <div style="display:flex;flex-direction:column;gap:8px;">
-              <button type="button" class="btn-edit" data-mueble='@json($m)' style="background:#06b6d4;color:#fff;padding:8px;border-radius:8px;border:0;cursor:pointer;">Editar</button>
-              <form action="{{ url('/muebles/'.$m->id) }}" method="POST" style="margin:0;">
-                @csrf
-                @method('DELETE')
-                <button type="submit" data-confirm="¿Eliminar mueble {{ addslashes($m->codigo ?? 'ID '.$m->id) }}?" style="background:linear-gradient(90deg,#ef4444,#f97316);color:#fff;padding:8px;border-radius:8px;border:none;cursor:pointer;">Eliminar</button>
-              </form>
-            </div>
-          </div>
-        </article>
-      @endforeach
+                    @if(!empty($isAdmin) && $isAdmin)
+                      <button type="button" class="btn-edit" data-mueble='@json($m)' style="background:#06b6d4;color:#fff;padding:8px;border-radius:8px;border:0;cursor:pointer;">Editar</button>
+                      <form action="{{ url('/muebles/'.$m->id) }}" method="POST" style="margin:0;">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" data-confirm="¿Eliminar mueble {{ addslashes($m->codigo ?? 'ID '.$m->id) }}?" style="background:linear-gradient(90deg,#ef4444,#f97316);color:#fff;padding:8px;border-radius:8px;border:none;cursor:pointer;">Eliminar</button>
+                      </form>
+                    @else
+                      <a href="{{ url('/solicitudes/create') }}?mueble_id={{ $m->id }}" style="display:inline-block;text-align:center;background:#06b6d4;color:#fff;padding:8px 12px;border-radius:8px;text-decoration:none;font-weight:700;">Solicitar</a>
+                    @endif
+                  </div>
+                </div>
+              </article>
+            @endforeach
     </div>
   @endif
 </div>

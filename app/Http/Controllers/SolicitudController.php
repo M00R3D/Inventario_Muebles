@@ -15,11 +15,14 @@ class SolicitudController extends Controller
         $usuarios = Usuario::all();
         return view('solicitudes.index', compact('solicitudes','muebles','usuarios'));
     }
-    public function create()
+    public function create(Request $request)
     {
-        $muebles = Mueble::all();
+        $mueble = null;
+        $muebleId = $request->query('mueble_id');
+        if ($muebleId) {$mueble = Mueble::find($muebleId);}
         $usuarios = Usuario::all();
-        return view('solicitudes.create', compact('muebles', 'usuarios'));
+        $currentUser = session()->has('usuario_id') ? Usuario::find(session('usuario_id')) : null;
+        return view('solicitudes.create', compact('mueble', 'usuarios', 'currentUser'));
     }
     public function store(Request $request)
     {
