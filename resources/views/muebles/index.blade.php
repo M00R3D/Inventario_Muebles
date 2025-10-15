@@ -21,6 +21,23 @@
 .modal-card{ transition: transform .28s cubic-bezier(.16,.84,.44,1), opacity .28s ease, max-height .28s ease, padding .28s ease; transform-origin: top center; opacity:1; }
 .modal-card.collapsed{ transform:scaleY(.98); opacity:0; max-height:0; padding-top:0; padding-bottom:0; overflow:hidden; }
 #confirm-overlay{ display:none; }
+
+.estado-badge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:4px 10px;
+  border-radius:999px;
+  font-size:0.78rem;
+  font-weight:700;
+  min-width:64px;
+  text-align:center;
+  box-shadow:0 2px 6px rgba(2,6,23,0.06);
+}
+.estado-bueno{ background:#10b981; color:#ffffff; }    
+.estado-regular{ background:#f59e0b; color:#0b0b0b; }  
+.estado-malo{ background:#ef4444; color:#ffffff; }     
+.estado-en_reparacion{ background:#6366f1; color:#ffffff; } 
 </style>
 
 <div class="container">
@@ -180,7 +197,13 @@
                  Sin imagen
                </div>
              @endif
-              <div style="font-weight:800">{{ $m->codigo ?? 'ID '.$m->id }}</div>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div style="font-weight:800">{{ $m->codigo ?? 'ID '.$m->id }}</div>
+                <?php $estadoClass = 'estado-'.($m->estado ?? ''); ?>
+                <span class="estado-badge <?php echo e($estadoClass); ?>">
+                  <?php echo e(ucfirst(str_replace('_',' ', $m->estado ?? '-'))); ?>
+                </span>
+              </div>
               <div style="color:var(--muted)">{{ \Illuminate\Support\Str::limit($m->descripcion ?? '-', 120) }}</div>
               <div style="color:var(--muted);font-size:0.95rem;">
                 <?php
