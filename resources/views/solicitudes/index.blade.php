@@ -24,6 +24,11 @@
 <div class="container">
   <h1>Solicitudes</h1>
 
+  @php
+    $currentUser = $currentUser ?? (session()->has('usuario_id') ? \App\Models\Usuario::find(session('usuario_id')) : null);
+    $isAdmin = $isAdmin ?? ($currentUser && ($currentUser->rol === 'admin'));
+  @endphp
+
   @if(session('success'))
     <div style="background:#ecfdf5;color:#065f46;padding:10px;border-radius:8px;margin:8px 0;font-weight:700;">{{ session('success') }}</div>
   @endif
@@ -35,6 +40,39 @@
           <h2 style="margin:0;font-size:1.05rem">Lista de solicitudes</h2>
           <button id="btn-new" style="background:#06b6d4;color:#fff;padding:8px 12px;border-radius:8px;border:0;cursor:pointer;">Nueva solicitud</button>
         </div>
+
+        <form id="sol-filters" method="GET" action="{{ url('/solicitudes') }}" style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+            @if($isAdmin)
+              <div>
+                <label style="display:block;font-weight:600;">Solicitante</label>
+                <select name="persona_id" style="padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
+                  <option value="">Todos</option>
+                  @foreach($usuarios as $u)
+                    <option value="{{ $u->id }}" {{ request('persona_id') == $u->id ? 'selected' : '' }}>{{ $u->nombre }} {{ $u->apellido }}</option>
+                  @endforeach
+                </select>
+              </div>
+            @endif
+            <div>
+              <label style="display:block;font-weight:600;">Mueble (código)</label>
+              <input name="codigo" type="search" value="{{ request('codigo') }}" placeholder="buscar código" style="padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
+            </div>
+            <div>
+              <label style="display:block;font-weight:600;">Estado</label>
+              <select name="estado" style="padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
+                <option value="">Todos</option>
+                <option value="pendiente" {{ request('estado')=='pendiente' ? 'selected' : '' }}>Pendiente</option>
+                <option value="aprobada" {{ request('estado')=='aprobada' ? 'selected' : '' }}>Aprobada</option>
+                <option value="rechazada" {{ request('estado')=='rechazada' ? 'selected' : '' }}>Rechazada</option>
+              </select>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button type="submit" style="background:#06b6d4;color:#fff;padding:8px 12px;border-radius:8px;border:0;cursor:pointer;">Aplicar</button>
+            <button type="button" id="sol-clear-filters" style="background:#ef4444;color:#fff;padding:8px 12px;border-radius:8px;border:0;cursor:pointer;">Limpiar</button>
+          </div>
+        </form>
 
         <div style="margin-top:12px;overflow:auto;">
           <table class="table" aria-label="Solicitudes">
@@ -67,30 +105,34 @@
                     <span class="badge {{ $cls }}">{{ ucfirst($s->estado) }}</span>
                   </td>
                   <td style="white-space:nowrap">
-                    <button type="button" class="btn-edit" data-solicitud='@json($s)' style="margin-right:6px;">Editar</button>
+                    @if($isAdmin)
+                      <button type="button" class="btn-edit" data-solicitud='@json($s)' style="margin-right:6px;">Editar</button>
 
-                    <form action="{{ route('solicitudes.changeEstado', $s->id) }}" method="POST" style="display:inline;margin-right:6px;">
-                      @csrf
-                      <input type="hidden" name="estado" value="aprobada">
-                      <button type="submit" title="Aprobar" style="background:#10b981;color:#fff;padding:6px 8px;border-radius:8px;border:0;">Aprobar</button>
-                    </form>
+                      <form action="{{ route('solicitudes.changeEstado', $s->id) }}" method="POST" style="display:inline;margin-right:6px;">
+                        @csrf
+                        <input type="hidden" name="estado" value="aprobada">
+                        <button type="submit" title="Aprobar" style="background:#10b981;color:#fff;padding:6px 8px;border-radius:8px;border:0;">Aprobar</button>
+                      </form>
 
-                    <form action="{{ route('solicitudes.changeEstado', $s->id) }}" method="POST" style="display:inline;margin-right:6px;">
-                      @csrf
-                      <input type="hidden" name="estado" value="pendiente">
-                      <button type="submit" title="Poner pendiente" style="background:#f59e0b;color:#111;padding:6px 8px;border-radius:8px;border:0;">Pendiente</button>
-                    </form>
+                      <form action="{{ route('solicitudes.changeEstado', $s->id) }}" method="POST" style="display:inline;margin-right:6px;">
+                        @csrf
+                        <input type="hidden" name="estado" value="pendiente">
+                        <button type="submit" title="Poner pendiente" style="background:#f59e0b;color:#111;padding:6px 8px;border-radius:8px;border:0;">Pendiente</button>
+                      </form>
 
-                    <form action="{{ route('solicitudes.changeEstado', $s->id) }}" method="POST" style="display:inline;margin-right:6px;">
-                      @csrf
-                      <input type="hidden" name="estado" value="rechazada">
-                      <button type="submit" title="Rechazar" style="background:#ef4444;color:#fff;padding:6px 8px;border-radius:8px;border:0;">Rechazar</button>
-                    </form>
+                      <form action="{{ route('solicitudes.changeEstado', $s->id) }}" method="POST" style="display:inline;margin-right:6px;">
+                        @csrf
+                        <input type="hidden" name="estado" value="rechazada">
+                        <button type="submit" title="Rechazar" style="background:#ef4444;color:#fff;padding:6px 8px;border-radius:8px;border:0;">Rechazar</button>
+                      </form>
 
-                    <form action="{{ url('/solicitudes/'.$s->id) }}" method="POST" style="display:inline;">
-                      @csrf @method('DELETE')
-                      <button type="submit" data-confirm="¿Eliminar solicitud #{{ $s->id }}?" style="background:linear-gradient(90deg,#ef4444,#f97316);color:#fff;padding:6px 8px;border-radius:8px;border:0;">Eliminar</button>
-                    </form>
+                      <form action="{{ url('/solicitudes/'.$s->id) }}" method="POST" style="display:inline;">
+                        @csrf @method('DELETE')
+                        <button type="submit" data-confirm="¿Eliminar solicitud #{{ $s->id }}?" style="background:linear-gradient(90deg,#ef4444,#f97316);color:#fff;padding:6px 8px;border-radius:8px;border:0;">Eliminar</button>
+                      </form>
+                    @else
+                      <span style="color:#6b7280;font-weight:700;">-</span>
+                    @endif
                   </td>
                 </tr>
               @empty
@@ -102,7 +144,33 @@
       </div>
     </div>
 
-    
+    <aside class="right">
+      <div class="card-wide" style="padding:12px;">
+        <h2 style="margin:0;font-size:1.05rem;">Resumen</h2>
+
+        <div style="margin-top:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="font-weight:700;">Total solicitudes</div>
+            <div style="font-size:1.2rem;">{{ $solicitudes->count() }}</div>
+          </div>
+
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+            <div style="font-weight:700;">Pendientes</div>
+            <div class="badge badge-pendiente" style="font-size:0.9rem;">{{ $solicitudes->where('estado', 'pendiente')->count() }}</div>
+          </div>
+
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+            <div style="font-weight:700;">Aprobadas</div>
+            <div class="badge badge-aprobada" style="font-size:0.9rem;">{{ $solicitudes->where('estado', 'aprobada')->count() }}</div>
+          </div>
+
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+            <div style="font-weight:700;">Rechazadas</div>
+            <div class="badge badge-rechazada" style="font-size:0.9rem;">{{ $solicitudes->where('estado', 'rechazada')->count() }}</div>
+          </div>
+        </div>
+      </div>
+    </aside>
   </div>
 </div>
 
@@ -135,12 +203,20 @@
 
         <div style="flex:1;min-width:260px;">
           <label>Solicitante</label>
-          <select name="persona_id" id="sol-persona" required style="width:100%;padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
-            <option value="">Selecciona</option>
-            @foreach($usuarios as $u)
-              <option value="{{ $u->id }}">{{ $u->nombre }} {{ $u->apellido }}</option>
-            @endforeach
-          </select>
+
+          @if(!empty($currentUser) && ($currentUser->rol ?? '') !== 'admin')
+            <input type="hidden" name="persona_id" value="{{ $currentUser->id }}">
+            <div style="padding:8px;border-radius:8px;border:1px solid #e5e7eb;background:#fafafa;font-weight:700;">
+              {{ $currentUser->nombre }} {{ $currentUser->apellido }} (Conectado)
+            </div>
+          @else
+            <select name="persona_id" id="sol-persona" required style="width:100%;padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
+              <option value="">Selecciona</option>
+              @foreach($usuarios as $u)
+                <option value="{{ $u->id }}">{{ $u->nombre }} {{ $u->apellido }}</option>
+              @endforeach
+            </select>
+          @endif
 
           <label style="margin-top:8px;">Fecha inicio</label>
           <input type="date" name="fecha_inicio" id="sol-fecha-inicio" style="width:100%;padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
@@ -152,11 +228,16 @@
           <textarea name="nota" id="sol-nota" rows="4" style="width:100%;padding:8px;border-radius:8px;border:1px solid #e5e7eb;"></textarea>
 
           <label style="margin-top:8px;">Estado</label>
-          <select name="estado" id="sol-estado" required style="width:100%;padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
-            <option value="pendiente">Pendiente</option>
-            <option value="aprobada">Aprobada</option>
-            <option value="rechazada">Rechazada</option>
-          </select>
+          @if(!empty($currentUser) && ($currentUser->rol ?? '') !== 'admin')
+            <input type="hidden" name="estado" value="pendiente">
+            <div style="padding:8px;border-radius:8px;border:1px solid #e5e7eb;background:#fff9ed;font-weight:700;color:#92400e;">Pendiente (automático)</div>
+          @else
+            <select name="estado" id="sol-estado" required style="width:100%;padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
+              <option value="pendiente">Pendiente</option>
+              <option value="aprobada">Aprobada</option>
+              <option value="rechazada">Rechazada</option>
+            </select>
+          @endif
 
           <div style="margin-top:12px;display:flex;gap:8px;">
             <button type="submit" id="sol-save" style="background:#06b6d4;color:#fff;padding:8px 12px;border-radius:8px;border:0;cursor:pointer;">Guardar</button>
@@ -183,9 +264,11 @@ document.addEventListener('DOMContentLoaded', function(){
   const solForm = document.getElementById('sol-form');
   const solMethod = document.getElementById('sol-method');
   const solId = document.getElementById('sol-id');
+  const solFilters = document.getElementById('sol-filters');
 
   function openModal() {
     modal.style.display = 'flex';
+    if(solFilters) solFilters.style.display = 'none';
     solMethod.value = 'POST';
     solId.value = '';
     solForm.action = "{{ url('/solicitudes') }}";
@@ -194,7 +277,7 @@ document.addEventListener('DOMContentLoaded', function(){
     document.querySelectorAll('.mueble-item').forEach(el=> el.classList.remove('selected'));
     modal.scrollTop = 0;
   }
-  function closeModal() { modal.style.display = 'none'; }
+  function closeModal() { modal.style.display = 'none'; if(solFilters) solFilters.style.display = 'flex'; }
 
   if (btnNew) btnNew.addEventListener('click', openModal);
   if (solCancel) solCancel.addEventListener('click', closeModal);
@@ -222,11 +305,13 @@ document.addEventListener('DOMContentLoaded', function(){
       try {
         const s = JSON.parse(this.getAttribute('data-solicitud'));
         openModal();
-        document.getElementById('sol-persona').value = s.persona_id || '';
+        const personaSel = document.getElementById('sol-persona');
+        if(personaSel) personaSel.value = s.persona_id || '';
         document.getElementById('sol-fecha-inicio').value = s.fecha_inicio || '';
         document.getElementById('sol-fecha-fin').value = s.fecha_fin || '';
         document.getElementById('sol-nota').value = s.nota || '';
-        document.getElementById('sol-estado').value = s.estado || 'pendiente';
+        const estadoSel = document.getElementById('sol-estado');
+        if(estadoSel) estadoSel.value = s.estado || 'pendiente';
         solMethod.value = 'PUT';
         solId.value = s.id;
         solForm.action = "{{ url('/solicitudes') }}/" + s.id;
@@ -235,6 +320,16 @@ document.addEventListener('DOMContentLoaded', function(){
       } catch(e){ console.error(e); alert('Error al abrir edición'); }
     });
   });
+
+  const clearBtn = document.getElementById('sol-clear-filters');
+  if(clearBtn){
+    clearBtn.addEventListener('click', function(){
+      const form = document.getElementById('sol-filters');
+      if(!form) return;
+      form.querySelectorAll('input,select').forEach(i=> i.value = '');
+      form.submit();
+    });
+  }
 });
 </script>
 @endsection

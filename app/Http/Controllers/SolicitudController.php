@@ -9,11 +9,24 @@ class SolicitudController extends Controller
 {
     public function index(Request $request)
     {
-        $solicitudes = Solicitud::with(['mueble', 'usuario'])->orderBy('id','desc')->get();
+        $currentUser = session()->has('usuario_id') ? Usuario::find(session('usuario_id')) : null;
+        $isAdmin = $currentUser && ($currentUser->rol === 'admin');
+        $query = Solicitud::with(['mueble', 'usuario'])->orderBy('id','desc');
+        if (! $isAdmin && $currentUser) {$query->where('persona_id', $currentUser->id);}
+        if ($request->filled('persona_id') && $isAdmin) {$query->where('persona_id', $request->input('persona_id'));}
+        if ($request->filled('estado')) {$query->where('estado', $request->input('estado'));}
+        if ($request->filled('codigo')) {
+            $q = $request->input('codigo');
+            $query->whereHas('mueble', function($qb) use ($q) {
+                $qb->where('codigo', 'like', "%{$q}%")
+                   ->orWhere('descripcion', 'like', "%{$q}%");
+            });
+        }
+        $solicitudes = $query->get();
         if ($request->wantsJson() || $request->is('api/*')) {return response()->json($solicitudes);}
         $muebles = Mueble::all();
         $usuarios = Usuario::all();
-        return view('solicitudes.index', compact('solicitudes','muebles','usuarios'));
+        return view('solicitudes.index', compact('solicitudes','muebles','usuarios','currentUser','isAdmin'));
     }
     public function create(Request $request)
     {
