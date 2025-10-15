@@ -10,10 +10,17 @@ class MuebleController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $muebles = Mueble::with('usuario')->get();
-        return response()->json($muebles);
+        $muebles = Mueble::with('usuario')->orderBy('id','desc')->get();
+
+        // API clients keep returning JSON
+        if ($request->wantsJson() || $request->is('api/*')) {
+            return response()->json($muebles);
+        }
+
+        // Web: render view with muebles
+        return view('muebles.index', compact('muebles'));
     }
 
     /**
