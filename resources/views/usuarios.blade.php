@@ -11,7 +11,13 @@
 @section('title','Usuarios | Inventario Muebles')
 
 @section('content')
-@php $areas = $areas ?? \App\Models\Area::all(); @endphp
+@php
+    $current = null;
+    if (session()->has('usuario_id')) {
+        $current = \App\Models\Usuario::find(session('usuario_id'));
+    }
+    $isAdmin = $current && ($current->rol === 'admin');
+@endphp
 
 <style>
 #notifications { position:fixed; top:84px; right:20px; z-index:140; display:flex; flex-direction:column; gap:8px; }
@@ -52,16 +58,18 @@
     <header style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap;">
         <div>
             <h1 style="margin:0;font-size:1.25rem;">Usuarios</h1>
-            @if(auth()->check())
-                <div style="font-weight:700;color:#111;">Conectado: {{ auth()->user()->nombre }} {{ auth()->user()->apellido }}</div>
-                <div style="font-size:0.9rem;color:#6b7280;">{{ auth()->user()->email }}</div>
+            @if($current)
+                <div style="font-weight:700;color:#111;">Conectado: {{ $current->nombre }} {{ $current->apellido }}</div>
+                <div style="font-size:0.9rem;color:#6b7280;">{{ $current->email }}</div>
             @endif
         </div>
 
         <div style="display:flex;gap:10px;align-items:center;">
-            <button id="btn-new" class="btn" type="button" style="background:#6366f1;color:#fff;padding:8px 12px;border-radius:8px;border:0;cursor:pointer;">
-                Nuevo usuario
-            </button>
+            @if($isAdmin)
+                <button id="btn-new" class="btn" type="button" style="background:#6366f1;color:#fff;padding:8px 12px;border-radius:8px;border:0;cursor:pointer;">
+                    Nuevo usuario
+                </button>
+            @endif
         </div>
     </header>
 
@@ -182,49 +190,42 @@
         <table style="width:100%;border-collapse:collapse;min-width:720px;">
             <thead>
                 <tr style="text-align:left;color:#374151;border-bottom:1px solid #e5e7eb;">
-                    <th style="padding:10px 12px;">ID</th>
+                    @if($isAdmin)
+                        <th style="padding:10px 12px;">ID</th>
+                    @endif
                     <th style="padding:10px 12px;">Nombre</th>
                     <th style="padding:10px 12px;">Apellido</th>
                     <th style="padding:10px 12px;">Email</th>
                     <th style="padding:10px 12px;">Rol</th>
                     <th style="padding:10px 12px;">Área</th>
-                    <th style="padding:10px 12px;width:190px;">Acciones</th>
+                    @if($isAdmin)
+                        <th style="padding:10px 12px;width:190px;">Acciones</th>
+                    @endif
                 </tr>
             </thead>
             <tbody>
                 @forelse($usuarios as $u)
                     <tr style="border-bottom:1px solid #f3f4f6;">
-                        <td style="padding:10px 12px;vertical-align:middle;">{{ $u->id }}</td>
-                        <td style="padding:10px 12px;vertical-align:middle;">{{ $u->nombre }}</td>
-                        <td style="padding:10px 12px;vertical-align:middle;">{{ $u->apellido }}</td>
-                        <td style="padding:10px 12px;vertical-align:middle;">{{ $u->email }}</td>
-                        <td style="padding:10px 12px;vertical-align:middle;">{{ $u->rol }}</td>
-                        <td style="padding:10px 12px;vertical-align:middle;">{{ $u->area->nombre ?? '-' }}</td>
-                        <td style="padding:10px 12px;vertical-align:middle;">
-                            <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                                <button type="button"
-                                        class="btn-edit"
-                                        data-user='@json($u)'
-                                        style="background:#06b6d4;color:#fff;padding:6px 10px;border-radius:8px;border:0;cursor:pointer;font-size:0.9rem;">
-                                    Editar
-                                </button>
-
-                                <form action="{{ url('/usuarios/'.$u->id) }}" method="POST" style="display:inline;">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit"
-                                            data-confirm="¿Eliminar usuario {{ addslashes($u->nombre.' '.$u->apellido) }}?"
-                                            style="background:#ef4444;color:#fff;padding:6px 10px;border-radius:8px;border:none;cursor:pointer;font-size:0.9rem;">
-                                        Eliminar
-                                    </button>
+                        @if($isAdmin)
+                            <td style="padding:10px 12px;">{{ $u->id }}</td>
+                        @endif
+                        <td style="padding:10px 12px;">{{ $u->nombre }}</td>
+                        <td style="padding:10px 12px;">{{ $u->apellido }}</td>
+                        <td style="padding:10px 12px;">{{ $u->email }}</td>
+                        <td style="padding:10px 12px;">{{ $u->rol }}</td>
+                        <td style="padding:10px 12px;">{{ optional($u->area)->nombre }}</td>
+                        @if($isAdmin)
+                            <td style="padding:10px 12px;width:190px;">
+                                <button type="button" class="btn-edit" data-user='@json($u)' style="margin-right:6px;">Editar</button>
+                                <form action="{{ url('/usuarios/'.$u->id) }}" method="POST" style="display:inline">
+                                    @csrf @method('DELETE')
+                                    <button type="submit" data-confirm="¿Eliminar usuario {{ addslashes($u->nombre . ' ' . $u->apellido) }}?" style="background:linear-gradient(90deg,#ef4444,#f97316);color:#fff;padding:6px 8px;border-radius:8px;border:0;">Eliminar</button>
                                 </form>
-                            </div>
-                        </td>
+                            </td>
+                        @endif
                     </tr>
                 @empty
-                    <tr>
-                        <td colspan="7" style="padding:14px 12px;text-align:center;color:#6b7280;">No hay usuarios registrados.</td>
-                    </tr>
+                    <tr><td colspan="{{ $isAdmin ? 7 : 5 }}">No hay usuarios.</td></tr>
                 @endforelse
             </tbody>
         </table>
