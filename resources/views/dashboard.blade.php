@@ -11,10 +11,184 @@
 @section('title','Dashboard | Inventario Muebles')
 
 @section('content')
-    <div class="card">
-        <h1>Bienvenido al Dashboard</h1>
-        <p>Aquí puedes ver estadísticas y gestionar la información de inventario.</p>
+@php
+    $current = session()->has('usuario_id') ? \App\Models\Usuario::find(session('usuario_id')) : null;
+    $isAdmin = $current && ($current->rol === 'admin');
+
+    $texts = [
+        'usuarios' => [
+            'Gestiona usuarios, roles y áreas de forma centralizada.',
+            'Revisa cuentas, asigna roles y controla accesos.',
+            'Administra perfiles y áreas del personal rápidamente.'
+        ],
+        'muebles' => [
+            'Explora el inventario, filtra por estado y solicita artículos.',
+            'Añade, edita o solicita muebles — seguimiento claro del stock.',
+            'Consulta fichas de muebles y su historial de uso.'
+        ],
+        'solicitudes' => [
+            'Revisa solicitudes, aprueba o rechaza con un clic.',
+            'Gestiona las peticiones y controla el estado de los préstamos.',
+            'Visualiza solicitudes recientes y responde rápidamente.'
+        ],
+        'imagenes' => [
+            'Sube y organiza imágenes públicas para los muebles.',
+            'Administra carpetas e imágenes visibles en el sitio.',
+            'Carga imágenes desde tu equipo y actualiza previews.'
+        ],
+    ];
+
+    function pickRandom(array $arr) {
+        return $arr[array_rand($arr)];
+    }
+@endphp
+
+<style>
+.dashboard-grid{ display:grid; grid-template-columns: repeat(auto-fit,minmax(240px,1fr)); gap:18px; align-items:start; }
+.card-cta{ background:linear-gradient(180deg,#ffffff,#fbfdff); border-radius:14px; padding:18px; box-shadow:0 12px 34px rgba(2,6,23,0.06); transition:transform .18s ease, box-shadow .18s ease; display:flex;flex-direction:column;gap:12px; min-height:130px; }
+.card-cta:hover{ transform:translateY(-6px); box-shadow:0 18px 44px rgba(2,6,23,0.10); }
+.card-cta .title{ display:flex; align-items:center; gap:12px; font-weight:800; font-size:1.05rem; color:#0f172a; }
+.card-cta .desc{ color:#475569; font-size:0.94rem; line-height:1.3; }
+.card-cta .meta{ margin-top:auto; display:flex; justify-content:space-between; align-items:center; gap:8px; }
+.card-btn{ background:linear-gradient(90deg,#06b6d4,#0ea5e9); color:#fff; padding:8px 12px; border-radius:10px; text-decoration:none; font-weight:700; }
+.icon-circle{ width:44px; height:44px; border-radius:10px; display:inline-grid; place-items:center; font-size:18px; color:#fff; }
+.icon-users{ background:linear-gradient(180deg,#6366f1,#4f46e5); }
+.icon-muebles{ background:linear-gradient(180deg,#06b6d4,#0891b2); }
+.icon-solicitudes{ background:linear-gradient(180deg,#f59e0b,#f97316); }
+.icon-images{ background:linear-gradient(180deg,#10b981,#059669); }
+
+.summary-row{ display:flex; gap:12px; flex-wrap:wrap; margin-bottom:18px; }
+.summary-item{ background:#fff; padding:12px 14px; border-radius:12px; box-shadow:0 8px 20px rgba(2,6,23,0.04); min-width:160px; }
+.summary-item .num{ font-weight:800; font-size:1.25rem; color:#0f172a; }
+.links-list{ display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+.link-chip{ background:#f1f5f9; padding:8px 10px; border-radius:999px; color:#0b1220; font-weight:700; text-decoration:none; }
+</style>
+
+<div style="max-width:1200px;margin:18px auto;padding:12px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px;">
+    <div>
+      <h1 style="margin:0;font-size:1.25rem;">Dashboard</h1>
+      <div style="color:#6b7280;margin-top:6px;font-weight:700;">
+        Bienvenido{{ $current ? ', '.$current->nombre.' '.$current->apellido : '' }} — Rol: {{ $current->rol ?? 'invitado' }}
+      </div>
     </div>
+    <div style="text-align:right;">
+      <div style="color:#6b7280;font-weight:700;">Accesos rápidos</div>
+      <div class="links-list" aria-hidden="false">
+        <a class="link-chip" href="{{ url('/muebles') }}">Inventario</a>
+        <a class="link-chip" href="{{ url('/solicitudes') }}">Solicitudes</a>
+        <a class="link-chip" href="{{ url('/usuarios') }}">Usuarios</a>
+        @if($isAdmin)
+          <a class="link-chip" href="{{ url('/imagenes') }}">Imágenes</a>
+        @endif
+      </div>
+    </div>
+  </div>
+
+  @if($isAdmin)
+    <div class="summary-row" role="region" aria-label="Resumen rápido">
+      <div class="summary-item">
+        <div style="color:#6b7280;font-weight:700;">Total muebles</div>
+        <div class="num">{{ \App\Models\Mueble::count() }}</div>
+      </div>
+      <div class="summary-item">
+        <div style="color:#6b7280;font-weight:700;">Solicitudes totales</div>
+        <div class="num">{{ \App\Models\Solicitud::count() }}</div>
+      </div>
+      <div class="summary-item">
+        <div style="color:#6b7280;font-weight:700;">Usuarios</div>
+        <div class="num">{{ \App\Models\Usuario::count() }}</div>
+      </div>
+    </div>
+
+    <div class="dashboard-grid" role="list">
+      <a class="card-cta" href="{{ url('/usuarios') }}" role="listitem" aria-label="Usuarios">
+        <div class="title"><span class="icon-circle icon-users">👥</span> Gestión de usuarios</div>
+        <div class="desc">
+          @if($isAdmin)
+            Administración total del CRUD de usuarios.
+          @else
+            {{ pickRandom($texts['usuarios']) }}
+          @endif
+        </div>
+        <div class="meta">
+          <span style="color:#64748b;font-weight:700;">Ver usuarios</span>
+          <span><span class="card-btn">Ir</span></span>
+        </div>
+      </a>
+
+      <a class="card-cta" href="{{ url('/muebles') }}" role="listitem" aria-label="Inventario">
+        <div class="title"><span class="icon-circle icon-muebles">🪑</span> Inventario y mueble</div>
+        <div class="desc">
+          @if($isAdmin)
+            Administración total del CRUD de muebles.
+          @else
+            {{ pickRandom($texts['muebles']) }}
+          @endif
+        </div>
+        <div class="meta">
+          <span style="color:#64748b;font-weight:700;">Gestionar inventario</span>
+          <span><span class="card-btn">Ir</span></span>
+        </div>
+      </a>
+
+      <a class="card-cta" href="{{ url('/solicitudes') }}" role="listitem" aria-label="Solicitudes">
+        <div class="title"><span class="icon-circle icon-solicitudes">📩</span> Solicitudes</div>
+        <div class="desc">
+          @if($isAdmin)
+            Administración total del CRUD de solicitudes.
+          @else
+            {{ pickRandom($texts['solicitudes']) }}
+          @endif
+        </div>
+        <div class="meta">
+          <span style="color:#64748b;font-weight:700;">Revisar solicitudes</span>
+          <span><span class="card-btn">Ir</span></span>
+        </div>
+      </a>
+
+      @if($isAdmin)
+      <a class="card-cta" href="{{ url('/imagenes') }}" role="listitem" aria-label="Imágenes">
+        <div class="title"><span class="icon-circle icon-images">🖼️</span> Imágenes</div>
+        <div class="desc">
+          Administración total del CRUD de imágenes.
+        </div>
+        <div class="meta">
+          <span style="color:#64748b;font-weight:700;">Administrar imágenes</span>
+          <span><span class="card-btn">Ir</span></span>
+        </div>
+      </a>
+      @endif
+    </div>
+
+  @else
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;">
+      <div class="card-cta">
+        <div class="title"><span class="icon-circle icon-muebles">🪑</span> Inventario</div>
+        <div class="desc">Explora los muebles disponibles (se ocultan los que están en reparación) y solicita el que necesites.</div>
+        <div class="meta">
+          <a class="card-btn" href="{{ url('/muebles') }}">Ver inventario</a>
+        </div>
+      </div>
+
+      <div class="card-cta">
+        <div class="title"><span class="icon-circle icon-solicitudes">📩</span> Mis solicitudes</div>
+        <div class="desc">Revisa tus solicitudes actuales, estado y crea nuevas solicitudes rápidamente.</div>
+        <div class="meta">
+          <a class="card-btn" href="{{ url('/solicitudes') }}">Ver solicitudes</a>
+        </div>
+      </div>
+
+      <div class="card-cta">
+        <div class="title"><span class="icon-circle icon-users">👥</span> Directorio</div>
+        <div class="desc">Consulta el listado de usuarios y sus áreas (solo lectura).</div>
+        <div class="meta">
+          <a class="card-btn" href="{{ url('/usuarios') }}">Ver usuarios</a>
+        </div>
+      </div>
+    </div>
+  @endif
+</div>
 @endsection
     <script>
     document.addEventListener('DOMContentLoaded', function() {
