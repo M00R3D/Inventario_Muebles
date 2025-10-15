@@ -4,38 +4,27 @@ namespace App\Http\Controllers;
 use App\Models\Mueble;
 use App\Models\Usuario;
 use Illuminate\Http\Request;
-
 class MuebleController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index(Request $request)
     {
-        $muebles = Mueble::with('usuario')->orderBy('id','desc')->get();
-
-        // API clients keep returning JSON
-        if ($request->wantsJson() || $request->is('api/*')) {
-            return response()->json($muebles);
-        }
-
-        // Web: render view with muebles
-        return view('muebles.index', compact('muebles'));
+        $query = Mueble::with('usuario')->orderBy('id','desc');
+        if ($request->filled('codigo')) {$query->where('codigo', 'like', '%' . $request->codigo . '%');}
+        if ($request->filled('descripcion')) {$query->where('descripcion', 'like', '%' . $request->descripcion . '%');}
+        if ($request->filled('estado')) {$query->where('estado', $request->estado);}
+        if ($request->filled('persona_id')) {$query->where('persona_id', $request->persona_id);}
+        if ($request->filled('desde')) {$query->whereDate('fecha_registro', '>=', $request->desde);}
+        if ($request->filled('hasta')) {$query->whereDate('fecha_registro', '<=', $request->hasta);}
+        $muebles = $query->get();
+        if ($request->wantsJson() || $request->is('api/*')) {return response()->json($muebles);}
+        $usuarios = Usuario::all();
+        return view('muebles.index', compact('muebles', 'usuarios'));
     }
-
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
-        // Mostrar formulario de creación
         $usuarios = Usuario::all();
         return view('muebles.create', compact('usuarios'));
     }
-
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
         $request->validate([
@@ -48,32 +37,22 @@ class MuebleController extends Controller
             'persona_id' => 'required|exists:usuarios,id',
             'estado' => 'required|in:bueno,regular,malo,en_reparacion',
         ]);
-        $mueble = Mueble::create($request->all());
-        return response()->json($mueble, 201);
+        $data = $request->all();
+        if (empty($data['fecha_registro'])) {$data['fecha_registro'] = now()->toDateString();}
+        $mueble = Mueble::create($data);
+        if ($request->wantsJson() || $request->is('api/*')) {return response()->json($mueble, 201);}
+        return redirect('/muebles')->with('success', 'Mueble creado correctamente');
     }
-
-    /**
-     * Display the specified resource.
-     */
     public function show(Mueble $mueble)
     {
         $mueble->load('usuario');
         return response()->json($mueble);
     }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(Mueble $mueble)
     {
-        // Mostrar formulario de edición
         $usuarios = Usuario::all();
         return view('muebles.edit', compact('mueble', 'usuarios'));
     }
-
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, Mueble $mueble)
     {
         $request->validate([
@@ -86,16 +65,16 @@ class MuebleController extends Controller
             'persona_id' => 'required|exists:usuarios,id',
             'estado' => 'required|in:bueno,regular,malo,en_reparacion',
         ]);
-        $mueble->update($request->all());
-        return response()->json($mueble);
+        $data = $request->all();
+        if (! $request->filled('fecha_registro')) {unset($data['fecha_registro']);}
+        $mueble->update($data);
+        if ($request->wantsJson() || $request->is('api/*')) {return response()->json($mueble);}
+        return redirect('/muebles')->with('success', 'Mueble actualizado correctamente');
     }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Mueble $mueble)
+    public function destroy(Request $request, Mueble $mueble)
     {
         $mueble->delete();
-        return response()->json(['message' => 'Mueble eliminado correctamente']);
+        if ($request->wantsJson() || $request->is('api/*')) {return response()->json(['message' => 'Mueble eliminado correctamente']);}
+        return redirect('/muebles')->with('success', 'Mueble eliminado correctamente');
     }
 }

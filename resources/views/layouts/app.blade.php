@@ -4,6 +4,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="csrf-token" content="<?php echo e(csrf_token()); ?>" />
     <title>@yield('title','Inventario Muebles')</title>
     <style>
         :root{--bg:#FDFDFC;--muted:#6b7280;--accent:#111827;--card:#fff}
