@@ -18,7 +18,17 @@ class MuebleController extends Controller
         $muebles = $query->get();
         if ($request->wantsJson() || $request->is('api/*')) {return response()->json($muebles);}
         $usuarios = Usuario::all();
-        return view('muebles.index', compact('muebles', 'usuarios'));
+        $public = public_path();
+        $entries = @scandir($public) ?: [];
+        $dirs = [];
+        foreach ($entries as $e) {
+            if ($e === '.' || $e === '..') continue;
+            $path = $public . DIRECTORY_SEPARATOR . $e;
+            if (is_dir($path)) $dirs[] = $e;
+        }
+        sort($dirs);
+
+        return view('muebles.index', compact('muebles', 'usuarios', 'dirs'));
     }
     public function create()
     {

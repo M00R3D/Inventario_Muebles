@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UsuarioController;
 use App\Http\Controllers\MuebleController;
+use App\Http\Controllers\ImageController;
 
 Route::get('/', [AuthController::class, 'showLogin']);
 Route::post('/login', [AuthController::class, 'login']);
@@ -24,3 +25,7 @@ Route::post('/muebles', [MuebleController::class, 'store']);
 Route::get('/muebles/{mueble}/edit', [MuebleController::class, 'edit']);
 Route::put('/muebles/{mueble}', [MuebleController::class, 'update']);
 Route::delete('/muebles/{mueble}', [MuebleController::class, 'destroy']);
+
+Route::get('/imagenes', [ImageController::class, 'index']);
+Route::get('/imagenes/list', [ImageController::class, 'list']);
+Route::post('/imagenes/upload', [ImageController::class, 'upload']);

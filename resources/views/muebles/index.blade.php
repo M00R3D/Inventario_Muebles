@@ -129,6 +129,33 @@
           <label>Nota</label>
           <input name="nota" id="f-nota" type="text" style="width:100%;padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
         </div>
+
+        <div style="display:flex;gap:8px;align-items:center;margin-top:8px;">
+          <div style="flex:1;min-width:160px;">
+            <label>Carpeta pública</label>
+            <select id="select-folder" style="width:100%;padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
+              <option value="">Selecciona carpeta (public)</option>
+              @isset($dirs)
+                @foreach($dirs as $d)
+                  <option value="{{ $d }}">{{ $d }}</option>
+                @endforeach
+              @endisset
+            </select>
+          </div>
+          <div style="flex:1;min-width:160px;">
+            <label>Archivo</label>
+            <select id="select-file" style="width:100%;padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
+              <option value="">-- elegir --</option>
+            </select>
+          </div>
+          <div style="min-width:120px;text-align:center;">
+            <label>Preview</label>
+            <div style="margin-top:6px;">
+              <img id="ruta-preview" src="{{ asset('imgs/default.webp') }}" alt="preview" style="width:120px;height:80px;object-fit:cover;border-radius:8px;background:#f3f4f6;">
+            </div>
+          </div>
+        </div>
+        <input type="hidden" name="ruta_img" id="f-ruta-img" value="">
       </div>
 
       <div style="display:flex;gap:8px;margin-top:12px;">
@@ -227,6 +254,74 @@ document.addEventListener('DOMContentLoaded', function(){
   const title = document.getElementById('form-title');
   const filtersEl = document.getElementById('filters');
   const cardsGrid = document.querySelector('.grid');
+  const folderSelect = document.getElementById('select-folder');
+  const fileSelect = document.getElementById('select-file');
+  const rutaInput = document.getElementById('f-ruta-img');
+  const preview = document.getElementById('ruta-preview');
+  const baseUrl = "{{ url('/') }}";
+
+  async function loadFilesForFolder(folder){
+    fileSelect.innerHTML = '<option value="">Cargando…</option>';
+    try {
+      const u = new URL("{{ url('/imagenes/list') }}", window.location.origin);
+      u.searchParams.set('folder', folder || '');
+      const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+      const resp = await fetch(u.toString(), { headers: {'X-CSRF-TOKEN': token, 'Accept':'application/json'}, credentials:'same-origin' });
+      if (!resp.ok) { fileSelect.innerHTML = '<option value="">Error</option>'; return; }
+      const json = await resp.json();
+      const files = json.files || [];
+      fileSelect.innerHTML = '<option value="">-- elegir --</option>';
+      files.forEach(f => {
+        const opt = document.createElement('option');
+        opt.value = f;
+        opt.textContent = f;
+        fileSelect.appendChild(opt);
+      });
+    } catch(e){
+      console.error(e);
+      fileSelect.innerHTML = '<option value="">Error de red</option>';
+    }
+  }
+
+  if (folderSelect) {
+    folderSelect.addEventListener('change', function(){
+      const folder = this.value || '';
+      if (!folder) { fileSelect.innerHTML = '<option value="">-- elegir --</option>'; return; }
+      loadFilesForFolder(folder);
+    });
+  }
+
+  if (fileSelect) {
+    fileSelect.addEventListener('change', function(){
+      const file = this.value || '';
+      const folder = folderSelect ? folderSelect.value : '';
+      if (!file || !folder) { rutaInput.value = ''; preview.src = baseUrl + '/imgs/default.webp'; return; }
+      const path = folder + '/' + file;
+      rutaInput.value = path;
+      preview.src = baseUrl + '/' + path;
+    });
+  }
+
+  function setPreviewFromRuta(ruta) {
+    if (!ruta) { preview.src = baseUrl + '/imgs/default.webp'; rutaInput.value = ''; return; }
+    rutaInput.value = ruta;
+    preview.src = baseUrl + '/' + ruta;
+    const parts = ruta.split('/');
+    if (parts.length >= 2) {
+      const folder = parts.slice(0, parts.length-1).join('/');
+      const file = parts[parts.length-1];
+      if (folderSelect) {
+        const opt = Array.from(folderSelect.options).find(o=>o.value === folder);
+        if (opt) {
+          folderSelect.value = folder;
+          loadFilesForFolder(folder).then(()=> {
+            const fo = Array.from(fileSelect.options).find(o=>o.value === file);
+            if (fo) fileSelect.value = file;
+          });
+        }
+      }
+    }
+  }
 
   function hidePageForModal(){
     if(filtersEl) filtersEl.style.display = 'none';
@@ -260,6 +355,7 @@ document.addEventListener('DOMContentLoaded', function(){
     document.getElementById('f-persona').value = m.persona_id || '';
     document.getElementById('f-estado').value = m.estado || 'bueno';
     document.getElementById('f-nota').value = m.nota || '';
+    setPreviewFromRuta(m.ruta_img || '');
     card.style.display = 'block';
     card.classList.add('collapsed');
     hidePageForModal();
