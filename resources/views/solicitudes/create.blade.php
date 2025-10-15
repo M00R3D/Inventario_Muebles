@@ -7,7 +7,7 @@
   <h1>Crear solicitud</h1>
 
   <div style="background:#fff;padding:12px;border-radius:10px;box-shadow:0 12px 34px rgba(2,6,23,0.06);">
-    <form method="POST" action="{{ url('/solicitudes') }}">
+    <form id="create-sol-form" method="POST" action="{{ url('/solicitudes') }}">
       @csrf
       <input type="hidden" name="mueble_id" value="{{ $mueble->id ?? '' }}">
       <div style="display:flex;gap:12px;flex-wrap:wrap;">
@@ -121,5 +121,21 @@ function setSolicitudPreview(ruta) {
     img.style.opacity = '1';
     };
 }
+
+document.addEventListener('DOMContentLoaded', function(){
+  const form = document.getElementById('create-sol-form');
+  if (!form) return;
+  function todayStr(offsetDays = 0){
+    const d = new Date();
+    d.setDate(d.getDate() + offsetDays);
+    return d.toISOString().slice(0,10);
+  }
+  form.addEventListener('submit', function(evt){
+    const inicio = form.querySelector('input[name="fecha_inicio"]');
+    const fin = form.querySelector('input[name="fecha_fin"]');
+    if (inicio && !inicio.value) inicio.value = todayStr(0);
+    if (fin && !fin.value) fin.value = todayStr(1);
+  });
+});
 </script>
 @endsection

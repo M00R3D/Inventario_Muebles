@@ -308,6 +308,16 @@ document.addEventListener('DOMContentLoaded', function(){
   });
 
   solForm?.addEventListener('submit', function(evt){
+    function todayStr(offsetDays = 0){
+      const d = new Date();
+      d.setDate(d.getDate() + offsetDays);
+      return d.toISOString().slice(0,10);
+    }
+    const inicioEl = document.getElementById('sol-fecha-inicio');
+    const finEl = document.getElementById('sol-fecha-fin');
+    if (inicioEl && !inicioEl.value) inicioEl.value = todayStr(0);
+    if (finEl && !finEl.value) finEl.value = todayStr(1);
+
     if(!solMuebleId.value) {
       evt.preventDefault();
       alert('Selecciona primero un mueble para la solicitud.');

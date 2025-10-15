@@ -460,6 +460,15 @@ document.addEventListener('DOMContentLoaded', function(){
   if (form){
     form.addEventListener('submit', async function(evt){
       evt.preventDefault();
+      function todayStr(offsetDays = 0){
+        const d = new Date();
+        d.setDate(d.getDate() + offsetDays);
+        return d.toISOString().slice(0,10);
+      }
+      const fechaInput = document.getElementById('f-fecha');
+      if (fechaInput && !fechaInput.value) {
+        fechaInput.value = todayStr(0);
+      }
       const original = btnSave.textContent;
       btnSave.disabled = true;
       btnSave.textContent = 'Guardando...';
