@@ -38,6 +38,28 @@
 .estado-regular{ background:#f59e0b; color:#0b0b0b; }  
 .estado-malo{ background:#ef4444; color:#ffffff; }     
 .estado-en_reparacion{ background:#6366f1; color:#ffffff; } 
+
+.preview-wrapper{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:#f8fafc;
+  border-radius:8px;
+  padding:6px;
+  max-height:180px;      /* adjust if you want larger preview */
+  overflow:hidden;
+}
+#ruta-preview{
+  display:block;
+  width:100%;
+  max-width:320px;      /* max width inside preview box */
+  max-height:160px;     /* keeps modal compact */
+  object-fit:contain;   /* ensure full image fits inside */
+  border-radius:6px;
+  box-shadow:0 6px 18px rgba(2,6,23,0.06);
+}
+/* ensure modal doesn't forcibly crop the preview box (override if needed) */
+#user-form-card .preview-wrapper{ overflow:visible; }
 </style>
 
 <div class="container">
@@ -170,7 +192,10 @@
           <div style="min-width:120px;text-align:center;">
             <label>Preview</label>
             <div style="margin-top:6px;">
-              <img id="ruta-preview" src="{{ asset('imgs/default.webp') }}" alt="preview" style="width:120px;height:80px;object-fit:cover;border-radius:8px;background:#f3f4f6;">
+                <!-- added preview image element -->
+                <div class="preview-wrapper">
+                    <img id="ruta-preview" src="{{ url('/imgs/default.webp') }}" alt="Preview" />
+                </div>
             </div>
           </div>
         </div>
@@ -191,11 +216,11 @@
       @foreach($muebles as $m)
         <article class="card" role="listitem" aria-labelledby="mueble-{{ $m->id }}">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-            <div style="flex:1 1 60%; margin-right:12px;">
+            <div style="max-width:100%;height:auto;">
              @if($m->ruta_img)
                <img src="<?php echo e(asset($m->ruta_img ?? 'imgs/default.webp')); ?>" alt="Imagen mueble" style="max-width:100%;height:auto;border-radius:6px;">
              @else
-               <div style="width:100%;height:140px;background:linear-gradient(180deg,#f3f4f6,#e5e7eb);display:flex;align-items:center;justify-content:center;border-radius:8px;color:#9ca3af;margin-bottom:8px;">
+               <div style="max-width:100%;height:auto;background:linear-gradient(180deg,#f3f4f6,#e5e7eb);display:flex;align-items:center;justify-content:center;border-radius:8px;color:#9ca3af;margin-bottom:8px;">
                  Sin imagen
                </div>
              @endif

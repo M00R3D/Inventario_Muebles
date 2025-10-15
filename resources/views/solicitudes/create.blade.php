@@ -14,11 +14,15 @@
         <div style="flex:1;min-width:300px;">
           <label>Mueble</label>
           <div style="display:flex;gap:12px;align-items:center;">
-            <div style="width:120px;height:90px;flex-shrink:0;">
+            <div style="width:120px;height:90px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:8px;overflow:hidden;background:#f3f4f6;">
               @if(!empty($mueble->ruta_img))
-                <img src="{{ asset($mueble->ruta_img) }}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">
+                <img
+                  src="{{ asset($mueble->ruta_img) }}"
+                  alt="{{ $mueble->codigo ?? 'imagen mueble' }}"
+                  style="display:block;max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;border-radius:6px;"
+                />
               @else
-                <div style="width:100%;height:100%;background:#f3f4f6;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#9ca3af;">Sin imagen</div>
+                <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-weight:700;">Sin imagen</div>
               @endif
             </div>
             <div>
@@ -76,5 +80,46 @@
       </div>
     </form>
   </div>
-</div>
+
+  <style>
+.solicitud-preview-wrapper{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:#f8fafc;
+  border-radius:8px;
+  padding:8px;
+  width:100%;
+  max-width:640px;
+  max-height: min(70vh, 600px);
+  margin:0 auto;
+  overflow:hidden;
+}
+.solicitud-preview-wrapper img{
+  display:block;
+  width:auto;
+  height:auto;
+  max-width:100%;
+  max-height:100%;
+  object-fit:contain;
+  border-radius:6px;
+  box-shadow:0 8px 22px rgba(2,6,23,0.06);
+  transition:opacity .18s ease, transform .18s ease;
+}
+</style>
+
+<script>
+function setSolicitudPreview(ruta) {
+  const img = document.getElementById('solicitud-preview');
+  if (!img) return;
+  if (!ruta) {img.src = "{{ url('/imgs/default.webp') }}";return;}
+  img.style.opacity = '0';
+  img.src = "{{ url('/') }}/" + ruta.replace(/^\/+/, '');
+  img.onload = () => {img.style.opacity = '1';};
+  img.onerror = () => {
+    img.src = "{{ url('/imgs/default.webp') }}";
+    img.style.opacity = '1';
+    };
+}
+</script>
 @endsection
