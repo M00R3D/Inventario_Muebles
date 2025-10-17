@@ -6,6 +6,7 @@ use App\Http\Controllers\UsuarioController;
 use App\Http\Controllers\MuebleController;
 use App\Http\Controllers\ImageController;
 use App\Http\Controllers\SolicitudController;
+use App\Http\Controllers\NotificacionController;
 
 Route::get('/', [AuthController::class, 'showLogin']);
 Route::post('/login', [AuthController::class, 'login']);
@@ -38,3 +39,19 @@ Route::get('/solicitudes/{solicitud}/edit', [SolicitudController::class, 'edit']
 Route::put('/solicitudes/{solicitud}', [SolicitudController::class, 'update']);
 Route::delete('/solicitudes/{solicitud}', [SolicitudController::class, 'destroy']);
 Route::post('/solicitudes/{solicitud}/estado', [SolicitudController::class, 'changeEstado'])->name('solicitudes.changeEstado');
+
+Route::get('/notificaciones', [NotificacionController::class, 'index']);
+Route::get('/notificaciones/create', [NotificacionController::class, 'create']);
+Route::post('/notificaciones', [NotificacionController::class, 'store']);
+Route::get('/notificaciones/{notificacion}/edit', [NotificacionController::class, 'edit']);
+Route::put('/notificaciones/{notificacion}', [NotificacionController::class, 'update']);
+Route::delete('/notificaciones/{notificacion}', [NotificacionController::class, 'destroy']);
+Route::post('/notificaciones/{notificacion}/estado', [NotificacionController::class, 'changeEstado'])->name('notificaciones.changeEstado');
+Route::post('/notificaciones/{notificacion}/marcar-visto', [NotificacionController::class, 'marcarVisto'])->name('notificaciones.marcarVisto');
+
+// endpoints adicionales (admin / usuario)
+Route::post('/notificaciones/{notificacion}/admin/estado', [NotificacionController::class, 'adminSetEstado'])->name('notificaciones.admin.setEstado');
+Route::post('/notificaciones/{notificacion}/admin/tipo',  [NotificacionController::class, 'adminSetTipo'])->name('notificaciones.admin.setTipo');
+
+Route::post('/notificaciones/{notificacion}/usuario/marcar-visto', [NotificacionController::class, 'usuarioMarcarVisto'])->name('notificaciones.usuario.marcarVisto');
+Route::post('/notificaciones/{notificacion}/usuario/estado',      [NotificacionController::class, 'usuarioSetEstado'])->name('notificaciones.usuario.setEstado');
