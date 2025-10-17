@@ -12,6 +12,7 @@ class DatabaseSeeder extends Seeder
             UsuarioSeeder::class,
             MuebleSeeder::class,
             SolicitudSeeder::class,
+            NotificacionSeeder::class,
         ]);
     }
 }
