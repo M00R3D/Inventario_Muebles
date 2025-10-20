@@ -19,6 +19,43 @@
     $isAdmin = $current && ($current->rol === 'admin');
 @endphp
 
+<style>
+.modal-card { transition: transform .28s cubic-bezier(.16,.84,.44,1), opacity .28s ease, max-height .28s ease, padding .28s ease; transform-origin: top center; opacity:1; max-height:1200px; overflow:hidden; }
+.modal-card.closing { transform: scaleY(0.86) translateY(-6px); opacity:0; padding-top:2px; padding-bottom:2px; max-height:0; overflow:hidden; }
+.modal-card.collapsed { transform: scaleY(0.98); opacity:0; max-height:0; padding-top:0; padding-bottom:0; overflow:hidden; }
+
+#notifs-table {
+    transition: transform .28s cubic-bezier(.16,.84,.44,1), opacity .28s ease, max-height .28s ease, padding .28s ease;
+    transform-origin: top center;
+    opacity: 1;
+    max-height: 2000px;
+    overflow: hidden;
+}
+#notifs-table.closing {
+    transform: scaleY(0.96) translateY(-6px);
+    opacity: 0;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    max-height: 0;
+    pointer-events: none;
+}
+#notifs-table.collapsed {
+    transform: scaleY(0.98);
+    opacity: 0;
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    overflow: hidden;
+}
+
+#notifications { position:fixed; top:84px; right:20px; z-index:140; display:flex; flex-direction:column; gap:8px; }
+#notifications .notif { min-width:220px; max-width:420px; padding:10px 14px; border-radius:10px; color:#fff; font-weight:700; transform:translateY(-6px); opacity:0; transition:transform .28s cubic-bezier(.16,.84,.44,1), opacity .28s ease; box-shadow:0 8px 24px rgba(2,6,23,0.08); }
+#notifications .notif.visible { transform:none; opacity:1; }
+#notifications .notif-success { background: linear-gradient(90deg,#10b981,#059669); }
+#notifications .notif-error { background: linear-gradient(90deg,#ef4444,#b91c1c); }
+#notifications .notif-info { background: linear-gradient(90deg,#6366f1,#06b6d4); }
+</style>
+
 <div style="padding:16px;max-width:1100px;margin:0 auto;">
     <header style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap;">
         <div>
@@ -163,6 +200,7 @@
 <script>
 document.addEventListener('DOMContentLoaded', function(){
     const card = document.getElementById('notif-form-card');
+    const notifsTable = document.getElementById('notifs-table');
     const btnNew = document.getElementById('btn-new');
     const btnCancel = document.getElementById('notif-cancel');
     const form = document.getElementById('notif-form');
@@ -172,39 +210,57 @@ document.addEventListener('DOMContentLoaded', function(){
     const fechaVistoRow = document.getElementById('f-fecha_visto_row');
     const fechaVistoInput = document.getElementById('f-fecha_visto');
     const notifications = document.getElementById('notifications');
-    const notifsTable = document.getElementById('notifs-table');
-
     function showNotification(message, type = 'info', timeout = 3500) {
         if (!notifications) return;
         const el = document.createElement('div');
         el.className = 'notif notif-'+type;
-        el.style.minWidth = '220px';
-        el.style.maxWidth = '420px';
-        el.style.padding = '10px 14px';
-        el.style.borderRadius = '10px';
-        el.style.color = '#fff';
-        el.style.fontWeight = '700';
-        el.style.transform = 'translateY(-6px)';
-        el.style.opacity = '0';
-        el.style.transition = 'transform .28s, opacity .28s';
-        if (type === 'success') el.style.background = 'linear-gradient(90deg,#10b981,#059669)';
-        else if (type === 'error') el.style.background = 'linear-gradient(90deg,#ef4444,#b91c1c)';
-        else el.style.background = 'linear-gradient(90deg,#6366f1,#06b6d4)';
         el.innerText = message;
         notifications.appendChild(el);
-        requestAnimationFrame(()=> { el.style.transform = 'none'; el.style.opacity = '1'; });
+        requestAnimationFrame(()=> el.classList.add('visible'));
         setTimeout(()=> {
-            el.style.transform = 'translateY(-6px)';
-            el.style.opacity = '0';
+            el.classList.remove('visible');
             el.addEventListener('transitionend', ()=> el.remove(), { once: true });
         }, timeout);
     }
-
-    function hidePageForModal(){
-        if (notifsTable) notifsTable.style.display = 'none';
+    function hideTable() {
+        if (!notifsTable) return;
+        if (notifsTable.classList.contains('closing') || getComputedStyle(notifsTable).display === 'none') return;
+        notifsTable.classList.add('closing');
+        const onEnd = function() {
+            notifsTable.style.display = 'none';
+            notifsTable.classList.remove('closing');
+            notifsTable.classList.add('collapsed');
+            notifsTable.removeEventListener('transitionend', onEnd);
+        };
+        notifsTable.addEventListener('transitionend', onEnd);
     }
-    function showPageForModal(){
-        if (notifsTable) notifsTable.style.display = 'block';
+    function showTable() {
+        if (!notifsTable) return;
+        if (getComputedStyle(notifsTable).display !== 'none') {
+            notifsTable.classList.remove('collapsed');
+            return;
+        }
+        notifsTable.style.display = 'block';
+        notifsTable.classList.add('collapsed');
+        requestAnimationFrame(()=> {
+            notifsTable.classList.remove('collapsed');
+        });
+    }
+
+    function closeModalAnimated() {
+        if (!card) return;
+        card.classList.add('closing');
+        card.addEventListener('transitionend', function handler() {
+            card.style.display = 'none';
+            card.classList.remove('closing');
+            if (form) {
+                form.reset();
+                methodInput.value = 'POST';
+                idInput.value = '';
+            }
+            showTable();
+            card.removeEventListener('transitionend', handler);
+        });
     }
 
     function openCreate() {
@@ -212,14 +268,14 @@ document.addEventListener('DOMContentLoaded', function(){
         form.action = "{{ url('/notificaciones') }}";
         methodInput.value = 'POST';
         idInput.value = '';
-        form.querySelectorAll('input, textarea, select').forEach(i => i.value = '');
+        form.querySelectorAll('input, textarea, select').forEach(i => { if(i.tagName==='SELECT') i.selectedIndex = 0; else i.value = ''; });
         const estadoEl = document.getElementById('f-estado');
         if (estadoEl) estadoEl.value = 'cerrada';
         fechaVistoRow.style.display = 'none';
         if (fechaVistoInput) fechaVistoInput.value = '';
         card.style.display = 'block';
         card.classList.add('collapsed');
-        hidePageForModal();
+        hideTable();
         requestAnimationFrame(()=> {
             card.classList.remove('collapsed');
             card.scrollIntoView({behavior:'smooth', block:'center'});
@@ -257,6 +313,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
         card.style.display = 'block';
         card.classList.add('collapsed');
+        hideTable();
         requestAnimationFrame(()=> {
             card.classList.remove('collapsed');
             card.scrollIntoView({behavior:'smooth', block:'center'});
@@ -264,15 +321,8 @@ document.addEventListener('DOMContentLoaded', function(){
     }
 
     if (btnNew) btnNew.addEventListener('click', openCreate);
-    if (btnCancel) btnCancel.addEventListener('click', function(){
-        card.classList.add('collapsed');
-        card.addEventListener('transitionend', function handler(){
-            card.style.display = 'none';
-            card.classList.remove('collapsed');
-            showPageForModal();
-            card.removeEventListener('transitionend', handler);
-        });
-    });
+    if (btnCancel) btnCancel.addEventListener('click', function(){ closeModalAnimated(); });
+    document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeModalAnimated(); });
 
     document.querySelectorAll('.btn-edit').forEach(btn=>{
         btn.addEventListener('click', function(){
@@ -299,12 +349,12 @@ document.addEventListener('DOMContentLoaded', function(){
 
             try {
                 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-                 const resp = await fetch(form.action, {
-                     method: 'POST',
-                     headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': csrfToken },
-                     body: fd,
-                     credentials: 'include'
-                 });
+                const resp = await fetch(form.action, {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': csrfToken },
+                    body: fd,
+                    credentials: 'include'
+                });
 
                 const contentType = resp.headers.get('content-type') || '';
                 let data = null;
@@ -313,10 +363,8 @@ document.addEventListener('DOMContentLoaded', function(){
 
                 if (resp.ok) {
                     showNotification('Operación realizada correctamente.', 'success', 1400);
-                    setTimeout(()=> {
-                        showPageForModal();
-                        window.location.href = "{{ url('/notificaciones') }}";
-                    }, 700);
+                    closeModalAnimated();
+                    setTimeout(()=> window.location.href = "{{ url('/notificaciones') }}", 700);
                     return;
                 }
 
@@ -385,9 +433,12 @@ document.addEventListener('DOMContentLoaded', function(){
     })();
 });
 </script>
+</script>
 
 <style>
 .notif { min-width:220px; max-width:420px; padding:10px 14px; border-radius:10px; color:#fff; font-weight:700; transform:translateY(-6px); opacity:0; transition:transform .28s, opacity .28s; box-shadow:0 8px 24px rgba(2,6,23,0.08); }
 .notif.visible { transform:none; opacity:1; }
 </style>
 @endsection
+</body>
+</html>
