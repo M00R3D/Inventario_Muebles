@@ -77,7 +77,7 @@ class NotificacionController extends Controller
     {
         $notificacion->delete();
         if ($request->wantsJson() || $request->is('api/*')) {return response()->json(['message' => 'Notificación eliminada correctamente']);}
-        return redirect()->route('notificaciones.index')->with('success', 'Notificación eliminada correctamente');
+        return redirect('/notificaciones')->with('success', 'Notificación eliminada correctamente');
     }
 
     public function adminSetEstado(Request $request, Notificacion $notificacion)
@@ -108,11 +108,19 @@ class NotificacionController extends Controller
 
     public function usuarioSetEstado(Request $request, Notificacion $notificacion)
     {
-        $request->validate(['estado' => 'required|in:cerrada,abierta']); // usuarios no cambian a 'vista' con este endpoint
+        $request->validate(['estado' => 'required|in:cerrada,abierta']); 
         $estado = $request->input('estado');
         $notificacion->estado = $estado;
         if ($estado === 'abierta') {$notificacion->fecha_visto = null;}
         $notificacion->save();
         return response()->json($notificacion);
     }
+    public function changeEstado(Request $request, Notificacion $notificacion)
+    {
+        $current = null;
+        if (session()->has('usuario_id')) {$current = Usuario::find(session('usuario_id'));}
+        if ($current && $current->rol === 'admin') {return $this->adminSetEstado($request, $notificacion);}
+        return $this->usuarioSetEstado($request, $notificacion);
+    }
+    public function marcarVisto(Notificacion $notificacion){return $this->usuarioMarcarVisto($notificacion);}
 }

@@ -18,6 +18,7 @@
                 <li><a href="{{ url('/muebles') }}"><span class="icon">🪑</span><span class="label">Inventario</span></a></li>
                 @if($isAdmin)
                     <li><a href="{{ url('/imagenes') }}"><span class="icon">🖼️</span><span class="label">Imágenes</span></a></li>
+                    <li><a href="{{ url('/notificaciones') }}"><span class="icon">🔔</span><span class="label">Notificaciones</span></a></li>
                 @endif
                 <li><a href="{{ url('/solicitudes') }}"><span class="icon">📩</span><span class="label">Solicitudes</span></a></li>
             </ul>
