@@ -41,7 +41,7 @@
         </div>
     @endif
 
-    <div style="overflow-x:auto;background:#fff;border-radius:10px;padding:8px;box-shadow:0 6px 18px rgba(0,0,0,0.06);">
+    <div id="notifs-table" style="overflow-x:auto;background:#fff;border-radius:10px;padding:8px;box-shadow:0 6px 18px rgba(0,0,0,0.06);">
         <table style="width:100%;border-collapse:collapse;min-width:720px;">
             <thead>
                 <tr style="text-align:left;color:#374151;border-bottom:1px solid #e5e7eb;">
@@ -172,6 +172,7 @@ document.addEventListener('DOMContentLoaded', function(){
     const fechaVistoRow = document.getElementById('f-fecha_visto_row');
     const fechaVistoInput = document.getElementById('f-fecha_visto');
     const notifications = document.getElementById('notifications');
+    const notifsTable = document.getElementById('notifs-table');
 
     function showNotification(message, type = 'info', timeout = 3500) {
         if (!notifications) return;
@@ -199,16 +200,26 @@ document.addEventListener('DOMContentLoaded', function(){
         }, timeout);
     }
 
+    function hidePageForModal(){
+        if (notifsTable) notifsTable.style.display = 'none';
+    }
+    function showPageForModal(){
+        if (notifsTable) notifsTable.style.display = 'block';
+    }
+
     function openCreate() {
         title.textContent = 'Nueva notificación';
         form.action = "{{ url('/notificaciones') }}";
         methodInput.value = 'POST';
         idInput.value = '';
         form.querySelectorAll('input, textarea, select').forEach(i => i.value = '');
+        const estadoEl = document.getElementById('f-estado');
+        if (estadoEl) estadoEl.value = 'cerrada';
         fechaVistoRow.style.display = 'none';
         if (fechaVistoInput) fechaVistoInput.value = '';
         card.style.display = 'block';
         card.classList.add('collapsed');
+        hidePageForModal();
         requestAnimationFrame(()=> {
             card.classList.remove('collapsed');
             card.scrollIntoView({behavior:'smooth', block:'center'});
@@ -227,7 +238,6 @@ document.addEventListener('DOMContentLoaded', function(){
         document.getElementById('f-descripcion').value = notif.descripcion || '';
         if (notif.fecha_visto) {
             fechaVistoRow.style.display = 'block';
-            // convert to local datetime-local format if possible
             try {
                 const d = new Date(notif.fecha_visto);
                 const pad = (n)=> String(n).padStart(2,'0');
@@ -259,6 +269,7 @@ document.addEventListener('DOMContentLoaded', function(){
         card.addEventListener('transitionend', function handler(){
             card.style.display = 'none';
             card.classList.remove('collapsed');
+            showPageForModal();
             card.removeEventListener('transitionend', handler);
         });
     });
@@ -287,12 +298,13 @@ document.addEventListener('DOMContentLoaded', function(){
             if (method.toUpperCase() === 'PUT') fd.append('_method', 'PUT');
 
             try {
-                const resp = await fetch(form.action, {
-                    method: 'POST',
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                    body: fd,
-                    credentials: 'same-origin'
-                });
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                 const resp = await fetch(form.action, {
+                     method: 'POST',
+                     headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': csrfToken },
+                     body: fd,
+                     credentials: 'include'
+                 });
 
                 const contentType = resp.headers.get('content-type') || '';
                 let data = null;
@@ -301,7 +313,10 @@ document.addEventListener('DOMContentLoaded', function(){
 
                 if (resp.ok) {
                     showNotification('Operación realizada correctamente.', 'success', 1400);
-                    setTimeout(()=> window.location.href = "{{ url('/notificaciones') }}", 700);
+                    setTimeout(()=> {
+                        showPageForModal();
+                        window.location.href = "{{ url('/notificaciones') }}";
+                    }, 700);
                     return;
                 }
 

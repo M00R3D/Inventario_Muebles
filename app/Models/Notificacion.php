@@ -6,6 +6,9 @@ class Notificacion extends Model
 {
     protected $table = 'notificaciones';
     protected $fillable = ['id_admin','id_usuario','estado','tipo','descripcion','fecha_creacion','fecha_visto','ruta',];
+    public $timestamps = true;
+    const CREATED_AT = 'fecha_creacion';
+    const UPDATED_AT = null;
 
     public function admin()
     {return $this->belongsTo(Usuario::class, 'id_admin');}
