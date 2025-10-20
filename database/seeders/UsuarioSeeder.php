@@ -30,7 +30,15 @@ class UsuarioSeeder extends Seeder
                 'apellido' => 'Moore',
                 'email' => 'jobmurdan@hotmail.com',
                 'password' => 'secret',
-                'rol' => 'empleado',
+                'rol' => 'admin',
+                'area_id' => 3,
+            ],
+            [
+                'nombre' => 'Jason',
+                'apellido' => 'Jhonson',
+                'email' => 'ad@mail.com',
+                'password' => 'secret',
+                'rol' => 'admin',
                 'area_id' => 3,
             ],
         ]);

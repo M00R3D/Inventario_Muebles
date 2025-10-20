@@ -3,65 +3,46 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use App\Models\Notificacion;
+use App\Models\Usuario;
 use Carbon\Carbon;
-
 class NotificacionSeeder extends Seeder
 {
     public function run(): void
     {
         $now = Carbon::now();
+        $tipos = ['prueba', 'aprobada', 'rechazada', 'otra'];
+        $mensajes = [
+            'Bienvenida al sistema — configuración inicial.',
+            'Tu solicitud fue aprobada. Revisa detalles en solicitudes.',
+            'Recordatorio: entrega de mueble programada.',
+            'Notificación interna: revisión completada.',
+            'Aviso: actualiza tu perfil cuando puedas.',
+            'Resumen semanal: revisa las tareas pendientes.'
+        ];
 
-        Notificacion::insert([
-            [
-                'id_admin' => 1,
-                'id_usuario' => 2,
-                'estado' => 'cerrada',
-                'tipo' => 'prueba',
-                'descripcion' => 'Bienvenida al sistema — configuración inicial.',
-                'fecha_creacion' => $now->copy()->subDays(6)->toDateTimeString(),
-                'fecha_visto' => null,
-                'ruta' => null,
-            ],
-            [
-                'id_admin' => 1,
-                'id_usuario' => 3,
-                'estado' => 'cerrada',
-                'tipo' => 'prueba',
-                'descripcion' => 'Tu solicitud fue aprobada. Revisa detalles en solicitudes.',
-                'fecha_creacion' => $now->copy()->subDays(3)->toDateTimeString(),
-                'fecha_visto' => null,
-                'ruta' => null,
-            ],
-            [
-                'id_admin' => null,
-                'id_usuario' => 2,
-                'estado' => 'cerrada',
-                'tipo' => 'prueba',
-                'descripcion' => 'Recordatorio: entrega de mueble programada.',
-                'fecha_creacion' => $now->copy()->subDay()->toDateTimeString(),
-                'fecha_visto' => null,
-                'ruta' => 'notificaciones/recordatorio.pdf',
-            ],
-            [
-                'id_admin' => 2,
-                'id_usuario' => null,
-                'estado' => 'cerrada',
-                'tipo' => 'prueba',
-                'descripcion' => 'Notificación interna: revisión completada.',
-                'fecha_creacion' => $now->copy()->subDays(10)->toDateTimeString(),
-                'fecha_visto' => null,
-                'ruta' => null,
-            ],
-            [
-                'id_admin' => 1,
-                'id_usuario' => 1,
-                'estado' => 'cerrada',
-                'tipo' => 'prueba',
-                'descripcion' => 'Prueba de notificaciones: esto es un mensaje de prueba.',
-                'fecha_creacion' => $now->copy()->subHours(6)->toDateTimeString(),
-                'fecha_visto' => null,
-                'ruta' => 'notificaciones/prueba.txt',
-            ],
-        ]);
+        $rows = [];
+        $usuarios = Usuario::all();
+        foreach ($usuarios as $uIndex => $u) {
+            for ($i = 0; $i < 6; $i++) {
+                $tipo = $tipos[$i % count($tipos)];
+                $estado = ($i === 4) ? 'vista' : (($i % 2 === 0) ? 'cerrada' : 'abierta');
+                $fecha_creacion = $now->copy()->subDays(($u->id * 6) + $i)->toDateTimeString();
+                $fecha_visto = $estado === 'vista' ? $now->copy()->subDays($i)->toDateTimeString() : null;
+                $rows[] = [
+                    'id_admin' => 1,
+                    'id_usuario' => $u->id,
+                    'estado' => $estado,
+                    'tipo' => $tipo,
+                    'descripcion' => $mensajes[$i % count($mensajes)] . " (para {$u->nombre} {$u->apellido})",
+                    'fecha_creacion' => $fecha_creacion,
+                    'fecha_visto' => $fecha_visto,
+                    'ruta' => null,
+                ];
+            }
+        }
+
+        if (!empty($rows)) {
+            Notificacion::insert($rows);
+        }
     }
 }

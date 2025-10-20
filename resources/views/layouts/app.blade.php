@@ -71,6 +71,19 @@
                 <span style="font-size:14px;line-height:1;display:inline-block;">⎋</span>
                 <span>Cerrar sesión</span>
             </a>
+
+            <?php
+                $__current = null;
+                if (session()->has('usuario_id')) {
+                    $__current = \App\Models\Usuario::find(session('usuario_id'));
+                }
+            ?>
+            <?php if($__current && in_array($__current->rol, ['empleado','tecnico'])): ?>
+                {{-- campana desplegable para empleados / técnicos --}}
+                <?php echo $__env->make('partials.notification_bell', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+            <?php endif; ?>
+
+            <script>window.currentUserId = @json(session('usuario_id') ?? null);</script>
         </div>
     </header>
 
