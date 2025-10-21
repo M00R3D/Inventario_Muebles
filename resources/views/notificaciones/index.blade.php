@@ -13,10 +13,13 @@
 @section('content')
 @php
     $current = null;
-    if (session()->has('usuario_id')) {
-        $current = \App\Models\Usuario::find(session('usuario_id'));
-    }
+    if (session()->has('usuario_id')) {$current = \App\Models\Usuario::find(session('usuario_id'));}
     $isAdmin = $current && ($current->rol === 'admin');
+    use Carbon\Carbon;
+    Carbon::setLocale('es');
+    $estadoOrder = ['cerrada' => 0, 'abierta' => 1, 'vista' => 2];
+    $tmp = $notificaciones->sortByDesc('fecha_creacion');
+    $notificaciones_sorted = $tmp->sortBy(function($n) use ($estadoOrder) {return $estadoOrder[$n->estado] ?? 99;})->values();
 @endphp
 
 <style>
@@ -78,31 +81,45 @@
         </div>
     @endif
 
-    <div id="notifs-table" style="overflow-x:auto;background:#fff;border-radius:10px;padding:8px;box-shadow:0 6px 18px rgba(0,0,0,0.06);">
+    @php
+        $cerradas = $notificaciones_sorted->filter(fn($x)=> ($x->estado ?? '') === 'cerrada')->values();
+        $abiertas = $notificaciones_sorted->filter(fn($x)=> ($x->estado ?? '') === 'abierta')->values();
+        $vistas   = $notificaciones_sorted->filter(fn($x)=> ($x->estado ?? '') === 'vista')->values();
+        $icons = ['prueba'=>'🧪','aprobada'=>'✅','rechazada'=>'❌','otra'=>'🔔'];
+    @endphp
+
+    {{-- Tabla: Cerradas --}}
+    <h3 style="margin-top:8px;margin-bottom:6px;color:#374151;">Cerradas</h3>
+    <div class="list-card" style="overflow-x:auto;background:#fff;border-radius:10px;padding:8px;box-shadow:0 6px 18px rgba(0,0,0,0.06);margin-bottom:12px;">
         <table style="width:100%;border-collapse:collapse;min-width:720px;">
             <thead>
                 <tr style="text-align:left;color:#374151;border-bottom:1px solid #e5e7eb;">
-                    <th style="padding:10px 12px;">ID</th>
+                    @if($isAdmin)<th style="padding:10px 12px;">ID</th>@endif
                     <th style="padding:10px 12px;">Tipo</th>
-                    <th style="padding:10px 12px;">Estado</th>
                     <th style="padding:10px 12px;">Descripción</th>
                     <th style="padding:10px 12px;">Fecha creación</th>
-                    <th style="padding:10px 12px;">Usuario</th>
-                    @if($isAdmin)
-                        <th style="padding:10px 12px;width:190px;">Acciones</th>
-                    @endif
+                    @if($isAdmin)<th style="padding:10px 12px;">Usuario</th>@endif
+                    @if($isAdmin)<th style="padding:10px 12px;width:190px;">Acciones</th>@endif
                 </tr>
             </thead>
             <tbody>
-                @forelse($notificaciones as $n)
+                @forelse($cerradas as $n)
                     <tr style="border-bottom:1px solid #f3f4f6;">
-                        <td style="padding:10px 12px;">{{ $n->id }}</td>
-                        <td style="padding:10px 12px;">{{ $n->tipo }}</td>
-                        <td style="padding:10px 12px;">{{ $n->estado }}</td>
-                        <td style="padding:10px 12px;">{{ Str::limit($n->descripcion, 80) }}</td>
-                        <td style="padding:10px 12px;">{{ $n->fecha_creacion }}</td>
-                        <td style="padding:10px 12px;">{{ optional($n->usuario)->nombre ? optional($n->usuario)->nombre . ' ' . optional($n->usuario)->apellido : 'Todos' }}</td>
+                        @if($isAdmin)<td style="padding:10px 12px;">{{ $n->id }}</td>@endif
+                        <td style="padding:10px 12px;">
+                            <span style="display:inline-flex;gap:8px;align-items:center;">
+                                <span aria-hidden="true">{{ $icons[$n->tipo] ?? '🔔' }}</span>
+                                <span style="font-weight:700;text-transform:capitalize;">{{ $n->tipo }}</span>
+                            </span>
+                        </td>
+                        <td style="padding:10px 12px;">{{ Str::limit($n->descripcion, 120) }}</td>
+                        <td style="padding:10px 12px;">
+                            @if(!empty($n->fecha_creacion))
+                                {{ ucfirst(\Carbon\Carbon::parse($n->fecha_creacion)->locale('es')->isoFormat('dddd, D [de] MMMM YYYY, HH:mm')) }}
+                            @else - @endif
+                        </td>
                         @if($isAdmin)
+                            <td style="padding:10px 12px;">{{ optional($n->usuario)->nombre ? optional($n->usuario)->nombre . ' ' . optional($n->usuario)->apellido : 'Todos' }}</td>
                             <td style="padding:10px 12px;width:190px;">
                                 <button type="button" class="btn-edit" data-notif='@json($n)' style="background:linear-gradient(90deg,#6366f1,#06b6d4);color:#fff;padding:6px 8px;border-radius:8px;border:0;font-weight:700;margin-right:6px;cursor:pointer;">Editar</button>
                                 <form action="{{ url('/notificaciones/'.$n->id) }}" method="POST" style="display:inline">
@@ -113,11 +130,108 @@
                         @endif
                     </tr>
                 @empty
-                    <tr><td colspan="{{ $isAdmin ? 7 : 6 }}">No hay notificaciones.</td></tr>
+                    <tr><td colspan="{{ $isAdmin ? 6 : 4 }}" style="padding:12px;">No hay notificaciones cerradas.</td></tr>
                 @endforelse
             </tbody>
         </table>
     </div>
+
+    {{-- Tabla: Abiertas --}}
+    <h3 style="margin-top:8px;margin-bottom:6px;color:#374151;">Abiertas</h3>
+    <div class="list-card" style="overflow-x:auto;background:#fff;border-radius:10px;padding:8px;box-shadow:0 6px 18px rgba(0,0,0,0.06);margin-bottom:12px;">
+        <table style="width:100%;border-collapse:collapse;min-width:720px;">
+            <thead>
+                <tr style="text-align:left;color:#374151;border-bottom:1px solid #e5e7eb;">
+                    @if($isAdmin)<th style="padding:10px 12px;">ID</th>@endif
+                    <th style="padding:10px 12px;">Tipo</th>
+                    <th style="padding:10px 12px;">Descripción</th>
+                    <th style="padding:10px 12px;">Fecha creación</th>
+                    @if($isAdmin)<th style="padding:10px 12px;">Usuario</th>@endif
+                    @if($isAdmin)<th style="padding:10px 12px;width:190px;">Acciones</th>@endif
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($abiertas as $n)
+                    <tr style="border-bottom:1px solid #f3f4f6;">
+                        @if($isAdmin)<td style="padding:10px 12px;">{{ $n->id }}</td>@endif
+                        <td style="padding:10px 12px;">
+                            <span style="display:inline-flex;gap:8px;align-items:center;">
+                                <span aria-hidden="true">{{ $icons[$n->tipo] ?? '🔔' }}</span>
+                                <span style="font-weight:700;text-transform:capitalize;">{{ $n->tipo }}</span>
+                            </span>
+                        </td>
+                        <td style="padding:10px 12px;">{{ Str::limit($n->descripcion, 120) }}</td>
+                        <td style="padding:10px 12px;">
+                            @if(!empty($n->fecha_creacion))
+                                {{ ucfirst(\Carbon\Carbon::parse($n->fecha_creacion)->locale('es')->isoFormat('dddd, D [de] MMMM YYYY, HH:mm')) }}
+                            @else - @endif
+                        </td>
+                        @if($isAdmin)
+                            <td style="padding:10px 12px;">{{ optional($n->usuario)->nombre ? optional($n->usuario)->nombre . ' ' . optional($n->usuario)->apellido : 'Todos' }}</td>
+                            <td style="padding:10px 12px;width:190px;">
+                                <button type="button" class="btn-edit" data-notif='@json($n)' style="background:linear-gradient(90deg,#6366f1,#06b6d4);color:#fff;padding:6px 8px;border-radius:8px;border:0;font-weight:700;margin-right:6px;cursor:pointer;">Editar</button>
+                                <form action="{{ url('/notificaciones/'.$n->id) }}" method="POST" style="display:inline">
+                                    @csrf @method('DELETE')
+                                    <button type="submit" data-confirm="¿Eliminar notificación #{{ $n->id }}?" style="background:linear-gradient(90deg,#ef4444,#f97316);color:#fff;padding:6px 8px;border-radius:8px;border:0;cursor:pointer;">Eliminar</button>
+                                </form>
+                            </td>
+                        @endif
+                    </tr>
+                @empty
+                    <tr><td colspan="{{ $isAdmin ? 6 : 4 }}" style="padding:12px;">No hay notificaciones abiertas.</td></tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+
+    {{-- Tabla: Vistas --}}
+    <h3 style="margin-top:8px;margin-bottom:6px;color:#374151;">Vistas</h3>
+    <div class="list-card" style="overflow-x:auto;background:#fff;border-radius:10px;padding:8px;box-shadow:0 6px 18px rgba(0,0,0,0.06);margin-bottom:12px;">
+        <table style="width:100%;border-collapse:collapse;min-width:720px;">
+            <thead>
+                <tr style="text-align:left;color:#374151;border-bottom:1px solid #e5e7eb;">
+                    @if($isAdmin)<th style="padding:10px 12px;">ID</th>@endif
+                    <th style="padding:10px 12px;">Tipo</th>
+                    <th style="padding:10px 12px;">Descripción</th>
+                    <th style="padding:10px 12px;">Fecha creación</th>
+                    @if($isAdmin)<th style="padding:10px 12px;">Usuario</th>@endif
+                    @if($isAdmin)<th style="padding:10px 12px;width:190px;">Acciones</th>@endif
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($vistas as $n)
+                    <tr style="border-bottom:1px solid #f3f4f6;">
+                        @if($isAdmin)<td style="padding:10px 12px;">{{ $n->id }}</td>@endif
+                        <td style="padding:10px 12px;">
+                            <span style="display:inline-flex;gap:8px;align-items:center;">
+                                <span aria-hidden="true">{{ $icons[$n->tipo] ?? '🔔' }}</span>
+                                <span style="font-weight:700;text-transform:capitalize;">{{ $n->tipo }}</span>
+                            </span>
+                        </td>
+                        <td style="padding:10px 12px;">{{ Str::limit($n->descripcion, 120) }}</td>
+                        <td style="padding:10px 12px;">
+                            @if(!empty($n->fecha_creacion))
+                                {{ ucfirst(\Carbon\Carbon::parse($n->fecha_creacion)->locale('es')->isoFormat('dddd, D [de] MMMM YYYY, HH:mm')) }}
+                            @else - @endif
+                        </td>
+                        @if($isAdmin)
+                            <td style="padding:10px 12px;">{{ optional($n->usuario)->nombre ? optional($n->usuario)->nombre . ' ' . optional($n->usuario)->apellido : 'Todos' }}</td>
+                            <td style="padding:10px 12px;width:190px;">
+                                <button type="button" class="btn-edit" data-notif='@json($n)' style="background:linear-gradient(90deg,#6366f1,#06b6d4);color:#fff;padding:6px 8px;border-radius:8px;border:0;font-weight:700;margin-right:6px;cursor:pointer;">Editar</button>
+                                <form action="{{ url('/notificaciones/'.$n->id) }}" method="POST" style="display:inline">
+                                    @csrf @method('DELETE')
+                                    <button type="submit" data-confirm="¿Eliminar notificación #{{ $n->id }}?" style="background:linear-gradient(90deg,#ef4444,#f97316);color:#fff;padding:6px 8px;border-radius:8px;border:0;cursor:pointer;">Eliminar</button>
+                                </form>
+                            </td>
+                        @endif
+                    </tr>
+                @empty
+                    <tr><td colspan="{{ $isAdmin ? 6 : 4 }}" style="padding:12px;">No hay notificaciones vistas.</td></tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+    {{-- end split tables --}}
 </div>
 
 {{-- Modal / formulario para crear / editar --}}

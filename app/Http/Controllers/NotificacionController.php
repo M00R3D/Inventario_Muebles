@@ -25,9 +25,11 @@ class NotificacionController extends Controller
         if ($request->filled('fecha_visto')) {$query->whereDate('fecha_visto', $request->input('fecha_visto'));}
         if ($request->filled('descripcion')) {$desc = $request->input('descripcion');$query->where('descripcion', 'like', "%{$desc}%");}
 
+        $current = null;
+        if (session()->has('usuario_id')) {$current = Usuario::find(session('usuario_id'));}
+        if ($current && $current->rol !== 'admin') {$query->where('id_usuario', $current->id);}
         $notificaciones = $query->get();
         if ($request->wantsJson() || $request->is('api/*')) {return response()->json($notificaciones);}
-
         $usuarios = Usuario::all();
         return view('notificaciones.index', compact('notificaciones', 'usuarios'));
     }
