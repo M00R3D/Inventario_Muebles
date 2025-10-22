@@ -111,13 +111,39 @@ class SolicitudController extends Controller
         if ($request->wantsJson() || $request->is('api/*')) {return response()->json(['message' => 'Solicitud eliminada correctamente']);}
         return redirect('/solicitudes')->with('success', 'Solicitud eliminada correctamente');
     }
-    public function changeEstado(Request $request, Solicitud $solicitud)
-    {
-        $request->validate([
-            'estado' => 'required|in:pendiente,aprobada,rechazada',
-        ]);
-        $solicitud->update(['estado' => $request->estado]);
-        if ($request->wantsJson() || $request->is('api/*')) {return response()->json(['message' => 'Estado actualizado', 'solicitud' => $solicitud]);}
-        return redirect('/solicitudes')->with('success', 'Estado actualizado correctamente');
+        public function changeEstado(Request $request, Solicitud $solicitud)
+        {
+            $request->validate(['estado' => 'required|in:pendiente,aprobada,rechazada',]);
+            $oldEstado = $solicitud->estado ?? 'desconocido';
+            $input = $request->only(['estado']);
+            $solicitud->update($input);
+            $newEstado = $solicitud->estado;
+            $changed = $solicitud->getChanges();
+            if (isset($changed['updated_at'])) {unset($changed['updated_at']);}
+            $changedList = !empty($changed) ? implode(', ', array_keys($changed)) : 'ninguno';
+            try {
+                $adminId = session('usuario_id') ?? null;
+                $actor = $adminId ? Usuario::find($adminId) : null;
+                $actorName = $actor ? ($actor->nombre . ' ' . $actor->apellido) : 'Sistema';
+                Notificacion::create([
+                    'id_admin' => $adminId,
+                    'id_usuario' => null,
+                    'audiencia' => 'admins',
+                    'estado' => 'cerrada',
+                    'tipo' => 'otra',
+                    'descripcion' => "La solicitud {$solicitud->id} ha sido editada por: {$actorName}. Estado: {$oldEstado} → {$newEstado}. Campos modificados: {$changedList}",
+                    'fecha_creacion' => Carbon::now()->toDateTimeString(),
+                    'fecha_visto' => null,
+                    'ruta' => null
+                ]);
+            } catch (\Throwable $e) {
+                \Log::error('Error creando notificación de cambio de estado de solicitud: ' . $e->getMessage());
+            }
+
+            if ($request->wantsJson() || $request->is('api/*')) {
+                return response()->json(['message' => 'Estado actualizado', 'solicitud' => $solicitud]);
+            }
+
+            return redirect('/solicitudes')->with('success', 'Estado actualizado correctamente');
+        }
     }
-}
