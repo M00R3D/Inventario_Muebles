@@ -119,7 +119,7 @@ class SolicitudController extends Controller
             $solicitud->update($input);
             $newEstado = $solicitud->estado;
             $changed = $solicitud->getChanges();
-            if (isset($changed['updated_at'])) {unset($changed['updated_at']);}
+            if (isset($changed['updated_at'])) { unset($changed['updated_at']); }
             $changedList = !empty($changed) ? implode(', ', array_keys($changed)) : 'ninguno';
             try {
                 $adminId = session('usuario_id') ?? null;
@@ -131,11 +131,24 @@ class SolicitudController extends Controller
                     'audiencia' => 'admins',
                     'estado' => 'cerrada',
                     'tipo' => 'otra',
-                    'descripcion' => "La solicitud {$solicitud->id} ha sido editada por: {$actorName}. Estado: {$oldEstado} → {$newEstado}. Campos modificados: {$changedList}",
+                    'descripcion' => "La solicitud #{$solicitud->id} fue actualizada por {$actorName}. Estado: {$oldEstado} → {$newEstado}. Campos modificados: {$changedList}",
                     'fecha_creacion' => Carbon::now()->toDateTimeString(),
                     'fecha_visto' => null,
-                    'ruta' => null
+                    'ruta' => url("/solicitudes/{$solicitud->id}")
                 ]);
+                if (!empty($solicitud->persona_id)) {
+                    Notificacion::create([
+                        'id_admin' => $adminId,
+                        'id_usuario' => $solicitud->persona_id,
+                        'audiencia' => 'usuario',
+                        'estado' => 'cerrada',
+                        'tipo' => 'otra',
+                        'descripcion' => "Tu solicitud #{$solicitud->id} ha cambiado: {$oldEstado} → {$newEstado}. Ejecutado por: {$actorName}.",
+                        'fecha_creacion' => Carbon::now()->toDateTimeString(),
+                        'fecha_visto' => null,
+                        'ruta' => url("/solicitudes/{$solicitud->id}")
+                    ]);
+                }
             } catch (\Throwable $e) {
                 \Log::error('Error creando notificación de cambio de estado de solicitud: ' . $e->getMessage());
             }
