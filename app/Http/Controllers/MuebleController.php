@@ -1,9 +1,11 @@
 <?php
 // app/Http/Controllers/MuebleController.php
 namespace App\Http\Controllers;
+use Illuminate\Http\Request;
 use App\Models\Mueble;
 use App\Models\Usuario;
-use Illuminate\Http\Request;
+use App\Models\Notificacion;
+use Carbon\Carbon;
 class MuebleController extends Controller
 {
     public function index(Request $request)
@@ -56,6 +58,24 @@ class MuebleController extends Controller
         $data = $request->all();
         if (empty($data['fecha_registro'])) {$data['fecha_registro'] = now()->toDateString();}
         $mueble = Mueble::create($data);
+
+        try {
+            $adminId = session('usuario_id') ?? null;
+            Notificacion::create([
+                'id_admin' => $adminId,
+                'id_usuario' => null,
+                'audiencia' => 'admins',
+                'estado' => 'cerrada',
+                'tipo' => 'otra',
+                'descripcion' => "Mueble creado por " . ($adminId ? (Usuario::find($adminId)->nombre . ' ' . Usuario::find($adminId)->apellido) : 'un administrador') . ": {$mueble->codigo} (ID {$mueble->id})",
+                'fecha_creacion' => Carbon::now()->toDateTimeString(),
+                'fecha_visto' => null,
+                'ruta' => url("/muebles/{$mueble->id}")
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('Error creando notificación de mueble: ' . $e->getMessage());
+        }
+
         if ($request->wantsJson() || $request->is('api/*')) {return response()->json($mueble, 201);}
         return redirect('/muebles')->with('success', 'Mueble creado correctamente');
     }
@@ -81,15 +101,90 @@ class MuebleController extends Controller
             'persona_id' => 'required|exists:usuarios,id',
             'estado' => 'required|in:bueno,regular,malo,en_reparacion',
         ]);
+        $original = $mueble->only(['codigo','descripcion','fecha_registro','monto_unitario','nota','ruta_img','persona_id','estado']);
         $data = $request->all();
         if (! $request->filled('fecha_registro')) {unset($data['fecha_registro']);}
         $mueble->update($data);
+        $changed = [];
+        foreach ($original as $key => $old) {
+            $new = $mueble->{$key} ?? null;
+            $oldStr = is_null($old) ? 'NULL' : (string)$old;
+            $newStr = is_null($new) ? 'NULL' : (string)$new;
+            if ($oldStr !== $newStr) {
+                $label = match($key) {
+                    'codigo' => 'Código',
+                    'descripcion' => 'Descripción',
+                    'fecha_registro' => 'Fecha registro',
+                    'monto_unitario' => 'Monto unitario',
+                    'nota' => 'Nota',
+                    'ruta_img' => 'Imagen',
+                    'persona_id' => 'Responsable',
+                    'estado' => 'Estado',
+                    default => $key,
+                };
+                if ($key === 'persona_id') {
+                    $oldUser = $old ? Usuario::find($old) : null;
+                    $newUser = $new ? Usuario::find($new) : null;
+                    $oldStr = $oldUser ? ($oldUser->nombre . ' ' . $oldUser->apellido) : ($oldStr === 'NULL' ? 'NULL' : $oldStr);
+                    $newStr = $newUser ? ($newUser->nombre . ' ' . $newUser->apellido) : ($newStr === 'NULL' ? 'NULL' : $newStr);
+                }
+                $changed[] = "{$label}: \"{$oldStr}\" → \"{$newStr}\"";
+            }
+        }
+        if (!empty($changed)) {
+            try {
+                $adminId = session('usuario_id') ?? null;
+                $admin = $adminId ? Usuario::find($adminId) : null;
+                $adminName = $admin ? ($admin->nombre . ' ' . $admin->apellido) : 'un administrador';
+                $descripcion = "Mueble actualizado por {$adminName}: {$mueble->codigo} (ID {$mueble->id}). Cambios: " . implode('; ', $changed);
+
+                Notificacion::create([
+                    'id_admin' => $adminId,
+                    'id_usuario' => null,
+                    'audiencia' => 'admins',
+                    'estado' => 'cerrada',
+                    'tipo' => 'otra',
+                    'descripcion' => $descripcion,
+                    'fecha_creacion' => Carbon::now()->toDateTimeString(),
+                    'fecha_visto' => null,
+                    'ruta' => url("/muebles/{$mueble->id}")
+                ]);
+            } catch (\Throwable $e) {
+                \Log::error('Error creando notificación de actualización de mueble: ' . $e->getMessage());
+            }
+        }
+
         if ($request->wantsJson() || $request->is('api/*')) {return response()->json($mueble);}
         return redirect('/muebles')->with('success', 'Mueble actualizado correctamente');
     }
+
     public function destroy(Request $request, Mueble $mueble)
     {
+        $muebleCodigo = $mueble->codigo ?? ("ID {$mueble->id}");
+        $muebleId = $mueble->id;
+        $muebleDescripcion = $mueble->descripcion ?? '';
         $mueble->delete();
+        try {
+            $adminId = session('usuario_id') ?? null;
+            $admin = $adminId ? Usuario::find($adminId) : null;
+            $adminName = $admin ? ($admin->nombre . ' ' . $admin->apellido) : 'un administrador';
+            $descripcion = "Mueble eliminado por {$adminName}: {$muebleCodigo} (ID {$muebleId}). Descripción previa: " . ($muebleDescripcion ? \Illuminate\Support\Str::limit($muebleDescripcion,200) : '-');
+
+            Notificacion::create([
+                'id_admin' => $adminId,
+                'id_usuario' => null,
+                'audiencia' => 'admins',
+                'estado' => 'cerrada',
+                'tipo' => 'otra',
+                'descripcion' => $descripcion,
+                'fecha_creacion' => Carbon::now()->toDateTimeString(),
+                'fecha_visto' => null,
+                'ruta' => url("/muebles")
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('Error creando notificación de eliminación de mueble: ' . $e->getMessage());
+        }
+
         if ($request->wantsJson() || $request->is('api/*')) {return response()->json(['message' => 'Mueble eliminado correctamente']);}
         return redirect('/muebles')->with('success', 'Mueble eliminado correctamente');
     }
