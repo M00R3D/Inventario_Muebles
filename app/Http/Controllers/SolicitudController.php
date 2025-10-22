@@ -1,10 +1,14 @@
 <?php
 // app/Http/Controllers/SolicitudController.php
 namespace App\Http\Controllers;
-use App\Models\Solicitud;
-use App\Models\Mueble;
-use App\Models\Usuario;
+
 use Illuminate\Http\Request;
+use App\Models\Solicitud;
+use App\Models\Usuario;
+use App\Models\Mueble;
+use App\Models\Notificacion;
+use Carbon\Carbon;
+
 class SolicitudController extends Controller
 {
     public function index(Request $request)
@@ -56,8 +60,25 @@ class SolicitudController extends Controller
             $data['estado'] = 'pendiente';
         }
         $solicitud = Solicitud::create($data);
+
+        $current = session()->has('usuario_id') ? Usuario::find(session('usuario_id')) : null;
+        $nombreUsuario = $current ? trim($current->nombre . ' ' . $current->apellido) : ($request->input('persona_nombre') ?? 'Usuario');
+        $descripcion = "{$nombreUsuario} ha creado la solicitud #{$solicitud->id}. Periodo: " . ($data['fecha_inicio'] ?? '-') . " → " . ($data['fecha_fin'] ?? '-');
+
+        Notificacion::create([
+            'id_admin'      => session('usuario_id') ?? null,
+            'id_usuario'    => $current ? $current->id : ($data['persona_id'] ?? null),
+            'audiencia'     => 'todos',
+            'estado'        => 'cerrada',
+            'tipo'          => 'otra',
+            'descripcion'   => $descripcion,
+            'fecha_creacion'=> Carbon::now()->toDateTimeString(),
+            'fecha_visto'   => null,
+            'ruta'          => url("/solicitudes/{$solicitud->id}")
+        ]);
+
         if ($request->wantsJson() || $request->is('api/*')) {return response()->json($solicitud, 201);}
-        return redirect('/solicitudes')->with('success', 'Solicitud creada correctamente');
+        return redirect('/solicitudes')->with('success','Solicitud creada correctamente.');
     }
     public function show(Solicitud $solicitud)
     {

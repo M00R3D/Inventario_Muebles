@@ -16,12 +16,16 @@ return new class extends Migration
             $table->increments('id');
             $table->unsignedInteger('id_admin')->nullable();
             $table->unsignedInteger('id_usuario')->nullable();
-            $table->enum('estado', ['cerrada', 'abierta', 'vista'])->default('cerrada');
-            $table->enum('tipo', ['prueba', 'aprobada', 'rechazada', 'otra'])->default('prueba');
+            $table->string('estado', 20)->default('cerrada');
+            $table->string('tipo', 20)->default('prueba');
             $table->string('descripcion', 500)->nullable();
             $table->dateTime('fecha_creacion')->default(DB::raw('CURRENT_TIMESTAMP'));
             $table->dateTime('fecha_visto')->nullable();
             $table->string('ruta', 100)->nullable();
+            $table->string('audiencia', 20)->default('todos');
+            $table->index('id_usuario');
+            $table->index('id_admin');
+            $table->index('audiencia');
         });
     }
 

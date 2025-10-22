@@ -130,12 +130,99 @@ document.addEventListener('DOMContentLoaded', function(){
     d.setDate(d.getDate() + offsetDays);
     return d.toISOString().slice(0,10);
   }
-  form.addEventListener('submit', function(evt){
+
+  /* helper: tiny floating notification */
+  function showToast(msg, type = 'info', timeout = 2500) {
+    let container = document.getElementById('float-notifs');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'float-notifs';
+      container.style.position = 'fixed';
+      container.style.top = '84px';
+      container.style.right = '20px';
+      container.style.zIndex = '160';
+      container.style.display = 'flex';
+      container.style.flexDirection = 'column';
+      container.style.gap = '8px';
+      document.body.appendChild(container);
+    }
+    const el = document.createElement('div');
+    el.textContent = msg;
+    el.style.padding = '10px 14px';
+    el.style.borderRadius = '10px';
+    el.style.color = '#fff';
+    el.style.fontWeight = '700';
+    el.style.boxShadow = '0 8px 24px rgba(2,6,23,0.08)';
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(-6px)';
+    if (type === 'success') el.style.background = 'linear-gradient(90deg,#10b981,#059669)';
+    else if (type === 'error') el.style.background = 'linear-gradient(90deg,#ef4444,#b91c1c)';
+    else el.style.background = 'linear-gradient(90deg,#6366f1,#06b6d4)';
+    container.appendChild(el);
+    requestAnimationFrame(()=> { el.style.transition = 'transform .28s, opacity .28s'; el.style.opacity = '1'; el.style.transform = 'none'; });
+    setTimeout(()=> {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(-6px)';
+      el.addEventListener('transitionend', ()=> el.remove(), { once: true });
+    }, timeout);
+  }
+
+  form.addEventListener('submit', async function(evt){
+    evt.preventDefault();
+
     const inicio = form.querySelector('input[name="fecha_inicio"]');
     const fin = form.querySelector('input[name="fecha_fin"]');
     if (inicio && !inicio.value) inicio.value = todayStr(0);
     if (fin && !fin.value) fin.value = todayStr(1);
+
+    const muebleId = form.querySelector('input[name="mueble_id"]')?.value;
+    const persona = form.querySelector('input[name="persona_id"], select[name="persona_id"]')?.value;
+    if (!muebleId) { alert('Selecciona primero un mueble para la solicitud.'); return; }
+    if (!persona) { alert('Selecciona solicitante.'); return; }
+
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalText = submitBtn ? submitBtn.textContent : null;
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Enviando...'; }
+
+    try {
+      const fd = new FormData(form);
+      const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+      const resp = await fetch(form.action, {
+        method: 'POST',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRF-TOKEN': csrf,
+          'Accept': 'application/json'
+        },
+        body: fd,
+        credentials: 'same-origin'
+      });
+
+      const ct = resp.headers.get('content-type') || '';
+      const data = ct.includes('application/json') ? await resp.json() : await resp.text();
+
+      if (resp.ok) {
+        showToast('Solicitud creada. Notificación generada.', 'success', 1400);
+        setTimeout(()=> window.location.href = "{{ url('/solicitudes') }}", 900);
+        return;
+      }
+
+      if (resp.status === 422 && data && data.errors) {
+        showToast(Object.values(data.errors).flat().join('; '), 'error', 6000);
+      } else {
+        showToast((data && data.message) ? data.message : 'Error al crear solicitud', 'error', 4000);
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Error de red. Intenta de nuevo.', 'error', 3500);
+    } finally {
+      if (submitBtn) { submitBtn.disabled = false; if (originalText) submitBtn.textContent = originalText; }
+    }
   });
 });
 </script>
+<style>
+#float-notifs { pointer-events:none; }
+#float-notifs .notif { pointer-events:auto; }
+</style>
 @endsection
