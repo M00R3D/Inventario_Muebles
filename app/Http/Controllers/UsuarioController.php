@@ -5,6 +5,8 @@ use App\Models\Usuario;
 use App\Models\Area;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use App\Models\Notificacion;
+use Carbon\Carbon;
 class UsuarioController extends Controller
 {
     public function index(Request $request)
@@ -38,6 +40,7 @@ class UsuarioController extends Controller
             'rol' => 'required|in:admin,empleado,tecnico',
             'area_id' => 'required|exists:areas,id',
         ]);
+
         $usuario = Usuario::create([
             'nombre' => $request->nombre,
             'apellido' => $request->apellido,
@@ -46,6 +49,37 @@ class UsuarioController extends Controller
             'rol' => $request->rol,
             'area_id' => $request->area_id,
         ]);
+
+        try {
+            $actorId = session('usuario_id') ?? null;
+            $actor = $actorId ? Usuario::find($actorId) : null;
+            $actorName = $actor ? ($actor->nombre . ' ' . $actor->apellido) : 'Sistema';
+            Notificacion::create([
+                'id_admin' => $actorId,
+                'id_usuario' => null,
+                'audiencia' => 'admins',
+                'estado' => 'cerrada',
+                'tipo' => 'otra',
+                'descripcion' => "Usuario creado: {$usuario->nombre} {$usuario->apellido} (ID {$usuario->id}). Creado por: {$actorName}",
+                'fecha_creacion' => Carbon::now()->toDateTimeString(),
+                'fecha_visto' => null,
+                'ruta' => url("/usuarios/{$usuario->id}")
+            ]);
+            Notificacion::create([
+                'id_admin' => $actorId,
+                'id_usuario' => $usuario->id,
+                'audiencia' => 'usuario',
+                'estado' => 'cerrada',
+                'tipo' => 'prueba',
+                'descripcion' => "Bienvenido {$usuario->nombre}. Tu cuenta fue creada por: {$actorName}",
+                'fecha_creacion' => Carbon::now()->toDateTimeString(),
+                'fecha_visto' => null,
+                'ruta' => url("/login")
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('Error al crear notificaciones en UsuarioController@store: ' . $e->getMessage());
+        }
+
         return response()->json($usuario, 201);
     }
     public function show(Usuario $usuario)
@@ -67,6 +101,8 @@ class UsuarioController extends Controller
             'rol' => 'required|in:admin,empleado,tecnico',
             'area_id' => 'required|exists:areas,id',
         ]);
+        $original = $usuario->only(['nombre','apellido','email','rol','area_id']);
+
         $usuario->update([
             'nombre' => $request->nombre,
             'apellido' => $request->apellido,
@@ -74,14 +110,72 @@ class UsuarioController extends Controller
             'rol' => $request->rol,
             'area_id' => $request->area_id,
         ]);
-        if ($request->filled('password')) {
-            $usuario->update(['password' => \Hash::make($request->password)]);
+        $changed = [];
+        foreach ($original as $key => $old) {
+            $new = $usuario->{$key} ?? null;
+            if ((string)$old !== (string)$new) {
+                $label = ucfirst(str_replace('_',' ',$key));
+                $changed[] = "{$label}: \"{$old}\" → \"{$new}\"";
+            }
         }
+        try {
+            $actorId = session('usuario_id') ?? null;
+            $actor = $actorId ? Usuario::find($actorId) : null;
+            $actorName = $actor ? ($actor->nombre . ' ' . $actor->apellido) : 'Sistema';
+            if (!empty($changed)) {
+                Notificacion::create([
+                    'id_admin' => $actorId,
+                    'id_usuario' => null,
+                    'audiencia' => 'admins',
+                    'estado' => 'cerrada',
+                    'tipo' => 'otra',
+                    'descripcion' => "Usuario actualizado: {$usuario->nombre} {$usuario->apellido} (ID {$usuario->id}). Realizado por: {$actorName}. Cambios: " . implode('; ', $changed),
+                    'fecha_creacion' => Carbon::now()->toDateTimeString(),
+                    'fecha_visto' => null,
+                    'ruta' => url("/usuarios/{$usuario->id}")
+                ]);
+                Notificacion::create([
+                    'id_admin' => $actorId,
+                    'id_usuario' => $usuario->id,
+                    'audiencia' => 'usuario',
+                    'estado' => 'cerrada',
+                    'tipo' => 'otra',
+                    'descripcion' => "Tus datos fueron actualizados por: {$actorName}. Cambios: " . implode('; ', $changed),
+                    'fecha_creacion' => Carbon::now()->toDateTimeString(),
+                    'fecha_visto' => null,
+                    'ruta' => url("/usuarios/{$usuario->id}/edit")
+                ]);
+            }
+        } catch (\Throwable $e) {
+            \Log::error('Error creando notificaciones en UsuarioController@update: ' . $e->getMessage());
+        }
+
         return response()->json($usuario);
     }
     public function destroy(Request $request, Usuario $usuario)
     {
+        $usuarioNombre = trim(($usuario->nombre ?? '') . ' ' . ($usuario->apellido ?? ''));
+        $usuarioId = $usuario->id;
         $usuario->delete();
+        try {
+            $actorId = session('usuario_id') ?? null;
+            $actor = $actorId ? Usuario::find($actorId) : null;
+            $actorName = $actor ? ($actor->nombre . ' ' . $actor->apellido) : 'Sistema';
+            Notificacion::create([
+                'id_admin' => $actorId,
+                'id_usuario' => null,
+                'audiencia' => 'admins',
+                'estado' => 'cerrada',
+                'tipo' => 'otra',
+                'descripcion' => "Usuario eliminado: {$usuarioNombre} (ID {$usuarioId}). Eliminado por: {$actorName}",
+                'fecha_creacion' => Carbon::now()->toDateTimeString(),
+                'fecha_visto' => null,
+                'ruta' => url("/usuarios")
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('Error creando notificación en UsuarioController@destroy: ' . $e->getMessage());
+        }
+
         if ($request->wantsJson() || $request->is('api/*')) {
             return response()->json(['message' => 'Usuario eliminado correctamente']);
         }

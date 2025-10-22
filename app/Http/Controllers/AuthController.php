@@ -5,6 +5,8 @@ use App\Models\Usuario;
 use App\Models\Area;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use App\Models\Notificacion;
+use Carbon\Carbon;
 
 class AuthController extends Controller
 {
@@ -75,6 +77,36 @@ class AuthController extends Controller
             'rol' => $request->rol,
             'area_id' => $request->area_id,
         ]);
+
+        try {
+            $actorId = session('usuario_id') ?? null;
+            $actor = $actorId ? Usuario::find($actorId) : null;
+            $actorName = $actor ? ($actor->nombre . ' ' . $actor->apellido) : 'Autoregistro';
+            Notificacion::create([
+                'id_admin' => $actorId,
+                'id_usuario' => null,
+                'audiencia' => 'admins',
+                'estado' => 'cerrada',
+                'tipo' => 'otra',
+                'descripcion' => "Nuevo registro de usuario: {$usuario->nombre} {$usuario->apellido} (ID {$usuario->id}). Origen: {$actorName}",
+                'fecha_creacion' => Carbon::now()->toDateTimeString(),
+                'fecha_visto' => null,
+                'ruta' => url("/usuarios/{$usuario->id}")
+            ]);
+            Notificacion::create([
+                'id_admin' => $actorId,
+                'id_usuario' => $usuario->id,
+                'audiencia' => 'usuario',
+                'estado' => 'cerrada',
+                'tipo' => 'prueba',
+                'descripcion' => "Bienvenido {$usuario->nombre}, tu cuenta ha sido creada.",
+                'fecha_creacion' => Carbon::now()->toDateTimeString(),
+                'fecha_visto' => null,
+                'ruta' => url("/login")
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('Error creando notificaciones en AuthController@register: ' . $e->getMessage());
+        }
 
         session(['usuario_id' => $usuario->id]);
         return redirect('/dashboard');
