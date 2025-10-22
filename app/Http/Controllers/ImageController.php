@@ -2,6 +2,10 @@
 namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use App\Models\Notificacion;
+use App\Models\Usuario;
+use Carbon\Carbon;
+
 class ImageController extends Controller
 {
     public function index()
@@ -59,6 +63,26 @@ class ImageController extends Controller
                     'path' => $folder . '/' . $name,
                     'name' => $name,
                 ];
+
+                try {
+                    $adminId = session('usuario_id') ?? null;
+                    $actor = $adminId ? Usuario::find($adminId) : null;
+                    $actorName = $actor ? ($actor->nombre . ' ' . $actor->apellido) : 'Sistema';
+                    Notificacion::create([
+                        'id_admin' => $adminId,
+                        'id_usuario' => null,
+                        'audiencia' => 'admins',
+                        'estado' => 'cerrada',
+                        'tipo' => 'otra',
+                        'descripcion' => "Imagen subida por el admin: {$actorName},ruta: {$folder}/{$name}",
+                        'fecha_creacion' => Carbon::now()->toDateTimeString(),
+                        'fecha_visto' => null,
+                        'ruta' => asset($folder . '/' . $name)
+                    ]);
+                } catch (\Throwable $e) {
+                    \Log::error('Error creando notificación de imagen: ' . $e->getMessage());
+                }
+
             } catch (\Exception $e) {
             }
         }
