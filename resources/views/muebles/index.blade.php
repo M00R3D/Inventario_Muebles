@@ -280,7 +280,7 @@
                       <form action="{{ url('/muebles/'.$m->id) }}" method="POST" style="margin:0;">
                         @csrf
                         @method('DELETE')
-                        <button type="submit" data-confirm="¿Eliminar mueble {{ addslashes($m->codigo ?? 'ID '.$m->id) }}?" style="background:linear-gradient(90deg,#ef4444,#f97316);color:#fff;padding:8px;border-radius:8px;border:none;cursor:pointer;">Eliminar</button>
+                        <button type="submit" data-confirm="¿Eliminar mueble {{ addslashes($m->codigo ?? 'ID '.$m->id) }}?" style="background:linear-gradient(90deg,#ef4444,#f97316);color:#fff;padding:8px;border-radius:8px;border:none;cursor:pointer;" data-confirm-type="delete">Eliminar</button>
                       </form>
                     @else
                       <a href="{{ url('/solicitudes/create') }}?mueble_id={{ $m->id }}" style="display:inline-block;text-align:center;background:#06b6d4;color:#fff;padding:8px 12px;border-radius:8px;text-decoration:none;font-weight:700;">Solicitar</a>

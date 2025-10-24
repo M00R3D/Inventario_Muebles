@@ -143,7 +143,7 @@
 
                       <form action="{{ url('/solicitudes/'.$s->id) }}" method="POST" style="display:inline;">
                         @csrf @method('DELETE')
-                        <button type="submit" data-confirm="¿Eliminar solicitud #{{ $s->id }}?" data-confirm-type="delete" style="background:linear-gradient(90deg,#ef4444,#f97316);color:#fff;padding:6px 8px;border-radius:8px;border:0;">Eliminar</button>
+                        <button type="submit" data-confirm="¿Eliminar solicitud #{{ $s->id }}?" data-confirm-type="delete" style="background:linear-gradient(90deg,#ef4444,#f97316);color:#fff;padding:6px 8px;border-radius:8px;border:0;" data-confirm-type="delete">Eliminar</button>
                       </form>
                     @else
                       <span style="color:#6b7280;font-weight:700;">-</span>

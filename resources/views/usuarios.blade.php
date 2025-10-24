@@ -234,7 +234,7 @@
                                 <button type="button" class="btn-edit" data-user='@json($u)' style="margin-right:6px;">Editar</button>
                                 <form action="{{ url('/usuarios/'.$u->id) }}" method="POST" style="display:inline">
                                     @csrf @method('DELETE')
-                                    <button type="submit" data-confirm="¿Eliminar usuario {{ addslashes($u->nombre . ' ' . $u->apellido) }}?" style="background:linear-gradient(90deg,#ef4444,#f97316);color:#fff;padding:6px 8px;border-radius:8px;border:0;">Eliminar</button>
+                                    <button type="submit" data-confirm="¿Eliminar usuario {{ addslashes($u->nombre . ' ' . $u->apellido) }}?" style="background:linear-gradient(90deg,#ef4444,#f97316);color:#fff;padding:6px 8px;border-radius:8px;border:0;" data-confirm-type="delete">Eliminar</button>
                                 </form>
                             </td>
                         @endif
