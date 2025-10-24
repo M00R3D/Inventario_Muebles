@@ -67,7 +67,7 @@
                     <?php echo 'Bienvenido,'; ?> <?php echo e($u->nombre ?? ''); ?> <?php echo e($u->apellido ?? ''); ?>
                 <?php endif; ?>
             </div>
-            <a href="<?php echo e(url('/logout')); ?>" class="btn-logout" title="Cerrar sesión" aria-label="Cerrar sesión" data-confirm="¿Deseas cerrar sesión ahora?">
+            <a href="<?php echo e(url('/logout')); ?>" class="btn-logout" title="Cerrar sesión" aria-label="Cerrar sesión" data-confirm="¿Deseas cerrar sesión ahora?" data-confirm-type="logout">
                 <span style="font-size:14px;line-height:1;display:inline-block;">⎋</span>
                 <span>Cerrar sesión</span>
             </a>
@@ -116,18 +116,55 @@
             const btnOk = document.getElementById('confirm-ok');
             const btnCancel = document.getElementById('confirm-cancel');
             let pendingEl = null;
+            const okDefault = { background: btnOk.style.background, color: btnOk.style.color, text: btnOk.textContent };
+            const cancelDefault = { background: btnCancel.style.background, color: btnCancel.style.color, text: btnCancel.textContent };
+            function applyStyle(button, style) {
+                if (!button) return;
+                button.style.background = style.background ?? '';
+                button.style.color = style.color ?? '';
+            }
+            function resetButtons() {
+                applyStyle(btnOk, okDefault);
+                applyStyle(btnCancel, cancelDefault);
+                btnOk.textContent = okDefault.text;
+                btnCancel.textContent = cancelDefault.text;
+            }
+
             function show(text, el){
                 pendingEl = el || null;
                 msg.textContent = text || '¿Estás seguro?';
+                const type = (el && (el.dataset.confirmType || el.getAttribute('data-confirm-type'))) || (el && (el.dataset.confirm || el.getAttribute('data-confirm-type'))) || 'default';
+                resetButtons();
+                if (type === 'logout') {
+                    btnOk.textContent = 'Cerrar sesión';
+                    applyStyle(btnOk, { background: 'linear-gradient(90deg,#ef4444,#b91c1c)', color: '#fff' });
+                    btnCancel.textContent = 'Permanecer Activo';
+                    applyStyle(btnCancel, { background: 'transparent', color: '#374151' });
+                } else if (type === 'delete' || type === 'danger') {
+                    btnOk.textContent = 'Eliminar';
+                    applyStyle(btnOk, { background: 'linear-gradient(90deg,#ef4444,#f97316)', color: '#fff' });
+                    btnCancel.textContent = 'Cancelar';
+                    applyStyle(btnCancel, { background: 'transparent', color: '#374151' });
+                } else if (type === 'confirm') {
+                    btnOk.textContent = 'Confirmar';
+                    applyStyle(btnOk, { background: 'linear-gradient(90deg,#6366f1,#06b6d4)', color: '#fff' });
+                    btnCancel.textContent = 'Cancelar';
+                    applyStyle(btnCancel, { background: 'transparent', color: '#374151' });
+                } else {
+                }
+
                 overlay.style.display = 'flex';
                 overlay.setAttribute('aria-hidden','false');
                 btnCancel.focus();
             }
+
             function hide(){
                 overlay.style.display = 'none';
                 overlay.setAttribute('aria-hidden','true');
                 pendingEl = null;
+                resetButtons();
             }
+
             document.addEventListener('click', function(e){
                 const el = e.target.closest('[data-confirm]');
                 if(!el) return;
@@ -139,6 +176,13 @@
             btnCancel.addEventListener('click', hide);
             btnOk.addEventListener('click', function(){
                 if(!pendingEl) return hide();
+                const callbackName = pendingEl.getAttribute('data-confirm-callback') || pendingEl.dataset.confirmCallback;
+                if (callbackName && typeof window[callbackName] === 'function') {
+                    try { window[callbackName].call(pendingEl, pendingEl); } catch(e){ console.error(e); }
+                    hide();
+                    return;
+                }
+
                 if(pendingEl.tagName === 'A' && pendingEl.href){
                     window.location.href = pendingEl.href;
                 } else {

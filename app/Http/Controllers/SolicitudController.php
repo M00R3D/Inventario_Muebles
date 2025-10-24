@@ -140,7 +140,7 @@ class SolicitudController extends Controller
                     Notificacion::create([
                         'id_admin' => $adminId,
                         'id_usuario' => $solicitud->persona_id,
-                        'audiencia' => 'usuario',
+                      'audiencia' => 'usuario',
                         'estado' => 'cerrada',
                         'tipo' => 'otra',
                         'descripcion' => "Tu solicitud #{$solicitud->id} ha cambiado: {$oldEstado} → {$newEstado}. Ejecutado por: {$actorName}.",

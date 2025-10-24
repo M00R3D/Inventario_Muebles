@@ -143,7 +143,7 @@
 
                       <form action="{{ url('/solicitudes/'.$s->id) }}" method="POST" style="display:inline;">
                         @csrf @method('DELETE')
-                        <button type="submit" data-confirm="¿Eliminar solicitud #{{ $s->id }}?" style="background:linear-gradient(90deg,#ef4444,#f97316);color:#fff;padding:6px 8px;border-radius:8px;border:0;">Eliminar</button>
+                        <button type="submit" data-confirm="¿Eliminar solicitud #{{ $s->id }}?" data-confirm-type="delete" style="background:linear-gradient(90deg,#ef4444,#f97316);color:#fff;padding:6px 8px;border-radius:8px;border:0;">Eliminar</button>
                       </form>
                     @else
                       <span style="color:#6b7280;font-weight:700;">-</span>
@@ -186,82 +186,6 @@
         </div>
       </div>
     </aside>
-  </div>
-</div>
-
-<div id="sol-modal" style="display:none;position:fixed;inset:0;background:rgba(2,6,23,0.45);align-items:center;justify-content:center;z-index:9999;padding:12px;">
-  <div style="background:#fff;border-radius:10px;padding:12px;max-width:980px;width:100%;max-height:90vh;overflow:auto;">
-    <h2 id="modal-title">Nueva solicitud</h2>
-    <form id="sol-form" method="POST" action="{{ url('/solicitudes') }}">
-      @csrf
-      <input type="hidden" name="_method" id="sol-method" value="POST">
-      <input type="hidden" name="id" id="sol-id" value="">
-      <input type="hidden" name="mueble_id" id="sol-mueble-id" value="">
-
-      <div style="display:flex;gap:12px;flex-wrap:wrap;">
-        <div style="flex:1;min-width:320px;">
-          <label>Seleccionar mueble</label>
-          <div class="mueble-grid" id="muebles-grid">
-            @foreach($muebles as $m)
-              <div class="mueble-item" data-id="{{ $m->id }}" data-codigo="{{ $m->codigo }}" data-ruta="{{ $m->ruta_img }}">
-                @if($m->ruta_img)
-                  <img class="mueble-thumb" src="{{ asset($m->ruta_img) }}" alt="{{ $m->codigo }}">
-                @else
-                  <div class="mueble-thumb"></div>
-                @endif
-                <div style="font-weight:700;font-size:0.9rem;">{{ $m->codigo }}</div>
-                <div style="font-size:0.85rem;color:#6b7280;">{{ \Illuminate\Support\Str::limit($m->descripcion,40) }}</div>
-              </div>
-            @endforeach
-          </div>
-        </div>
-
-        <div style="flex:1;min-width:260px;">
-          <label>Solicitante</label>
-
-          @if(!empty($currentUser) && ($currentUser->rol ?? '') !== 'admin')
-            <input type="hidden" name="persona_id" value="{{ $currentUser->id }}">
-            <div style="padding:8px;border-radius:8px;border:1px solid #e5e7eb;background:#fafafa;font-weight:700;">
-              {{ $currentUser->nombre }} {{ $currentUser->apellido }} (Conectado)
-            </div>
-          @else
-            <select name="persona_id" id="sol-persona" required style="width:100%;padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
-              <option value="">Selecciona</option>
-              @foreach($usuarios as $u)
-                <option value="{{ $u->id }}">{{ $u->nombre }} {{ $u->apellido }}</option>
-              @endforeach
-            </select>
-          @endif
-
-          <label style="margin-top:8px;">Fecha inicio</label>
-          <input type="date" name="fecha_inicio" id="sol-fecha-inicio" style="width:100%;padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
-
-          <label style="margin-top:8px;">Fecha fin</label>
-          <input type="date" name="fecha_fin" id="sol-fecha-fin" style="width:100%;padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
-
-          <label style="margin-top:8px;">Nota</label>
-          <textarea name="nota" id="sol-nota" rows="4" style="width:100%;padding:8px;border-radius:8px;border:1px solid #e5e7eb;"></textarea>
-
-          <label style="margin-top:8px;">Estado</label>
-          @if(!empty($currentUser) && ($currentUser->rol ?? '') !== 'admin')
-            <input type="hidden" name="estado" value="pendiente">
-            <div style="padding:8px;border-radius:8px;border:1px solid #e5e7eb;background:#fff9ed;font-weight:700;color:#92400e;">Pendiente (automático)</div>
-          @else
-            <select name="estado" id="sol-estado" required style="width:100%;padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
-              <option value="pendiente">Pendiente</option>
-              <option value="aprobada">Aprobada</option>
-              <option value="rechazada">Rechazada</option>
-            </select>
-          @endif
-
-          <div style="margin-top:12px;display:flex;gap:8px;">
-            <button type="submit" id="sol-save" style="background:#06b6d4;color:#fff;padding:8px 12px;border-radius:8px;border:0;cursor:pointer;">Guardar</button>
-            <button type="button" id="sol-cancel" style="background:#ef4444;color:#fff;padding:8px 12px;border-radius:8px;border:0;cursor:pointer;">Cancelar</button>
-          </div>
-          <div id="sol-selected" style="margin-top:12px;color:#6b7280;font-weight:700;"></div>
-        </div>
-      </div>
-    </form>
   </div>
 </div>
 
