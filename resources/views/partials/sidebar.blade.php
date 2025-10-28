@@ -46,6 +46,7 @@
     transition: width 260ms var(--ease), transform 220ms var(--ease), box-shadow 220ms var(--ease);
     display: flex;
     flex-direction: column;
+    flex-wrap:wrap;
     gap: 0.5rem;
     background: linear-gradient(180deg,var(--card-bg), rgba(255,255,255,0.96));
     border-radius: var(--radius);
@@ -54,14 +55,11 @@
     position: sticky;
     top: 52px; 
     height: calc(100vh - 52px);
-    overflow: auto;
-    -webkit-overflow-scrolling: touch;
 }
 .sidebar.open{ transform: translateY(0); }
 .sidebar-card{
     display:flex;
     flex-direction:column;
-    gap:0.6rem;
     width:100%;
     background:transparent;
     padding:0;

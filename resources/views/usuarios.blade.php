@@ -81,7 +81,7 @@
 
         <div style="display:flex;gap:10px;align-items:center;">
             @if($isAdmin)
-                <button id="btn-new" class="btn" type="button" style="background:#6366f1;color:#fff;padding:8px 12px;border-radius:8px;border:0;cursor:pointer;">
+                <button id="btn-new" class="btn-edit" type="button" style="background:#6366f1;color:#fff;padding:8px 12px;border-radius:8px;border:0;cursor:pointer;">
                     Nuevo usuario
                 </button>
             @endif
@@ -123,8 +123,8 @@
         </div>
 
         <div style="display:flex;gap:8px;">
-            <button type="submit" style="background:#06b6d4;color:#fff;padding:8px 12px;border-radius:8px;border:0;cursor:pointer;font-weight:700;">Buscar</button>
-            <button type="button" id="btn-clear-filters" style="background:#ef4444;color:#fff;padding:8px 12px;border-radius:8px;border:0;cursor:pointer;font-weight:700;">Limpiar</button>
+            <button type="submit"class="btn-edit" style="background:#06b6d4;color:#fff;padding:8px 12px;border-radius:8px;border:0;cursor:pointer;font-weight:700;">Buscar</button>
+            <button type="button" class="btn-edit"id="btn-clear-filters" style="background:#ef4444;color:#fff;padding:8px 12px;border-radius:8px;border:0;cursor:pointer;font-weight:700;">Limpiar</button>
         </div>
     </form>
 
@@ -195,8 +195,8 @@
             </div>
 
             <div style="display:flex;gap:8px;margin-top:12px;">
-                <button type="submit" id="btn-save" class="btn" style="background:#06b6d4;color:#fff;padding:8px 12px;border-radius:8px;border:0;cursor:pointer;">Guardar</button>
-                <button id="btn-cancel" type="button" style="background:#ef4444;color:#fff;padding:8px 12px;border-radius:8px;border:0;cursor:pointer;">Cancelar</button>
+                <button type="submit" id="btn-save" class="btn-edit" style="background:#06b6d4;color:#fff;padding:8px 12px;border-radius:8px;border:0;cursor:pointer;">Guardar</button>
+                <button id="btn-cancel" type="button" class="btn-edit" style="background:#ef4444;color:#fff;padding:8px 12px;border-radius:8px;border:0;cursor:pointer;">Cancelar</button>
             </div>
         </form>
     </div>
@@ -234,7 +234,7 @@
                                 <button type="button" class="btn-edit" data-user='@json($u)' style="margin-right:6px;">Editar</button>
                                 <form action="{{ url('/usuarios/'.$u->id) }}" method="POST" style="display:inline">
                                     @csrf @method('DELETE')
-                                    <button type="submit" data-confirm="¿Eliminar usuario {{ addslashes($u->nombre . ' ' . $u->apellido) }}?" style="background:linear-gradient(90deg,#ef4444,#f97316);color:#fff;padding:6px 8px;border-radius:8px;border:0;" data-confirm-type="delete">Eliminar</button>
+                                    <button type="submit" class="btn-edit" data-confirm="¿Eliminar usuario {{ addslashes($u->nombre . ' ' . $u->apellido) }}?" style="background:linear-gradient(90deg,#ef4444,#f97316);color:#fff;padding:6px 8px;border-radius:8px;border:0;" data-confirm-type="delete">Eliminar</button>
                                 </form>
                             </td>
                         @endif
@@ -384,13 +384,37 @@ document.addEventListener('DOMContentLoaded', function(){
         closeModalAnimated();
     });
 
-    document.querySelectorAll('.btn-edit').forEach(btn=>{
-        btn.addEventListener('click', function(){
+    document.querySelectorAll('.btn-edit[data-user], .btn-edit[data-id]').forEach(btn=>{
+        btn.addEventListener('click', async function(){
             try {
-                const user = JSON.parse(this.getAttribute('data-user'));
-                openEdit(user);
-            } catch(e) {
-                console.error('invalid user json', e);
+                const raw = btn.getAttribute('data-user') || btn.dataset.user || btn.getAttribute('data-id') || btn.dataset.id;
+                if (!raw) {
+                    showNotification('Error: información del usuario no disponible', 'error');
+                    return;
+                }
+
+                const trimmed = String(raw).trim();
+                if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+                    let parsed = null;
+                    try { parsed = JSON.parse(trimmed); } catch(e) { parsed = null; }
+                    if (!parsed) { showNotification('Error: datos JSON inválidos', 'error'); return; }
+                    openEdit(parsed);
+                    return;
+                }
+
+                const id = encodeURIComponent(trimmed);
+                const resp = await fetch('/api/usuarios/' + id, {
+                    credentials: 'same-origin',
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                if (!resp.ok) {
+                    showNotification('Error cargando datos del usuario (id:'+ trimmed +')', 'error');
+                    return;
+                }
+                const userObj = await resp.json();
+                openEdit(userObj);
+            } catch (err) {
+                console.error('Error al abrir edición:', err);
                 showNotification('Error interno: datos de usuario inválidos', 'error');
             }
         });
