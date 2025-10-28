@@ -165,6 +165,16 @@
                 resetButtons();
             }
 
+            window.showConfirmFor = function(el){
+                try {
+                    if (!el) return;
+                    const text = el.getAttribute('data-confirm') || '¿Estás seguro?';
+                    show(text, el);
+                } catch(e){
+                    console.error('showConfirmFor error', e);
+                }
+            };
+
             document.addEventListener('click', function(e){
                 const el = e.target.closest('[data-confirm]');
                 if(!el) return;
@@ -178,18 +188,19 @@
                 if(!pendingEl) return hide();
                 const callbackName = pendingEl.getAttribute('data-confirm-callback') || pendingEl.dataset.confirmCallback;
                 if (callbackName && typeof window[callbackName] === 'function') {
-                    try { window[callbackName].call(pendingEl, pendingEl); } catch(e){ console.error(e); }
+                    try { window[callbackName](pendingEl); }
+                    catch(e){ console.error('confirm callback error', e); }
                     hide();
                     return;
                 }
 
                 if(pendingEl.tagName === 'A' && pendingEl.href){
                     window.location.href = pendingEl.href;
-                } else {
-                    const form = pendingEl.closest('form');
-                    if(form) form.submit();
-                    else pendingEl.click();
+                    hide();
+                    return;
                 }
+                const f = pendingEl.closest('form');
+                if (f) { f.submit(); hide(); return; }
                 hide();
             });
 

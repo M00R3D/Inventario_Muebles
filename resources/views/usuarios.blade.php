@@ -124,7 +124,7 @@
 
         <div style="display:flex;gap:8px;">
             <button type="submit"class="btn-edit" style="background:#06b6d4;color:#fff;padding:8px 12px;border-radius:8px;border:0;cursor:pointer;font-weight:700;">Buscar</button>
-            <button type="button" class="btn-edit"id="btn-clear-filters" style="background:#ef4444;color:#fff;padding:8px 12px;border-radius:8px;border:0;cursor:pointer;font-weight:700;">Limpiar</button>
+            <button type="button" class="btn-edit" id="btn-clear-filters" style="background:#ef4444;color:#fff;padding:8px 12px;border-radius:8px;border:0;cursor:pointer;font-weight:700;">Limpiar</button>
         </div>
     </form>
 
@@ -234,7 +234,7 @@
                                 <button type="button" class="btn-edit" data-user='@json($u)' style="margin-right:6px;">Editar</button>
                                 <form action="{{ url('/usuarios/'.$u->id) }}" method="POST" style="display:inline">
                                     @csrf @method('DELETE')
-                                    <button type="submit" class="btn-edit" data-confirm="¿Eliminar usuario {{ addslashes($u->nombre . ' ' . $u->apellido) }}?" style="background:linear-gradient(90deg,#ef4444,#f97316);color:#fff;padding:6px 8px;border-radius:8px;border:0;" data-confirm-type="delete">Eliminar</button>
+                                    <button type="submit" data-id="${u.id}" class="btn-edit" data-confirm="¿Eliminar usuario {{ addslashes($u->nombre . ' ' . $u->apellido) }}?" style="background:linear-gradient(90deg,#ef4444,#f97316);color:#fff;padding:6px 8px;border-radius:8px;border:0;" data-confirm-type="delete">Eliminar</button>
                                 </form>
                             </td>
                         @endif
@@ -265,6 +265,9 @@ document.addEventListener('DOMContentLoaded', function(){
     const chkChangePassword = document.getElementById('chk-change-password');
     const pwdInput = document.getElementById('f-password');
     const notifications = document.getElementById('notifications');
+    const STORAGE_KEY = 'usuarios_filters_v1';
+    let latestUsersMap = {};
+
     function hideTable() {
         if (!usersTable) return;
         if (usersTable.classList.contains('closing') || getComputedStyle(usersTable).display === 'none') return;
@@ -470,19 +473,142 @@ document.addEventListener('DOMContentLoaded', function(){
             }
         });
     }
+    function readFiltersFromForm() {
+        const f = document.getElementById('users-filters');
+        if (!f) return {};
+        const data = {};
+        Array.from(f.elements).forEach(el=>{
+            if (!el.name) return;
+            if (el.type === 'checkbox') data[el.name] = el.checked;
+            else data[el.name] = el.value ?? '';
+        });
+        return data;
+    }
 
-    const btnClear = document.getElementById('btn-clear-filters');
-    if (btnClear) {
-        btnClear.addEventListener('click', function(){
-            const form = document.getElementById('users-filters');
-            if (!form) return;
-            form.querySelectorAll('input,select').forEach(i=>{
-                if (i.type === 'checkbox' || i.type === 'radio') i.checked = false;
-                else i.value = '';
-            });
-            form.submit();
+    function applyFiltersToForm(filters = {}) {
+        const f = document.getElementById('users-filters');
+        if (!f) return;
+        Object.keys(filters).forEach(k=>{
+            const el = f.elements.namedItem(k);
+            if (!el) return;
+            try {
+                el.value = filters[k];
+            } catch(e) {}
         });
     }
+    const API_BASE = "{{ url('/usuarios') }}";
+
+    async function fetchAndRenderUsers(filters = {}) {
+        const tbody = document.querySelector('#users-table tbody');
+        const thead = document.querySelector('#users-table thead');
+        if (!tbody || !thead) return;
+        const params = new URLSearchParams();
+        Object.entries(filters).forEach(([k,v])=>{
+            if (v === null || v === undefined) return;
+            const s = String(v).trim();
+            if (s.length === 0) return;
+            params.set(k, s);
+        });
+        const url = API_BASE + (params.toString() ? ('?' + params.toString()) : '');
+        try {
+            const resp = await fetch(url, { credentials: 'same-origin', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } });
+            if (!resp.ok) throw new Error('HTTP ' + resp.status);
+            const users = await resp.json();
+            latestUsersMap = {};
+            users.forEach(u => latestUsersMap[u.id] = u);
+            // render header (simple)
+            thead.innerHTML = `<tr>
+                <th style="padding:8px;font-weight:700">ID</th>
+                <th style="padding:8px;font-weight:700">Nombre</th>
+                <th style="padding:8px;font-weight:700">Apellido</th>
+                <th style="padding:8px;font-weight:700">Email</th>
+                <th style="padding:8px;font-weight:700">Rol</th>
+                <th style="padding:8px;font-weight:700">Área</th>
+                <th style="padding:8px;font-weight:700">Acciones</th>
+            </tr>`;
+            tbody.innerHTML = users.map(u=>{
+                const area = u.area ? (u.area.nombre || '') : '';
+                const esc = (s)=> String(s ?? '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+                const confirmText = `¿Eliminar usuario ${esc(u.nombre)} ${esc(u.apellido)}?`;
+                return `<tr>
+                    <td style="padding:8px;white-space:nowrap">${esc(u.id)}</td>
+                    <td style="padding:8px">${esc(u.nombre)}</td>
+                    <td style="padding:8px">${esc(u.apellido)}</td>
+                    <td style="padding:8px">${esc(u.email)}</td>
+                    <td style="padding:8px">${esc(u.rol)}</td>
+                    <td style="padding:8px">${esc(area)}</td>
+                    <td style="padding:8px;white-space:nowrap">
+                        <button class="btn-edit" data-id="${u.id}" type="button">Editar</button>
+                        <button type="button" class="btn-edit btn-delete" data-confirm="${confirmText}" data-confirm-type="delete" data-confirm-callback="confirmDeleteById" style="background:linear-gradient(90deg,#ef4444,#f97316);color:#fff;padding:6px 8px;border-radius:8px;border:0;">Eliminar</button>
+                    </td>
+                </tr>`;
+            }).join('') || '<tr><td colspan="7" style="padding:12px">No hay usuarios</td></tr>';
+            document.querySelectorAll('#users-table .btn-edit[data-id]').forEach(btn=>{
+                btn.addEventListener('click', function(){
+                    const id = this.dataset.id;
+                    const user = latestUsersMap[id];
+                    if (!user) {
+                        showNotification('Error: información del usuario no disponible', 'error');
+                        return;
+                    }
+                    openEdit(user);
+                });
+            });
+            document.querySelectorAll('#users-table .btn-delete[data-id]').forEach(btn=>{
+                btn.addEventListener('click', function(evt){
+                    evt.preventDefault();
+                    evt.stopPropagation();
+                    if (typeof window.showConfirmFor === 'function') {
+                        window.showConfirmFor(this);
+                    } else {
+                        if (!confirm(this.getAttribute('data-confirm'))) return;
+                        window.confirmDeleteById && window.confirmDeleteById(this);
+                    }
+                });
+            });
+        } catch (err) {
+            console.error('Error cargando usuarios:', err);
+            tbody.innerHTML = `<tr><td colspan="7" style="padding:12px">Error cargando usuarios</td></tr>`;
+        }
+    }
+    const usersFiltersForm = document.getElementById('users-filters');
+    if (usersFiltersForm) {
+        usersFiltersForm.addEventListener('submit', function(evt){
+            evt.preventDefault();
+            const filters = readFiltersFromForm();
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(filters));
+            fetchAndRenderUsers(filters);
+            if (window.history && history.replaceState) history.replaceState(null,'','/usuarios');
+        });
+        const btnClear = document.getElementById('btn-clear-filters');
+        if (btnClear) {
+            btnClear.addEventListener('click', function(evt){
+                evt.preventDefault();
+                localStorage.removeItem(STORAGE_KEY);
+                try {
+                    usersFiltersForm.querySelectorAll('input,select').forEach(i => {
+                        if (i.type === 'submit' || i.type === 'button') return;
+                        if (i.type === 'checkbox' || i.type === 'radio') i.checked = false;
+                        else i.value = '';
+                    });
+                } catch(e){}
+                fetchAndRenderUsers({});
+                if (window.history && history.replaceState) history.replaceState(null,'','/usuarios');
+            });
+        }
+    }
+    (function initFiltersFromStorage(){
+        try {
+            const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+            if (stored && Object.keys(stored).length > 0) {
+                applyFiltersToForm(stored);
+                fetchAndRenderUsers(stored);
+                if (window.history && history.replaceState) history.replaceState(null,'','/usuarios');
+                return;
+            }
+        } catch(e){}
+        fetchAndRenderUsers({});
+    })();
 });
 </script>
 @endsection
