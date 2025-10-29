@@ -67,6 +67,21 @@
 .btn-edit:hover{ transform: translateY(-3px); }
 .btn-edit:active{ transform: translateY(-1px); }
 .btn-edit:focus{ outline:3px solid rgba(99,102,241,0.12); outline-offset:2px; }
+
+.btn-delete{
+  background: linear-gradient(90deg,#810a0aff,#d63867ff);
+  color: #fff;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 0;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 10px 28px rgba(99,102,241,0.10);
+  transition: transform .12s ease, box-shadow .12s ease, opacity .12s ease;
+}
+.btn-delete:hover{ transform: translateY(-3px); }
+.btn-delete:active{ transform: translateY(-1px); }
+.btn-delete:focus{ outline:3px solid rgba(99,102,241,0.12); outline-offset:2px; }
 </style>
 
 <div style="padding:16px;max-width:1100px;margin:0 auto;">
@@ -219,29 +234,7 @@
                 </tr>
             </thead>
             <tbody>
-                @forelse($usuarios as $u)
-                    <tr style="border-bottom:1px solid #f3f4f6;">
-                        @if($isAdmin)
-                            <td style="padding:10px 12px;">{{ $u->id }}</td>
-                        @endif
-                        <td style="padding:10px 12px;">{{ $u->nombre }}</td>
-                        <td style="padding:10px 12px;">{{ $u->apellido }}</td>
-                        <td style="padding:10px 12px;">{{ $u->email }}</td>
-                        <td style="padding:10px 12px;">{{ $u->rol }}</td>
-                        <td style="padding:10px 12px;">{{ optional($u->area)->nombre }}</td>
-                        @if($isAdmin)
-                            <td style="padding:10px 12px;width:190px;">
-                                <button type="button" class="btn-edit" data-user='@json($u)' style="margin-right:6px;">Editar</button>
-                                <form action="{{ url('/usuarios/'.$u->id) }}" method="POST" style="display:inline">
-                                    @csrf @method('DELETE')
-                                    <button type="submit" data-id="${u.id}" class="btn-edit" data-confirm="¿Eliminar usuario {{ addslashes($u->nombre . ' ' . $u->apellido) }}?" style="background:linear-gradient(90deg,#ef4444,#f97316);color:#fff;padding:6px 8px;border-radius:8px;border:0;" data-confirm-type="delete">Eliminar</button>
-                                </form>
-                            </td>
-                        @endif
-                    </tr>
-                @empty
-                    <tr><td colspan="{{ $isAdmin ? 7 : 5 }}">No hay usuarios.</td></tr>
-                @endforelse
+                <tr><td colspan="{{ $isAdmin ? 7 : 5 }}" style="padding:12px">Cargando usuarios…</td></tr>
             </tbody>
         </table>
     </div>
@@ -516,33 +509,23 @@ document.addEventListener('DOMContentLoaded', function(){
             const users = await resp.json();
             latestUsersMap = {};
             users.forEach(u => latestUsersMap[u.id] = u);
-            // render header (simple)
-            thead.innerHTML = `<tr>
-                <th style="padding:8px;font-weight:700">ID</th>
-                <th style="padding:8px;font-weight:700">Nombre</th>
-                <th style="padding:8px;font-weight:700">Apellido</th>
-                <th style="padding:8px;font-weight:700">Email</th>
-                <th style="padding:8px;font-weight:700">Rol</th>
-                <th style="padding:8px;font-weight:700">Área</th>
-                <th style="padding:8px;font-weight:700">Acciones</th>
-            </tr>`;
-            tbody.innerHTML = users.map(u=>{
+            const esc = (s)=> String(s ?? '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+            tbody.innerHTML = users.length ? users.map(u=>{
                 const area = u.area ? (u.area.nombre || '') : '';
-                const esc = (s)=> String(s ?? '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
                 const confirmText = `¿Eliminar usuario ${esc(u.nombre)} ${esc(u.apellido)}?`;
                 return `<tr>
-                    <td style="padding:8px;white-space:nowrap">${esc(u.id)}</td>
-                    <td style="padding:8px">${esc(u.nombre)}</td>
-                    <td style="padding:8px">${esc(u.apellido)}</td>
-                    <td style="padding:8px">${esc(u.email)}</td>
-                    <td style="padding:8px">${esc(u.rol)}</td>
-                    <td style="padding:8px">${esc(area)}</td>
-                    <td style="padding:8px;white-space:nowrap">
+                    <td class="u-id">${esc(u.id)}</td>
+                    <td class="u-nombre">${esc(u.nombre)}</td>
+                    <td class="u-apellido">${esc(u.apellido)}</td>
+                    <td class="u-email">${esc(u.email)}</td>
+                    <td class="u-rol">${esc(u.rol)}</td>
+                    <td class="u-area">${esc(area)}</td>
+                    <td class="u-actions">
                         <button class="btn-edit" data-id="${u.id}" type="button">Editar</button>
-                        <button type="button" class="btn-edit btn-delete" data-confirm="${confirmText}" data-confirm-type="delete" data-confirm-callback="confirmDeleteById" style="background:linear-gradient(90deg,#ef4444,#f97316);color:#fff;padding:6px 8px;border-radius:8px;border:0;">Eliminar</button>
+                        <button type="button" class="btn-delete" data-confirm="${confirmText}" data-confirm-type="delete" data-confirm-callback="confirmDeleteById">Eliminar</button>
                     </td>
                 </tr>`;
-            }).join('') || '<tr><td colspan="7" style="padding:12px">No hay usuarios</td></tr>';
+            }).join('') : '<tr><td colspan="7" style="padding:12px">No hay usuarios</td></tr>';
             document.querySelectorAll('#users-table .btn-edit[data-id]').forEach(btn=>{
                 btn.addEventListener('click', function(){
                     const id = this.dataset.id;
