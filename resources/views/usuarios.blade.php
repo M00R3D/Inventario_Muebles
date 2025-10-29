@@ -514,15 +514,19 @@ document.addEventListener('DOMContentLoaded', function(){
                 const area = u.area ? (u.area.nombre || '') : '';
                 const confirmText = `¿Eliminar usuario ${esc(u.nombre)} ${esc(u.apellido)}?`;
                 return `<tr>
-                    <td class="u-id">${esc(u.id)}</td>
+                        @if($isAdmin)
+                            <td class="u-id">${esc(u.id)}</td>
+                        @endif
                     <td class="u-nombre">${esc(u.nombre)}</td>
                     <td class="u-apellido">${esc(u.apellido)}</td>
                     <td class="u-email">${esc(u.email)}</td>
                     <td class="u-rol">${esc(u.rol)}</td>
                     <td class="u-area">${esc(area)}</td>
                     <td class="u-actions">
-                        <button class="btn-edit" data-id="${u.id}" type="button">Editar</button>
-                        <button type="button" class="btn-delete" data-confirm="${confirmText}" data-confirm-type="delete" data-confirm-callback="confirmDeleteById">Eliminar</button>
+                        @if($isAdmin)
+                            <button class="btn-edit" data-id="${u.id}" type="button">Editar</button>
+                            <button type="button" class="btn-delete" data-confirm="${confirmText}" data-confirm-type="delete" data-confirm-callback="confirmDeleteById">Eliminar</button>
+                        @endif
                     </td>
                 </tr>`;
             }).join('') : '<tr><td colspan="7" style="padding:12px">No hay usuarios</td></tr>';

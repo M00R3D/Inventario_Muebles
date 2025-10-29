@@ -11,6 +11,11 @@
 @section('title','Muebles | Inventario Muebles')
 
 @section('content')
+@php
+    $current = null;
+    if (session()->has('usuario_id')) {$current = \App\Models\Usuario::find(session('usuario_id'));}
+    $isAdmin = $current && ($current->rol === 'admin');
+@endphp
 <style>
 :root{ --bg:#f8fafc; --card:#fff; --muted:#6b7280; --accent1:#6366f1; --accent2:#06b6d4; }
 .container{max-width:1200px;margin:0 auto;padding:18px;}
@@ -453,12 +458,12 @@ document.addEventListener('DOMContentLoaded', function(){
   });
 
   document.querySelectorAll('.btn-edit').forEach(btn=>{
-    btn.addEventListener('click', function(){
-      try {
-        const m = JSON.parse(this.getAttribute('data-mueble'));
-        openEdit(m);
-      } catch(e){ console.error(e); alert('Datos inválidos'); }
-    });
+    // btn.addEventListener('click', function(){
+    //   try {
+    //     const m = JSON.parse(this.getAttribute('data-mueble'));
+    //     openEdit(m);
+    //   } catch(e){ console.error(e); alert('Datos inválidos'); }
+    // });
   });
   document.addEventListener('click', function(e){
     const a = e.target.closest('.read-more');
