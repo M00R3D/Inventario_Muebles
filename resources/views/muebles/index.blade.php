@@ -15,51 +15,93 @@
 :root{ --bg:#f8fafc; --card:#fff; --muted:#6b7280; --accent1:#6366f1; --accent2:#06b6d4; }
 .container{max-width:1200px;margin:0 auto;padding:18px;}
 .header-hero{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
-.header-hero h1{margin:0;font-size:1.25rem}
+.header-hero h1{margin:0;font-size:3.25rem}
 .grid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap:18px; }
-.card{ background:var(--card); border-radius:12px; padding:14px; box-shadow:0 12px 34px rgba(2,6,23,0.08); display:flex; flex-direction:column; gap:12px; }
-.modal-card{ transition: transform .28s cubic-bezier(.16,.84,.44,1), opacity .28s ease, max-height .28s ease, padding .28s ease; transform-origin: top center; opacity:1; }
-.modal-card.collapsed{ transform:scaleY(.98); opacity:0; max-height:0; padding-top:0; padding-bottom:0; overflow:hidden; }
-#confirm-overlay{ display:none; }
 
-.estado-badge{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  padding:4px 10px;
-  border-radius:999px;
-  font-size:0.78rem;
-  font-weight:700;
-  min-width:64px;
-  text-align:center;
-  box-shadow:0 2px 6px rgba(2,6,23,0.06);
-}
+.card{ background:var(--card); border-radius:12px; padding:14px; box-shadow:0 12px 34px rgba(2,6,23,0.08); display:flex; flex-direction:column; gap:12px; min-height:220px; }
+.card-inner{ display:flex; flex-direction:column; gap:12px; align-items:stretch; }
+.card-media{ width:100%; display:flex; align-items:center; justify-content:center; background:#f8fafc; border-radius:8px; padding:6px; max-height:240px; overflow:hidden; }
+.card-media img{ max-width:100%; height:auto; max-height:200px; object-fit:contain; border-radius:6px; box-shadow:0 6px 18px rgba(2,6,23,0.06); }
+
+.preview-wrapper img { display:block; max-width:320px; max-height:180px; width:auto; height:auto; object-fit:contain; border-radius:6px; }
+
+.card-info{ flex:1 1 auto; display:flex; flex-direction:column; gap:8px; }
+.card-top{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.card-title{ font-weight:800; font-size:1rem; color:#111; max-width:60%; word-break:break-word; }
+.card-desc{ color:var(--muted); font-size:0.95rem; line-height:1.25; }
+.card-meta{ display:flex; gap:12px; align-items:center; margin-top:6px; color:var(--muted); font-size:0.9rem; }
+
+.mueble-nota{ display:flex; flex-wrap:wrap; white-space:normal; word-break:break-word; overflow-wrap:break-word; max-width:100%; margin-top:6px; font-size:0.9rem; color:#374151; background:#f8fafc; padding:6px 8px; border-radius:8px; }
+
+.card-actions{ display:flex;gap:50%;  justify-content:flex-start; align-items:center; margin-top:auto; }
+
+.estado-badge{ display:inline-flex; align-items:center; justify-content:center; padding:4px 10px; border-radius:999px; font-size:0.78rem; font-weight:700; min-width:94px; text-align:center; box-shadow:0 2px 6px rgba(2,6,23,0.06); }
 .estado-bueno{ background:#10b981; color:#ffffff; }    
 .estado-regular{ background:#f59e0b; color:#0b0b0b; }  
 .estado-malo{ background:#ef4444; color:#ffffff; }     
 .estado-en_reparacion{ background:#6366f1; color:#ffffff; } 
 
-.preview-wrapper{
-  display:flex;
+.btn-base{
+  color:#fff;
+  padding:8px 12px;
+  border-radius:8px;
+  border:0;
+  font-weight:800;
+  cursor:pointer;
+  box-shadow:0 8px 20px rgba(2,6,23,0.06);
+  transition: transform .12s ease, box-shadow .12s ease;
+  display:inline-flex;
   align-items:center;
   justify-content:center;
-  background:#f8fafc;
+  gap:8px;
+}
+.btn-base:hover{ transform: translateY(-3px); }
+.btn-base:active{ transform: translateY(-1px); }
+.btn-base:focus{ outline:3px solid rgba(99,102,241,0.12); outline-offset:2px; }
+
+.btn-new, .btn-save { background: linear-gradient(90deg,var(--accent1),var(--accent2)); color:#fff; }
+.btn-clear, .btn-cancel { background: linear-gradient(90deg,#ef4444,#f97316); color:#fff; }
+
+.btn-save, .btn-cancel {
+  padding:8px 12px;
   border-radius:8px;
-  padding:6px;
-  max-height:180px;      /* adjust if you want larger preview */
-  overflow:hidden;
+  border:0;
+  font-weight:800;
+  cursor:pointer;
+  box-shadow:0 8px 20px rgba(99,102,241,0.08);
+  transition: transform .12s ease, box-shadow .12s ease;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
 }
-#ruta-preview{
-  display:block;
-  width:100%;
-  max-width:320px;      /* max width inside preview box */
-  max-height:160px;     /* keeps modal compact */
-  object-fit:contain;   /* ensure full image fits inside */
-  border-radius:6px;
-  box-shadow:0 6px 18px rgba(2,6,23,0.06);
+.btn-save:hover, .btn-cancel:hover{ transform: translateY(-3px); }
+.btn-save:active, .btn-cancel:active{ transform: translateY(-1px); }
+.btn-save:focus, .btn-cancel:focus{ outline:3px solid rgba(99,102,241,0.12); outline-offset:2px; }
+
+.btn-new, .btn-save { background: linear-gradient(90deg,var(--accent1),var(--accent2)); }
+.btn-clear, .btn-cancel { background: linear-gradient(90deg,#ef4444,#f97316); }
+
+.btn-clear.light {
+  background:transparent;color:#ef4444;border:1px solid #ef4444;font-weight:700;
 }
-/* ensure modal doesn't forcibly crop the preview box (override if needed) */
-#user-form-card .preview-wrapper{ overflow:visible; }
+
+.btn-edit{ background: linear-gradient(90deg,var(--accent1),var(--accent2)); color:#fff; padding:8px 10px; border-radius:8px; border:0; font-weight:700; cursor:pointer; box-shadow:0 8px 20px rgba(99,102,241,0.08); transition: transform .12s ease; }
+.btn-edit:hover{ transform: translateY(-3px); }
+.btn-edit:active{ transform: translateY(-1px); }
+.btn-edit:focus{ outline:3px solid rgba(99,102,241,0.12); }
+.btn-delete{ background: linear-gradient(90deg,#810a0aff,#d63867ff); color:#fff; padding:8px 10px; border-radius:8px; border:0; font-weight:700; cursor:pointer; box-shadow:0 8px 20px rgba(99,102,241,0.08); transition: transform .12s ease; }
+.btn-delete:hover{ transform: translateY(-3px); }
+.btn-delete:active{ transform: translateY(-1px); }
+.btn-delete:focus{ outline:3px solid rgba(99,102,241,0.12); }
+.read-more{ margin-left:8px; color:#06b6d4; font-weight:700; text-decoration:none; }
+
+@media (max-width:700px){
+  .card-inner{ flex-direction:column; }
+  .card-media{ width:100%; max-height:240px; }
+  .card-top{ flex-direction:row; gap:8px; }
+  .card-actions{ justify-content:flex-start; }
+}
 </style>
 
 <div class="container">
@@ -75,7 +117,7 @@
 
     <div style="display:flex;gap:8px;align-items:center">
       @if(!empty($isAdmin) && $isAdmin)
-        <button id="btn-new" class="btn" type="button" style="background:linear-gradient(90deg,var(--accent1),var(--accent2));color:#fff;padding:8px 12px;border-radius:10px;border:0;cursor:pointer;font-weight:800">Nuevo mueble</button>
+        <button id="btn-new" class="btn-base btn-new" type="button">Nuevo mueble</button>
       @endif
     </div>
   </div>
@@ -120,8 +162,8 @@
     </div>
 
     <div style="display:flex;gap:8px;">
-      <button type="submit" style="background:#06b6d4;color:#fff;padding:8px 12px;border-radius:8px;border:0;cursor:pointer;font-weight:700;">Buscar</button>
-      <button type="button" id="btn-clear" style="background:#ef4444;color:#fff;padding:8px 12px;border-radius:8px;border:0;cursor:pointer;font-weight:700;">Limpiar</button>
+      <button type="submit" class="btn-base btn-save">Buscar</button>
+      <button type="button" id="btn-clear" class="btn-base btn-clear">Limpiar</button>
     </div>
   </form>
 
@@ -192,7 +234,6 @@
           <div style="min-width:120px;text-align:center;">
             <label>Preview</label>
             <div style="margin-top:6px;">
-                <!-- added preview image element -->
                 <div class="preview-wrapper">
                     <img id="ruta-preview" src="{{ url('/imgs/default.webp') }}" alt="Preview" />
                 </div>
@@ -203,8 +244,8 @@
       </div>
 
       <div style="display:flex;gap:8px;margin-top:12px;">
-        <button type="submit" id="btn-save" style="background:#06b6d4;color:#fff;padding:8px 12px;border-radius:8px;border:0;cursor:pointer;">Guardar</button>
-        <button id="btn-cancel" type="button" style="background:#ef4444;color:#fff;padding:8px 12px;border-radius:8px;border:0;cursor:pointer;">Cancelar</button>
+        <button type="submit" id="btn-save" class="btn-base btn-save">Guardar</button>
+        <button id="btn-cancel" type="button" class="btn-base btn-cancel">Cancelar</button>
       </div>
     </form>
   </div>
@@ -215,80 +256,70 @@
     <div class="grid" role="list">
       @foreach($muebles as $m)
         <article class="card" role="listitem" aria-labelledby="mueble-{{ $m->id }}">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-            <div style="max-width:100%;height:auto;">
-             @if($m->ruta_img)
-               <img src="<?php echo e(asset($m->ruta_img ?? 'imgs/default.webp')); ?>" alt="Imagen mueble" style="max-width:100%;height:auto;border-radius:6px;">
-             @else
-               <div style="max-width:100%;height:auto;background:linear-gradient(180deg,#f3f4f6,#e5e7eb);display:flex;align-items:center;justify-content:center;border-radius:8px;color:#9ca3af;margin-bottom:8px;">
-                 Sin imagen
-               </div>
-             @endif
-              <div style="display:flex;align-items:center;gap:10px;">
-                <div style="font-weight:800">{{ $m->codigo ?? 'ID '.$m->id }}</div>
+          <div class="card-inner">
+            <div class="card-media">
+              @if($m->ruta_img)
+                <img src="{{ asset($m->ruta_img ?? 'imgs/default.webp') }}" alt="Imagen mueble">
+              @else
+                <div style="background:linear-gradient(180deg,#f3f4f6,#e5e7eb);display:flex;align-items:center;justify-content:center;border-radius:8px;color:#9ca3af;padding:18px;">
+                  Sin imagen
+                </div>
+              @endif
+            </div>
+
+            <div class="card-info">
+              <div class="card-top">
+                <div class="card-title">{{ $m->codigo ?? 'ID '.$m->id }}</div>
                 <?php $estadoClass = 'estado-'.($m->estado ?? ''); ?>
-                <span class="estado-badge <?php echo e($estadoClass); ?>">
-                  <?php echo e(ucfirst(str_replace('_',' ', $m->estado ?? '-'))); ?>
-                </span>
+                <span class="estado-badge {{ $estadoClass }}">{{ ucfirst(str_replace('_',' ', $m->estado ?? '-')) }}</span>
               </div>
-              <div style="color:var(--muted)">{{ \Illuminate\Support\Str::limit($m->descripcion ?? '-', 120) }}</div>
-              <div style="color:var(--muted);font-size:0.95rem;">
-                <?php
+
+              <div class="card-desc">
+                @php
                   $full = trim($m->descripcion ?? '');
                   if (preg_match('/\R/', $full)) {
-                    $parts = preg_split('/\R+/', $full);
-                    $firstPara = trim($parts[0] ?? '');
-                    $rest = trim(implode("\n\n", array_slice($parts, 1)));
-                    $showRead = $rest !== '';
+                      $parts = preg_split('/\R+/', $full);
+                      $firstPara = trim($parts[0] ?? '');
+                      $rest = trim(implode("\n\n", array_slice($parts, 1)));
+                      $showRead = $rest !== '';
                   } else {
-                    $firstPara = \Illuminate\Support\Str::limit($full, 160);
-                    $rest = $full;
-                    $showRead = strlen($full) > strlen($firstPara);
+                      $firstPara = \Illuminate\Support\Str::limit($full, 160);
+                      $rest = $full;
+                      $showRead = strlen($full) > strlen($firstPara);
                   }
-                ?>
-                <?php if($showRead): ?>
-                  <span class="desc-ellipsis">…</span>
-                  <a href="#" class="read-more" data-full="<?php echo e($rest); ?>" style="margin-left:8px;color:#06b6d4;font-weight:700;text-decoration:none;">Leer más</a>
-                <?php endif; ?>
-                <span class="desc-full" style="display:none;"><?php echo e($rest); ?></span>
-               </div>
-               <div style="margin-top:8px;font-weight:700">${{ number_format($m->monto_unitario ?? 0, 2, ',', '.') }}</div>
-               <div style="font-size:0.86rem;color:var(--muted)">{{ $m->usuario->nombre ?? '-' }} {{ $m->usuario->apellido ?? '' }}</div>
-               <?php $nota = trim($m->nota ?? ''); ?>
-               <?php if($nota): ?>
-                <span class="mueble-nota" style="
-                  display:flex;
-                  flex-wrap:wrap;
-                  white-space:normal;
-                  word-break:break-word;
-                  overflow-wrap:break-word;
-                  max-width:100%;
-                  margin-top:6px;
-                  font-size:0.9rem;
-                  color:#374151;
-                  background:#f8fafc;
-                  padding:6px 8px;
-                  border-radius:8px;
-                ">
-                  <?php echo e(\Illuminate\Support\Str::limit($nota, 120)); ?>
-                </span>
-               <?php endif; ?>
-             </div>
-             <div style="display:flex;flex-direction:column;gap:8px;">
-                    @if(!empty($isAdmin) && $isAdmin)
-                      <button type="button" class="btn-edit" data-mueble='@json($m)' style="background:#06b6d4;color:#fff;padding:8px;border-radius:8px;border:0;cursor:pointer;">Editar</button>
-                      <form action="{{ url('/muebles/'.$m->id) }}" method="POST" style="margin:0;">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" data-confirm="¿Eliminar mueble {{ addslashes($m->codigo ?? 'ID '.$m->id) }}?" style="background:linear-gradient(90deg,#ef4444,#f97316);color:#fff;padding:8px;border-radius:8px;border:none;cursor:pointer;" data-confirm-type="delete">Eliminar</button>
-                      </form>
-                    @else
-                      <a href="{{ url('/solicitudes/create') }}?mueble_id={{ $m->id }}" style="display:inline-block;text-align:center;background:#06b6d4;color:#fff;padding:8px 12px;border-radius:8px;text-decoration:none;font-weight:700;">Solicitar</a>
-                    @endif
-                  </div>
-                </div>
-              </article>
-            @endforeach
+                @endphp
+                <div class="desc-short">{{ \Illuminate\Support\Str::limit($m->descripcion ?? '-', 120) }}</div>
+                @if($showRead)
+                  <a href="#" class="read-more" data-full="{{ $rest }}">Leer más</a>
+                @endif
+                <div class="desc-full" style="display:none;">{{ $rest }}</div>
+              </div>
+
+              <div class="card-meta">
+                <div class="card-price">${{ number_format($m->monto_unitario ?? 0, 2, ',', '.') }}</div>
+                <div class="card-owner">{{ $m->usuario->nombre ?? '-' }} {{ $m->usuario->apellido ?? '' }}</div>
+              </div>
+
+              @php $nota = trim($m->nota ?? '') @endphp
+              @if($nota)
+                <div class="mueble-nota">{{ \Illuminate\Support\Str::limit($nota, 120) }}</div>
+              @endif
+            </div>
+          </div>
+          <div class="card-actions">
+            @if(!empty($isAdmin) && $isAdmin)
+              <button type="button" class="btn-edit" data-mueble='@json($m)'>Editar</button>
+              <form action="{{ url('/muebles/'.$m->id) }}" method="POST" style="margin:0;">
+                @csrf
+                @method('DELETE')
+                <button type="submit" data-confirm="¿Eliminar mueble {{ addslashes($m->codigo ?? 'ID '.$m->id) }}?" class="btn-delete" data-confirm-type="delete">Eliminar</button>
+              </form>
+            @else
+              <a href="{{ url('/solicitudes/create') }}?mueble_id={{ $m->id }}" class="btn-edit" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center;">Solicitar</a>
+            @endif
+          </div>
+        </article>
+         @endforeach
     </div>
   @endif
 </div>
@@ -418,13 +449,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
   if (btnNew) btnNew.addEventListener('click', openCreate);
   if (btnCancel) btnCancel.addEventListener('click', function(){
-    card.classList.add('collapsed');
-    card.addEventListener('transitionend', function handler(){
-      card.style.display = 'none';
-      card.classList.remove('collapsed');
-      showPageForModal();
-      card.removeEventListener('transitionend', handler);
-    });
+    window.location.href = "{{ url('/muebles') }}";
   });
 
   document.querySelectorAll('.btn-edit').forEach(btn=>{
