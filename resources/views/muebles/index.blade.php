@@ -349,6 +349,138 @@ document.addEventListener('DOMContentLoaded', function(){
   const rutaInput = document.getElementById('f-ruta-img');
   const preview = document.getElementById('ruta-preview');
   const baseUrl = "{{ url('/') }}";
+  const API_BASE = "{{ url('/muebles') }}";
+  const STORAGE_KEY = 'muebles_filters_v1';
+
+  function readFiltersFromForm() {
+    const f = document.getElementById('filters');
+    if (!f) return {};
+    const data = {};
+    Array.from(f.elements).forEach(el=>{
+      if (!el.name) return;
+      if (el.type === 'checkbox') data[el.name] = el.checked;
+      else data[el.name] = el.value ?? '';
+    });
+    return data;
+  }
+
+  function applyFiltersToForm(filters = {}) {
+    const f = document.getElementById('filters');
+    if (!f) return;
+    Object.keys(filters).forEach(k=>{
+      const el = f.elements.namedItem(k);
+      if (!el) return;
+      try {
+        if (el.type === 'checkbox') el.checked = !!filters[k];
+        else el.value = filters[k];
+      } catch(e){}
+    });
+  }
+
+  async function fetchAndRenderMuebles(filters = {}) {
+    const grid = document.querySelector('.grid');
+    if (!grid) return;
+    const params = new URLSearchParams();
+    Object.entries(filters).forEach(([k,v])=>{
+      if (v === null || v === undefined) return;
+      const s = String(v).trim();
+      if (s.length === 0) return;
+      params.set(k, s);
+    });
+    const url = API_BASE + (params.toString() ? ('?' + params.toString()) : '');
+    try {
+      const resp = await fetch(url, {
+        credentials: 'same-origin',
+        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+      });
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      const items = await resp.json();
+      const esc = s => String(s ?? '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      grid.innerHTML = items.length ? items.map(m => {
+        const imgUrl = m.ruta_img ? (`${baseUrl}/${esc(m.ruta_img)}`) : (`${baseUrl}/imgs/default.webp`);
+        const nota = m.nota ? `<div class="mueble-nota">${esc(m.nota)}</div>` : '';
+        const usuario = m.usuario ? esc((m.usuario.nombre||'') + ' ' + (m.usuario.apellido||'')) : '';
+        return `<article class="card" role="listitem" aria-labelledby="mueble-${esc(m.id)}">
+            <div class="card-inner">
+              <div class="card-media"><img src="${imgUrl}" alt="${esc(m.codigo||'')}" /></div>
+              <div class="card-info">
+                <div class="card-top">
+                  <div class="card-title">${esc(m.codigo || ('ID ' + m.id))}</div>
+                  <span class="estado-badge estado-${esc(m.estado || '')}">${esc((m.estado || '').replace('_',' '))}</span>
+                </div>
+                <div class="card-desc">${esc(m.descripcion || '-')}</div>
+                ${nota}
+                <div class="card-meta">
+                  <div class="card-price">${m.monto_unitario ? ('$' + Number(m.monto_unitario).toFixed(2)) : ''}</div>
+                  <div class="card-owner">${usuario}</div>
+                </div>
+              </div>
+            </div>
+            <div class="card-actions">
+              ${ {!! !empty($isAdmin) && $isAdmin ? 'true' : 'false' !!} ? `<button type="button" class="btn-base btn-edit" data-mueble='${esc(JSON.stringify(m))}'>Editar</button>
+                <button type="button" class="btn-base btn-delete" data-id="${esc(m.id)}" data-confirm="¿Eliminar mueble ${esc(m.codigo || ('ID ' + m.id))}?" data-confirm-type="delete" data-confirm-callback="confirmDeleteById">Eliminar</button>` : `<a class="btn-base btn-new" href="${baseUrl}/solicitudes/create?mueble_id=${m.id}">Solicitar</a>` }
+            </div>
+          </article>`;
+      }).join('') : '<div class="card">No hay muebles</div>';
+
+      document.querySelectorAll('.btn-edit[data-mueble]').forEach(btn=>{
+        btn.addEventListener('click', function(){
+          try { const obj = JSON.parse(this.getAttribute('data-mueble')); openEdit(obj); } catch(e){ console.error(e); }
+        });
+      });
+      document.querySelectorAll('.btn-delete[data-id]').forEach(btn=>{
+        btn.addEventListener('click', function(evt){
+          evt.preventDefault(); evt.stopPropagation();
+          if (typeof window.showConfirmFor === 'function') { window.showConfirmFor(this); return; }
+          if (!confirm(this.getAttribute('data-confirm'))) return;
+          window.confirmDeleteById && window.confirmDeleteById(this);
+        });
+      });
+    } catch (err) {
+      console.error('Error cargando muebles:', err);
+      grid.innerHTML = '<div class="card">Error cargando muebles</div>';
+    }
+  }
+
+  (function wireFilters(){
+    const f = document.getElementById('filters');
+    if (!f) return;
+    f.addEventListener('submit', function(evt){
+      evt.preventDefault();
+      const filters = readFiltersFromForm();
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(filters)); } catch(e){}
+      if (typeof fetchAndRenderMuebles === 'function') fetchAndRenderMuebles(filters);
+      if (window.history && history.replaceState) history.replaceState(null, '', '/muebles');
+    });
+
+    const btnClear = document.getElementById('btn-clear');
+    if (btnClear) {
+      btnClear.addEventListener('click', function(evt){
+        evt.preventDefault();
+        const ff = document.getElementById('filters');
+        if (ff) {
+          ff.querySelectorAll('input,select').forEach(i=>{
+            if (i.type === 'checkbox' || i.type === 'radio') i.checked = false;
+            else if (i.type !== 'submit' && i.type !== 'button') i.value = '';
+          });
+        }
+        try { localStorage.removeItem(STORAGE_KEY); } catch(e){}
+        if (typeof fetchAndRenderMuebles === 'function') fetchAndRenderMuebles({});
+        if (window.history && history.replaceState) history.replaceState(null,'','/muebles');
+      });
+    }
+
+    try {
+      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      if (stored && Object.keys(stored).length > 0) {
+        applyFiltersToForm(stored);
+        fetchAndRenderMuebles(stored);
+        if (window.history && history.replaceState) history.replaceState(null, '', '/muebles');
+        return;
+      }
+    } catch(e){}
+    fetchAndRenderMuebles({});
+  })();
 
   async function loadFilesForFolder(folder){
     fileSelect.innerHTML = '<option value="">Cargando…</option>';
@@ -457,14 +589,7 @@ document.addEventListener('DOMContentLoaded', function(){
     window.location.href = "{{ url('/muebles') }}";
   });
 
-  document.querySelectorAll('.btn-edit').forEach(btn=>{
-    // btn.addEventListener('click', function(){
-    //   try {
-    //     const m = JSON.parse(this.getAttribute('data-mueble'));
-    //     openEdit(m);
-    //   } catch(e){ console.error(e); alert('Datos inválidos'); }
-    // });
-  });
+  document.querySelectorAll('.btn-edit').forEach(btn=>{  });
   document.addEventListener('click', function(e){
     const a = e.target.closest('.read-more');
     if(!a) return;
@@ -537,10 +662,21 @@ document.addEventListener('DOMContentLoaded', function(){
   }
 
   const btnClear = document.getElementById('btn-clear');
-  if (btnClear) btnClear.addEventListener('click', function(){
-    document.getElementById('filters').querySelectorAll('input,select').forEach(i=> i.value = '');
-    document.getElementById('filters').submit();
-  });
+  if (btnClear) {
+    btnClear.addEventListener('click', function(evt){
+      evt.preventDefault();
+      const ff = document.getElementById('filters');
+      if (ff) {
+        ff.querySelectorAll('input,select').forEach(i=>{
+          if (i.type === 'checkbox' || i.type === 'radio') i.checked = false;
+          else if (i.type !== 'submit' && i.type !== 'button') i.value = '';
+        });
+      }
+      try { localStorage.removeItem(STORAGE_KEY); } catch(e){}
+      if (typeof fetchAndRenderMuebles === 'function') fetchAndRenderMuebles({});
+      if (window.history && history.replaceState) history.replaceState(null,'','/muebles');
+    });
+  }
 });
 </script>
 @endsection
