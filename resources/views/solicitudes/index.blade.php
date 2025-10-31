@@ -53,7 +53,10 @@
       <div class="card-wide" style="margin-bottom:12px;">
         <div style="display:flex;justify-content:space-between;align-items:center;">
           <h2 style="margin:0;font-size:1.05rem">Lista de solicitudes</h2>
-          <button id="btn-new" style="background:#06b6d4;color:#fff;padding:8px 12px;border-radius:8px;border:0;cursor:pointer;">Nueva solicitud</button>
+          @if($isAdmin)
+            <div style="font-size:0.85rem;color:#6b7280;">(Administración)</div>
+            <button id="btn-new" style="background:#06b6d4;color:#fff;padding:8px 12px;border-radius:8px;border:0;cursor:pointer;">Nueva solicitud</button>
+          @endif
         </div>
 
         <form id="sol-filters" method="GET" action="{{ url('/solicitudes') }}" style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
@@ -92,7 +95,7 @@
         <div style="margin-top:12px;overflow:auto;">
           <table class="table" aria-label="Solicitudes">
             <thead>
-              <tr><th>ID</th><th>Mueble</th><th>Solicitante</th><th>Periodo</th><th>Estado</th><th>Acciones</th></tr>
+              <tr><th>ID</th><th>Mueble</th>@if($isAdmin)<th>Solicitante</th>@endif<th>Periodo</th><th>Estado</th>@if($isAdmin)<th>Acciones</th>@endif</tr>
             </thead>
             <tbody>
               @forelse($solicitudes as $s)
@@ -113,14 +116,16 @@
                       </div>
                     </div>
                   </td>
+                  @if($isAdmin)
                    <td>{{ $s->usuario->nombre ?? '-' }} {{ $s->usuario->apellido ?? '' }}</td>
+                   @endif
                    <td>{{ $s->fecha_inicio ?? '-' }} → {{ $s->fecha_fin ?? '-' }}</td>
                    <td>
                     @php $cls = 'badge-'.($s->estado ?? 'pendiente'); @endphp
                     <span class="badge {{ $cls }}">{{ ucfirst($s->estado) }}</span>
                   </td>
+                  @if($isAdmin)
                   <td style="white-space:nowrap">
-                    @if($isAdmin)
                       <button type="button" class="btn-edit" data-solicitud='@json($s)' style="margin-right:6px;">Editar</button>
 
                       <form action="{{ route('solicitudes.changeEstado', $s->id) }}" method="POST" style="display:inline;margin-right:6px;">
@@ -147,8 +152,8 @@
                       </form>
                     @else
                       <span style="color:#6b7280;font-weight:700;">-</span>
+                    </td>
                     @endif
-                  </td>
                 </tr>
               @empty
                 <tr><td colspan="6">No hay solicitudes aún.</td></tr>
