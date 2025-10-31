@@ -5,7 +5,10 @@
 @section('content')
 <div style="max-width:900px;margin:18px auto;padding:12px;">
   <h1>Crear solicitud</h1>
-
+  @php
+    $currentUser = $currentUser ?? (session()->has('usuario_id') ? \App\Models\Usuario::find(session('usuario_id')) : null);
+    $isAdmin = $isAdmin ?? ($currentUser && ($currentUser->rol === 'admin'));
+  @endphp
   <div style="background:#fff;padding:12px;border-radius:10px;box-shadow:0 12px 34px rgba(2,6,23,0.06);">
     <form id="create-sol-form" method="POST" action="{{ url('/solicitudes') }}">
       @csrf
@@ -59,19 +62,23 @@
 
           <label style="margin-top:8px;">Nota</label>
           <textarea name="nota" rows="4" style="width:100%;padding:8px;border-radius:8px;border:1px solid #e5e7eb;"></textarea>
-
-          <label style="margin-top:8px;">Estado</label>
-          @if(!empty($currentUser) && ($currentUser->rol ?? '') !== 'admin')
-            <input type="hidden" name="estado" value="pendiente">
-            <div style="padding:8px;border-radius:8px;border:1px solid #e5e7eb;background:#fff9ed;font-weight:700;color:#92400e;">Pendiente (automático)</div>
-          @else
+          @if($isAdmin)
+            <label style="margin-top:8px;">Estado</label>
+              <input type="hidden" name="estado" value="pendiente">
+              <div style="padding:8px;border-radius:8px;border:1px solid #e5e7eb;background:#fff9ed;font-weight:700;color:#92400e;">Pendiente (automático)</div>
+          @endif
+          @if(!($isAdmin))
+            <label style="margin-top:8px;">Estado</label>
+              <input type="hidden" name="estado" value="pendiente">
+              <div style="padding:8px;border-radius:8px;border:1px solid #e5e7eb;background:#fff9ed;font-weight:700;color:#92400e;">Tu solicitud estará pendiente hasta que un administrador la apruebe</div>
+          @endif
+          @if($isAdmin)
             <select name="estado" required style="width:100%;padding:8px;border-radius:8px;border:1px solid #e5e7eb;margin-bottom:12px;">
               <option value="pendiente">Pendiente</option>
               <option value="aprobada">Aprobada</option>
               <option value="rechazada">Rechazada</option>
             </select>
           @endif
-
           <div style="display:flex;gap:8px;">
             <button type="submit" style="background:#06b6d4;color:#fff;padding:8px 12px;border-radius:8px;border:0;cursor:pointer;">Crear solicitud</button>
             <a href="{{ url('/muebles') }}" style="background:#ef4444;color:#fff;padding:8px 12px;border-radius:8px;border:0;display:inline-flex;align-items:center;justify-content:center;text-decoration:none;">Cancelar</a>
@@ -131,7 +138,6 @@ document.addEventListener('DOMContentLoaded', function(){
     return d.toISOString().slice(0,10);
   }
 
-  /* helper: tiny floating notification */
   function showToast(msg, type = 'info', timeout = 2500) {
     let container = document.getElementById('float-notifs');
     if (!container) {

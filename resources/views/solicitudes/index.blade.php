@@ -34,6 +34,84 @@
 .btn-edit:hover{ transform: translateY(-3px); }
 .btn-edit:active{ transform: translateY(-1px); }
 .btn-edit:focus{ outline:3px solid rgba(99,102,241,0.12); outline-offset:2px; }
+
+.btn-new-soli{
+  background: linear-gradient(90deg,#6366f1,#7364f5ff);
+  color: #ffffffff;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 0;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 10px 28px rgba(99,102,241,0.10);
+  transition: transform .12s ease, box-shadow .12s ease, opacity .12s ease;
+}
+.btn-new-soli:hover{ transform: translateY(-3px); }
+.btn-new-soli:active{ transform: translateY(-1px); }
+.btn-new-soli:focus{ outline:3px solid rgba(99,102,241,0.12); outline-offset:2px; }
+
+
+.btn-delete{
+  background: linear-gradient(90deg,#810a0aff,#d63867ff);
+  color: #fff;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 0;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 10px 28px rgba(99,102,241,0.10);
+  transition: transform .12s ease, box-shadow .12s ease, opacity .12s ease;
+}
+.btn-delete:hover{ transform: translateY(-3px); }
+.btn-delete:active{ transform: translateY(-1px); }
+.btn-delete:focus{ outline:3px solid rgba(99,102,241,0.12); outline-offset:2px; }
+
+.btn-aprobar{
+  background: linear-gradient(90deg,#10b981,#17743eff);
+  color: #fff;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 0;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 10px 28px rgba(99,102,241,0.10);
+  transition: transform .12s ease, box-shadow .12s ease, opacity .12s ease;
+}
+.btn-aprobar:hover{ transform: translateY(-3px); }
+.btn-aprobar:active{ transform: translateY(-1px); }
+.btn-aprobar:focus{ outline:3px solid rgba(99,102,241,0.12); outline-offset:2px; }
+
+.btn-pendiente{
+  background: linear-gradient(90deg,#f59e0b,#f5900bff);
+  color: #000000ff;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 0;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 10px 28px rgba(99,102,241,0.10);
+  transition: transform .12s ease, box-shadow .12s ease, opacity .12s ease;
+}
+.btn-pendiente:hover{ transform: translateY(-3px); }
+.btn-pendiente:active{ transform: translateY(-1px); }
+.btn-pendiente:focus{ outline:3px solid rgba(99,102,241,0.12); outline-offset:2px; }
+
+.btn-cancel{
+  background: linear-gradient(90deg,#ef4444,#5c1313ff);
+  color: #ffffffff;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 0;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 10px 28px rgba(99,102,241,0.10);
+  transition: transform .12s ease, box-shadow .12s ease, opacity .12s ease;
+}
+.btn-cancel:hover{ transform: translateY(-3px); }
+.btn-cancel:active{ transform: translateY(-1px); }
+.btn-cancel:focus{ outline:3px solid rgba(99,102,241,0.12); outline-offset:2px; }
+
+
 </style>
 
 <div class="container">
@@ -55,7 +133,7 @@
           <h2 style="margin:0;font-size:1.05rem">Lista de solicitudes</h2>
           @if($isAdmin)
             <div style="font-size:0.85rem;color:#6b7280;">(Administración)</div>
-            <button id="btn-new" style="background:#06b6d4;color:#fff;padding:8px 12px;border-radius:8px;border:0;cursor:pointer;">Nueva solicitud</button>
+            <button id="btn-new"  class="btn-new-soli">Nueva solicitud</button>
           @endif
         </div>
 
@@ -87,8 +165,8 @@
             </div>
           </div>
           <div style="display:flex;gap:8px;">
-            <button type="submit" style="background:#06b6d4;color:#fff;padding:8px 12px;border-radius:8px;border:0;cursor:pointer;">Aplicar</button>
-            <button type="button" id="sol-clear-filters" style="background:#ef4444;color:#fff;padding:8px 12px;border-radius:8px;border:0;cursor:pointer;">Limpiar</button>
+            <button type="submit" class="btn-new-soli">Aplicar</button>
+            <button type="button" id="sol-clear-filters" class="btn-delete">Limpiar</button>
           </div>
         </form>
 
@@ -131,24 +209,24 @@
                       <form action="{{ route('solicitudes.changeEstado', $s->id) }}" method="POST" style="display:inline;margin-right:6px;">
                         @csrf
                         <input type="hidden" name="estado" value="aprobada">
-                        <button type="submit" title="Aprobar" style="background:#10b981;color:#fff;padding:6px 8px;border-radius:8px;border:0;">Aprobar</button>
+                        <button type="submit" title="Aprobar" class="btn-aprobar">Aprobar</button>
                       </form>
 
                       <form action="{{ route('solicitudes.changeEstado', $s->id) }}" method="POST" style="display:inline;margin-right:6px;">
                         @csrf
                         <input type="hidden" name="estado" value="pendiente">
-                        <button type="submit" title="Poner pendiente" style="background:#f59e0b;color:#111;padding:6px 8px;border-radius:8px;border:0;">Pendiente</button>
+                        <button type="submit" title="Poner pendiente" class="btn-pendiente">Pendiente</button>
                       </form>
 
                       <form action="{{ route('solicitudes.changeEstado', $s->id) }}" method="POST" style="display:inline;margin-right:6px;">
                         @csrf
                         <input type="hidden" name="estado" value="rechazada">
-                        <button type="submit" title="Rechazar" style="background:#ef4444;color:#fff;padding:6px 8px;border-radius:8px;border:0;">Rechazar</button>
+                        <button type="submit" title="Rechazar" class="btn-cancel">Rechazar</button>
                       </form>
 
                       <form action="{{ url('/solicitudes/'.$s->id) }}" method="POST" style="display:inline;">
                         @csrf @method('DELETE')
-                        <button type="submit" data-confirm="¿Eliminar solicitud #{{ $s->id }}?" data-confirm-type="delete" style="background:linear-gradient(90deg,#ef4444,#f97316);color:#fff;padding:6px 8px;border-radius:8px;border:0;" data-confirm-type="delete">Eliminar</button>
+                        <button type="submit" data-confirm="¿Eliminar solicitud #{{ $s->id }}?" data-confirm-type="delete" class="btn-delete" data-confirm-type="delete">Eliminar</button>
                       </form>
                     @else
                       <span style="color:#6b7280;font-weight:700;">-</span>
@@ -194,6 +272,88 @@
   </div>
 </div>
 
+<div id="sol-modal" style="display:none;position:fixed;inset:0;background:rgba(2,6,23,0.5);z-index:220;align-items:center;justify-content:center;padding:20px;">
+  <div style="width:100%;max-width:920px;background:#fff;border-radius:10px;padding:16px;box-shadow:0 12px 40px rgba(2,6,23,0.2);max-height:90vh;overflow:auto;">
+    <header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <h2 id="sol-modal-title" style="margin:0;font-size:1.05rem">Crear / Editar solicitud</h2>
+      <button id="sol-cancel" type="button" class="btn-base btn-clear">Cerrar</button>
+    </header>
+
+    <form id="sol-form" method="POST" action="{{ url('/solicitudes') }}">
+      @csrf
+      <input type="hidden" id="sol-method" name="_method" value="POST">
+      <input type="hidden" id="sol-id" name="id" value="">
+      <input type="hidden" id="sol-mueble-id" name="mueble_id" value="">
+
+      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:300px;">
+          <label>Solicitante</label>
+          @if($isAdmin)
+            <select id="sol-persona" name="persona_id" required style="width:100%;padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
+              <option value="">Selecciona</option>
+              @foreach($usuarios as $u)
+                <option value="{{ $u->id }}">{{ $u->nombre }} {{ $u->apellido }}</option>
+              @endforeach
+            </select>
+          @else
+            <input type="hidden" id="sol-persona" name="persona_id" value="{{ session('usuario_id') ?? '' }}">
+            <div style="padding:8px;border-radius:8px;border:1px solid #e5e7eb;background:#fafafa;font-weight:700;">
+              {{ $currentUser ? ($currentUser->nombre.' '.$currentUser->apellido) : 'Usuario' }}
+            </div>
+          @endif
+
+          <label style="margin-top:8px;">Fecha inicio</label>
+          <input id="sol-fecha-inicio" name="fecha_inicio" type="date" style="width:100%;padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
+
+          <label style="margin-top:8px;">Fecha fin</label>
+          <input id="sol-fecha-fin" name="fecha_fin" type="date" style="width:100%;padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
+
+          <label style="margin-top:8px;">Nota</label>
+          <textarea id="sol-nota" name="nota" rows="4" style="width:100%;padding:8px;border-radius:8px;border:1px solid #e5e7eb;"></textarea>
+          @if($isAdmin)
+            <label style="margin-top:8px;">Estado</label>
+            <select id="sol-estado" name="estado" style="width:100%;padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
+              <option value="pendiente">Pendiente</option>
+              <option value="aprobada">Aprobada</option>
+              <option value="rechazada">Rechazada</option>
+            </select>
+          @else
+            <input type="hidden" id="sol-estado" name="estado" value="pendiente">
+          @endif
+        </div>
+
+        <div style="flex:1;min-width:260px;">
+          <div style="font-weight:700;margin-bottom:6px;">Mueble seleccionado</div>
+          <div id="sol-selected" style="padding:10px;border-radius:8px;border:1px solid #e5e7eb;background:#fafafa;min-height:60px;"></div>
+
+          <div style="margin-top:12px;font-weight:700;">Selecciona mueble</div>
+          <div id="muebles-grid" class="mueble-grid" style="margin-top:8px;">
+            @foreach($muebles as $m)
+              <div class="mueble-item" data-id="{{ $m->id }}" data-codigo="{{ $m->codigo }}" data-nombre="{{ e($m->descripcion) }}" title="{{ $m->codigo }}" style="padding:8px;border-radius:8px;">
+                <div style="width:100%;height:70px;display:flex;align-items:center;justify-content:center;background:#f3f4f6;border-radius:6px;overflow:hidden;">
+                  @if($m->ruta_img)
+                    <img src="{{ asset($m->ruta_img) }}" alt="{{ $m->codigo }}" style="max-width:100%;max-height:70px;object-fit:contain;">
+                  @else
+                    <div style="color:#9ca3af;font-weight:700;">Sin imagen</div>
+                  @endif
+                </div>
+                <div style="margin-top:6px;text-align:center;">
+                  <div style="font-weight:700;">{{ $m->codigo }}</div>
+                  <div style="font-size:0.85rem;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ \Illuminate\Support\Str::limit($m->descripcion ?? '-', 34) }}</div>
+                </div>
+              </div>
+            @endforeach
+           </div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;">
+        <button type="submit" class="btn-base btn-save">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 @endsection
 
 @section('scripts')
@@ -209,7 +369,16 @@ document.addEventListener('DOMContentLoaded', function(){
   const solMethod = document.getElementById('sol-method');
   const solId = document.getElementById('sol-id');
   const solFilters = document.getElementById('sol-filters');
-
+  function selectMueble(el){
+    if(!el) return;
+    document.querySelectorAll('.mueble-item').forEach(x=> x.classList.remove('selected'));
+    el.classList.add('selected');
+    const id = el.getAttribute('data-id') || '';
+    const codigo = el.getAttribute('data-codigo') || '';
+    const nombre = el.getAttribute('data-nombre') || '';
+    if(solMuebleId) solMuebleId.value = id;
+    if(solSelected) solSelected.innerHTML = `<strong>${codigo}</strong>${ nombre ? ' — <span style="color:#6b7280;font-weight:700;">'+nombre+'</span>' : '' }`;
+  }
   function openModal() {
     modal.style.display = 'flex';
     if(solFilters) solFilters.style.display = 'none';
@@ -270,18 +439,23 @@ document.addEventListener('DOMContentLoaded', function(){
         solId.value = s.id;
         solForm.action = "{{ url('/solicitudes') }}/" + s.id;
         const sel = document.querySelector('.mueble-item[data-id="'+s.mueble_id+'"]');
-        if(sel){ sel.click(); sel.scrollIntoView({behavior:'smooth', block:'center'}); }
+        if(sel){ selectMueble(sel); sel.scrollIntoView({behavior:'smooth', block:'center'}); }
       } catch(e){ console.error(e); alert('Error al abrir edición'); }
     });
   });
 
   const clearBtn = document.getElementById('sol-clear-filters');
-  if(clearBtn){
-    clearBtn.addEventListener('click', function(){
+  if (clearBtn) {
+    clearBtn.addEventListener('click', function(evt){
+      evt.preventDefault();
       const form = document.getElementById('sol-filters');
-      if(!form) return;
-      form.querySelectorAll('input,select').forEach(i=> i.value = '');
-      form.submit();
+      if (form) {
+        form.querySelectorAll('input,select').forEach(i=>{
+          if (i.type === 'checkbox' || i.type === 'radio') i.checked = false;
+          else if (i.type !== 'submit' && i.type !== 'button') i.value = '';
+        });
+      }
+      window.location.href = "{{ url('/solicitudes') }}";
     });
   }
 });
