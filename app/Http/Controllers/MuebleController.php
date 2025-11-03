@@ -10,7 +10,7 @@ class MuebleController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Mueble::with('usuario')->orderBy('id','desc');
+        $query = Mueble::with(['usuario', 'responsable'])->orderBy('id','desc');
         if ($request->filled('codigo')) {$query->where('codigo', 'like', '%' . $request->codigo . '%');}
         if ($request->filled('descripcion')) {$query->where('descripcion', 'like', '%' . $request->descripcion . '%');}
         if ($request->filled('estado')) {$query->where('estado', $request->estado);}
@@ -52,7 +52,8 @@ class MuebleController extends Controller
             'monto_unitario' => 'required|numeric|min:0',
             'nota' => 'nullable|string|max:500',
             'ruta_img' => 'nullable|string|max:200',
-            'persona_id' => 'required|exists:usuarios,id',
+            'persona_id' => 'nullable|exists:usuarios,id',
+            'responsable_id' => 'nullable|exists:usuarios,id',
             'estado' => 'required|in:bueno,regular,malo,en_reparacion',
         ]);
         $data = $request->all();
@@ -98,7 +99,8 @@ class MuebleController extends Controller
             'monto_unitario' => 'required|numeric|min:0',
             'nota' => 'nullable|string|max:500',
             'ruta_img' => 'nullable|string|max:200',
-            'persona_id' => 'required|exists:usuarios,id',
+            'persona_id' => 'nullable|exists:usuarios,id',
+            'responsable_id' => 'nullable|exists:usuarios,id',
             'estado' => 'required|in:bueno,regular,malo,en_reparacion',
         ]);
         $original = $mueble->only(['codigo','descripcion','fecha_registro','monto_unitario','nota','ruta_img','persona_id','estado']);

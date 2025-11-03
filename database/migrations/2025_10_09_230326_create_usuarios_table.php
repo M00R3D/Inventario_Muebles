@@ -16,8 +16,6 @@ return new class extends Migration {
             $table->enum('rol', ['admin', 'empleado', 'tecnico'])->default('empleado');
             $table->unsignedInteger('area_id');
             $table->timestamps();
-
-            // Foreign key
             $table->foreign('area_id')->references('id')->on('areas')->onDelete('cascade');
         });
     }

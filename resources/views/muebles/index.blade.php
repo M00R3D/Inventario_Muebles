@@ -34,7 +34,26 @@
 .card-top{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .card-title{ font-weight:800; font-size:1rem; color:#111; max-width:60%; word-break:break-word; }
 .card-desc{ color:var(--muted); font-size:0.95rem; line-height:1.25; }
-.card-meta{ display:flex; gap:12px; align-items:center; margin-top:6px; color:var(--muted); font-size:0.9rem; }
+.card-meta{
+  display:flex;
+  gap:12px;
+  align-items:flex-start;
+  margin-top:6px;
+  color:var(--muted);
+  font-size:0.9rem;
+  flex-wrap:wrap;
+}
+.card-meta > div {
+  flex: 1 1 140px;
+  min-width: 0;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.card-meta strong { display:block; font-weight:700; margin-bottom:2px; }
+.card-responsable, .card-solicitante { color:var(--muted); font-size:0.9rem; }
 
 .mueble-nota{ display:flex; flex-wrap:wrap; white-space:normal; word-break:break-word; overflow-wrap:break-word; max-width:100%; margin-top:6px; font-size:0.9rem; color:#374151; background:#f8fafc; padding:6px 8px; border-radius:8px; }
 
@@ -148,10 +167,11 @@
         </select>
       </div>
       <div>
-        <label style="display:block;font-weight:600;font-size:0.9rem;">Responsable</label>
+        <label style="display:block;font-weight:600;font-size:0.7rem;">Responsable(admin)</label>
+        <label style="display:block;font-weight:600;font-size:0.9rem;">Solicitante(usuario)</label>
         <select name="persona_id" style="padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
           <option value="">Todos</option>
-          @foreach($usuarios as $u)
+          @foreach($usuarios->where('rol','!=','admin') as $u)
             <option value="{{ $u->id }}" {{ request('persona_id')==$u->id ? 'selected' : '' }}>{{ $u->nombre }} {{ $u->apellido }}</option>
           @endforeach
         </select>
@@ -199,9 +219,19 @@
         @endif
         <div style="flex:1;min-width:160px;">
           <label>Responsable</label>
-          <select name="persona_id" id="f-persona" required style="width:100%;padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
-            <option value="">Selecciona</option>
-            @foreach($usuarios as $u)
+          <label>Solicitante</label>
+          <select name="persona_id" id="f-persona" style="width:100%;padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
+            <option value="">(ninguno)</option>
+            @foreach($usuarios->where('rol','!=','admin') as $u)
+              <option value="{{ $u->id }}">{{ $u->nombre }} {{ $u->apellido }}</option>
+            @endforeach
+          </select>
+        </div>
+        <div style="flex:1;min-width:160px;">
+          <label>Responsable</label>
+          <select name="responsable_id" id="f-responsable" style="width:100%;padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
+            <option value="">(ninguno)</option>
+            @foreach($usuarios->where('rol','admin') as $u)
               <option value="{{ $u->id }}">{{ $u->nombre }} {{ $u->apellido }}</option>
             @endforeach
           </select>
@@ -304,9 +334,14 @@
               <div class="card-meta">
                 @if($isAdmin)
                 <div class="card-price">${{ number_format($m->monto_unitario ?? 0, 2, ',', '.') }}</div>
-                @endif
-                <div class="card-owner">{{ $m->usuario->nombre ?? '-' }} {{ $m->usuario->apellido ?? '' }}</div>
+                <div class="card-responsable"><strong>Responsable(admin):</strong>
+                  {{ $m->responsable ? ($m->responsable->nombre . ' ' . $m->responsable->apellido) : 'ninguno' }}
+                </div>
+                <div class="card-solicitante"><strong>Solicitante(usuario):</strong>
+                  {{ $m->usuario ? ($m->usuario->nombre . ' ' . $m->usuario->apellido) : 'ninguno' }}
+                </div>
               </div>
+              @endif
               @php $nota = trim($m->nota ?? '') @endphp
               @if($nota)
                 <div class="mueble-nota">{{ \Illuminate\Support\Str::limit($nota, 120) }}</div>
@@ -402,7 +437,8 @@ document.addEventListener('DOMContentLoaded', function(){
       grid.innerHTML = items.length ? items.map(m => {
         const imgUrl = m.ruta_img ? (`${baseUrl}/${esc(m.ruta_img)}`) : (`${baseUrl}/imgs/default.webp`);
         const nota = m.nota ? `<div class="mueble-nota">${esc(m.nota)}</div>` : '';
-        const usuario = m.usuario ? esc((m.usuario.nombre||'') + ' ' + (m.usuario.apellido||'')) : '';
+        const solicitante = m.usuario ? esc((m.usuario.nombre||'') + ' ' + (m.usuario.apellido||'')) : 'ninguno';
+        const responsable = m.responsable ? esc((m.responsable.nombre||'') + ' ' + (m.responsable.apellido||'')) : 'ninguno';
         const priceHtml = IS_ADMIN ? (m.monto_unitario ? `<div class="card-price">$${Number(m.monto_unitario).toFixed(2)}</div>` : `<div class="card-price"></div>`) : '';
         const actionsHtml = IS_ADMIN
           ? `<button type="button" class="btn-base btn-edit" data-mueble='${esc(JSON.stringify(m))}'>Editar</button>
@@ -420,7 +456,10 @@ document.addEventListener('DOMContentLoaded', function(){
                 ${nota}
                 <div class="card-meta">
                   ${priceHtml}
-                  <div class="card-owner">${usuario}</div>
+                  @if($isAdmin)
+                  <div class="card-responsable"><strong>Responsable(admin):</strong> ${responsable}</div>
+                  <div class="card-solicitante"><strong>Solicitante(usuario):</strong> ${solicitante}</div>
+                  @endif
                 </div>
               </div>
             </div>
@@ -567,6 +606,8 @@ document.addEventListener('DOMContentLoaded', function(){
     methodInput.value = 'POST';
     idInput.value = '';
     form.querySelectorAll('input,select').forEach(i=> i.value = '');
+    const fResp = document.getElementById('f-responsable');
+    if (fResp) fResp.value = '';
     card.style.display = 'block';
     card.classList.add('collapsed');
     hidePageForModal();
@@ -582,6 +623,10 @@ document.addEventListener('DOMContentLoaded', function(){
     document.getElementById('f-fecha').value = m.fecha_registro ? m.fecha_registro : '';
     document.getElementById('f-monto').value = m.monto_unitario || '';
     document.getElementById('f-persona').value = m.persona_id || '';
+    try {
+      const fr = document.getElementById('f-responsable');
+      if (fr) fr.value = m.responsable_id || '';
+    } catch(e){}
     document.getElementById('f-estado').value = m.estado || 'bueno';
     document.getElementById('f-nota').value = m.nota || '';
     setPreviewFromRuta(m.ruta_img || '');

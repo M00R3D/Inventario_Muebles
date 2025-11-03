@@ -3,11 +3,16 @@
 namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use App\Models\Mueble;
+use App\Models\Usuario;
 
 class MuebleSeeder extends Seeder
 {
     public function run(): void
     {
+        // buscar el usuario responsable por email
+        $responsable = Usuario::where('email', 'jobmurdan@hotmail.com')->first();
+        $responsableId = $responsable ? $responsable->id : null;
+
         Mueble::insert([
             [
                 'codigo' => 'M001',
@@ -16,7 +21,8 @@ class MuebleSeeder extends Seeder
                 'monto_unitario' => 1500.00,
                 'nota' => 'Buen estado',
                 'ruta_img' => null,
-                'persona_id' => 1,
+                'persona_id' => null,
+                'responsable_id' => $responsableId,
                 'estado' => 'bueno',
             ],
             [
@@ -26,7 +32,8 @@ class MuebleSeeder extends Seeder
                 'monto_unitario' => 800.00,
                 'nota' => null,
                 'ruta_img' => 'sillaergonomica/1.webp',
-                'persona_id' => 2,
+                'persona_id' => null,
+                'responsable_id' => $responsableId,
                 'estado' => 'regular',
             ],
             [
@@ -36,7 +43,8 @@ class MuebleSeeder extends Seeder
                 'monto_unitario' => 3200.00,
                 'nota' => 'Requiere limpieza',
                 'ruta_img' => 'mesareuniones/1.webp',
-                'persona_id' => 1,
+                'persona_id' => null,
+                'responsable_id' => $responsableId,
                 'estado' => 'bueno',
             ],
             [
@@ -46,7 +54,8 @@ class MuebleSeeder extends Seeder
                 'monto_unitario' => 950.00,
                 'nota' => null,
                 'ruta_img' => 'archivadormetalico/1.jpg',
-                'persona_id' => 2,
+                'persona_id' => null,
+                'responsable_id' => $responsableId,
                 'estado' => 'bueno',
             ],
             [
@@ -56,7 +65,8 @@ class MuebleSeeder extends Seeder
                 'monto_unitario' => 400.00,
                 'nota' => 'Pata floja',
                 'ruta_img' => 'sillavisitas/1.webp',
-                'persona_id' => 3,
+                'persona_id' => null,
+                'responsable_id' => $responsableId,
                 'estado' => 'en_reparacion',
             ],
             [
@@ -66,7 +76,8 @@ class MuebleSeeder extends Seeder
                 'monto_unitario' => 600.00,
                 'nota' => null,
                 'ruta_img' => 'mesaauxiliar/2.jpg',
-                'persona_id' => 1,
+                'persona_id' => null,
+                'responsable_id' => $responsableId,
                 'estado' => 'bueno',
             ],
             [
@@ -76,7 +87,8 @@ class MuebleSeeder extends Seeder
                 'monto_unitario' => 1200.00,
                 'nota' => 'Ruedas desgastadas',
                 'ruta_img' => 'sillaejecutiva/1.jpg',
-                'persona_id' => 2,
+                'persona_id' => null,
+                'responsable_id' => $responsableId,
                 'estado' => 'regular',
             ],
             [
@@ -86,7 +98,8 @@ class MuebleSeeder extends Seeder
                 'monto_unitario' => 700.00,
                 'nota' => null,
                 'ruta_img' => 'estantemadera/1.png',
-                'persona_id' => 3,
+                'persona_id' => null,
+                'responsable_id' => $responsableId,
                 'estado' => 'bueno',
             ],
             [
@@ -97,6 +110,7 @@ class MuebleSeeder extends Seeder
                 'nota' => 'Rayada en la superficie',
                 'ruta_img' => 'mesajuntaspequenia/1.webp',
                 'persona_id' => 1,
+                'responsable_id' => $responsableId,
                 'estado' => 'regular',
             ],
             [
@@ -107,6 +121,7 @@ class MuebleSeeder extends Seeder
                 'nota' => null,
                 'ruta_img' => 'sillaplegable/1.webp',
                 'persona_id' => 2,
+                'responsable_id' => $responsableId,
                 'estado' => 'malo',
             ],
         ]);

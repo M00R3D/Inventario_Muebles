@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration {
     public function up(): void
@@ -15,12 +16,13 @@ return new class extends Migration {
             $table->decimal('monto_unitario', 10, 2)->default(0.00);
             $table->string('nota', 500)->nullable();
             $table->string('ruta_img', 200)->nullable();
-            $table->unsignedInteger('persona_id'); // referencia a usuarios
+            $table->unsignedInteger('persona_id')->nullable(); // referencia a usuarios, puede ser null
+            $table->unsignedInteger('responsable_id')->nullable();
             $table->enum('estado', ['bueno', 'regular', 'malo', 'en_reparacion'])->default('bueno');
             $table->timestamps();
 
-            // Foreign key
-            $table->foreign('persona_id')->references('id')->on('usuarios')->onDelete('cascade');
+            $table->foreign('persona_id')->references('id')->on('usuarios')->onDelete('set null');
+            $table->foreign('responsable_id')->references('id')->on('usuarios')->onDelete('set null');
         });
     }
 
