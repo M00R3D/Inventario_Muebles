@@ -191,10 +191,12 @@
           <label>Fecha registro</label>
           <input name="fecha_registro" id="f-fecha" type="date" style="padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
         </div>
+        @if($isAdmin)
         <div style="min-width:160px;">
           <label>Monto unitario</label>
           <input name="monto_unitario" id="f-monto" type="number" step="0.01" required style="padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
         </div>
+        @endif
         <div style="flex:1;min-width:160px;">
           <label>Responsable</label>
           <select name="persona_id" id="f-persona" required style="width:100%;padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
@@ -299,12 +301,12 @@
                 @endif
                 <div class="desc-full" style="display:none;">{{ $rest }}</div>
               </div>
-
               <div class="card-meta">
+                @if($isAdmin)
                 <div class="card-price">${{ number_format($m->monto_unitario ?? 0, 2, ',', '.') }}</div>
+                @endif
                 <div class="card-owner">{{ $m->usuario->nombre ?? '-' }} {{ $m->usuario->apellido ?? '' }}</div>
               </div>
-
               @php $nota = trim($m->nota ?? '') @endphp
               @if($nota)
                 <div class="mueble-nota">{{ \Illuminate\Support\Str::limit($nota, 120) }}</div>
@@ -350,6 +352,7 @@ document.addEventListener('DOMContentLoaded', function(){
   const preview = document.getElementById('ruta-preview');
   const baseUrl = "{{ url('/') }}";
   const API_BASE = "{{ url('/muebles') }}";
+  const IS_ADMIN = {!! json_encode(!empty($isAdmin) && $isAdmin) !!};
   const STORAGE_KEY = 'muebles_filters_v1';
 
   function readFiltersFromForm() {
@@ -400,6 +403,11 @@ document.addEventListener('DOMContentLoaded', function(){
         const imgUrl = m.ruta_img ? (`${baseUrl}/${esc(m.ruta_img)}`) : (`${baseUrl}/imgs/default.webp`);
         const nota = m.nota ? `<div class="mueble-nota">${esc(m.nota)}</div>` : '';
         const usuario = m.usuario ? esc((m.usuario.nombre||'') + ' ' + (m.usuario.apellido||'')) : '';
+        const priceHtml = IS_ADMIN ? (m.monto_unitario ? `<div class="card-price">$${Number(m.monto_unitario).toFixed(2)}</div>` : `<div class="card-price"></div>`) : '';
+        const actionsHtml = IS_ADMIN
+          ? `<button type="button" class="btn-base btn-edit" data-mueble='${esc(JSON.stringify(m))}'>Editar</button>
+             <button type="button" class="btn-base btn-delete" data-id="${esc(m.id)}" data-confirm="¿Eliminar mueble ${esc(m.codigo || ('ID ' + m.id))}?" data-confirm-type="delete" data-confirm-callback="confirmDeleteById">Eliminar</button>`
+          : `<a class="btn-base btn-new" href="${baseUrl}/solicitudes/create?mueble_id=${m.id}">Solicitar</a>`;
         return `<article class="card" role="listitem" aria-labelledby="mueble-${esc(m.id)}">
             <div class="card-inner">
               <div class="card-media"><img src="${imgUrl}" alt="${esc(m.codigo||'')}" /></div>
@@ -411,14 +419,13 @@ document.addEventListener('DOMContentLoaded', function(){
                 <div class="card-desc">${esc(m.descripcion || '-')}</div>
                 ${nota}
                 <div class="card-meta">
-                  <div class="card-price">${m.monto_unitario ? ('$' + Number(m.monto_unitario).toFixed(2)) : ''}</div>
+                  ${priceHtml}
                   <div class="card-owner">${usuario}</div>
                 </div>
               </div>
             </div>
             <div class="card-actions">
-              ${ {!! !empty($isAdmin) && $isAdmin ? 'true' : 'false' !!} ? `<button type="button" class="btn-base btn-edit" data-mueble='${esc(JSON.stringify(m))}'>Editar</button>
-                <button type="button" class="btn-base btn-delete" data-id="${esc(m.id)}" data-confirm="¿Eliminar mueble ${esc(m.codigo || ('ID ' + m.id))}?" data-confirm-type="delete" data-confirm-callback="confirmDeleteById">Eliminar</button>` : `<a class="btn-base btn-new" href="${baseUrl}/solicitudes/create?mueble_id=${m.id}">Solicitar</a>` }
+              ${actionsHtml}
             </div>
           </article>`;
       }).join('') : '<div class="card">No hay muebles</div>';
