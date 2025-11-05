@@ -178,7 +178,7 @@
           <a class="card-btn" href="{{ url('/solicitudes') }}">Ver solicitudes</a>
         </div>
       </div>
-
+      @if($isAdmin)
       <div class="card-cta">
         <div class="title"><span class="icon-circle icon-users">👥</span> Directorio</div>
         <div class="desc">Consulta el listado de usuarios y sus áreas (solo lectura).</div>
@@ -186,6 +186,7 @@
           <a class="card-btn" href="{{ url('/usuarios') }}">Ver usuarios</a>
         </div>
       </div>
+      @endif
     </div>
   @endif
 </div>

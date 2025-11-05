@@ -14,7 +14,9 @@
         <nav class="sidebar-nav" aria-label="Navegación principal">
             <ul>
                 <li><a href="{{ url('/dashboard') }}"><span class="icon">🏠</span><span class="label">Dashboard</span></a></li>
+                @if($isAdmin)
                 <li><a href="{{ url('/usuarios') }}"><span class="icon">👥</span><span class="label">Usuarios</span></a></li>
+                @endif
                 <li><a href="{{ url('/muebles') }}"><span class="icon">🪑</span><span class="label">Inventario</span></a></li>
                 @if($isAdmin)
                     <li><a href="{{ url('/imagenes') }}"><span class="icon">🖼️</span><span class="label">Imágenes</span></a></li>
