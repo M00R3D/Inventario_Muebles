@@ -133,29 +133,16 @@
             function show(text, el){
                 pendingEl = el || null;
                 msg.textContent = text || '¿Estás seguro?';
-                const type = (el && (el.dataset.confirmType || el.getAttribute('data-confirm-type'))) || (el && (el.dataset.confirm || el.getAttribute('data-confirm-type'))) || 'default';
+                const type = (el && (el.dataset.confirmType || el.getAttribute('data-confirm-type'))) || 'default';
                 resetButtons();
                 if (type === 'logout') {
-                    btnOk.textContent = 'Cerrar sesión';
-                    applyStyle(btnOk, { background: 'linear-gradient(90deg,#ef4444,#b91c1c)', color: '#fff' });
-                    btnCancel.textContent = 'Permanecer Activo';
                     applyStyle(btnCancel, { background: 'transparent', color: '#374151' });
                 } else if (type === 'delete' || type === 'danger') {
-                    btnOk.textContent = 'Eliminar';
-                    applyStyle(btnOk, { background: 'linear-gradient(90deg,#ef4444,#f97316)', color: '#fff' });
-                    btnCancel.textContent = 'Cancelar';
                     applyStyle(btnCancel, { background: 'transparent', color: '#374151' });
-                } else if (type === 'confirm') {
-                    btnOk.textContent = 'Confirmar';
-                    applyStyle(btnOk, { background: 'linear-gradient(90deg,#6366f1,#06b6d4)', color: '#fff' });
-                    btnCancel.textContent = 'Cancelar';
-                    applyStyle(btnCancel, { background: 'transparent', color: '#374151' });
-                } else {
                 }
-
                 overlay.style.display = 'flex';
                 overlay.setAttribute('aria-hidden','false');
-                btnCancel.focus();
+                try { btnCancel.focus(); } catch(e){}
             }
 
             function hide(){
@@ -164,7 +151,6 @@
                 pendingEl = null;
                 resetButtons();
             }
-
             window.showConfirmFor = function(el){
                 try {
                     if (!el) return;
@@ -174,7 +160,6 @@
                     console.error('showConfirmFor error', e);
                 }
             };
-
             document.addEventListener('click', function(e){
                 const el = e.target.closest('[data-confirm]');
                 if(!el) return;
@@ -184,23 +169,18 @@
             }, true);
 
             btnCancel.addEventListener('click', hide);
+
             btnOk.addEventListener('click', function(){
-                if(!pendingEl) return hide();
+                if(!pendingEl) { hide(); return; }
                 const callbackName = pendingEl.getAttribute('data-confirm-callback') || pendingEl.dataset.confirmCallback;
                 if (callbackName && typeof window[callbackName] === 'function') {
-                    try { window[callbackName](pendingEl); }
-                    catch(e){ console.error('confirm callback error', e); }
-                    hide();
-                    return;
-                }
-
-                if(pendingEl.tagName === 'A' && pendingEl.href){
-                    window.location.href = pendingEl.href;
+                    try { window[callbackName](pendingEl); } catch (err) { console.error('Error callback confirm:', err); }
                     hide();
                     return;
                 }
                 const f = pendingEl.closest('form');
-                if (f) { f.submit(); hide(); return; }
+                if (f) { try { f.submit(); } catch(e){ console.error(e); } hide(); return; }
+                if (pendingEl.tagName === 'A' && pendingEl.href) { window.location.href = pendingEl.href; hide(); return; }
                 hide();
             });
 
@@ -210,6 +190,7 @@
             document.addEventListener('keydown', function(ev){
                 if(ev.key === 'Escape') hide();
             });
+
         })();
 
         function setCollapsed(collapsed){
@@ -256,6 +237,52 @@
             }
         });
     })();
+
+    window.confirmDeleteById = async function(el){
+      if(!el) return;
+      try {
+        const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+        const frm = el.closest('form');
+        if (frm) {
+          const action = frm.action;
+          const fd = new FormData(frm);
+          if (!fd.has('_method')) fd.append('_method','DELETE');
+          const resp = await fetch(action, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+              'X-CSRF-TOKEN': token,
+              'X-Requested-With': 'XMLHttpRequest',
+              'Accept': 'application/json'
+            },
+            body: fd
+          });
+          if (resp.ok) { location.reload(); return; }
+          const ct = resp.headers.get('content-type') || '';
+          const data = ct.includes('application/json') ? await resp.json() : await resp.text();
+          console.error('Error al eliminar (form):', resp.status, data);
+          alert((data && data.message) ? data.message : 'Error al eliminar');
+          return;
+        }
+        const id = el.getAttribute('data-id');
+        if (!id) { console.warn('confirmDeleteById: id missing'); return; }
+        const urlBase = el.getAttribute('data-base') || `${location.origin}/muebles`;
+        const resp2 = await fetch(`${urlBase}/${encodeURIComponent(id)}`, {
+          method: 'DELETE',
+          credentials: 'same-origin',
+          headers: {
+            'X-CSRF-TOKEN': token,
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+          }
+        });
+        if (resp2.ok) { location.reload(); return; }
+        const ct2 = resp2.headers.get('content-type') || '';
+        const data2 = ct2.includes('application/json') ? await resp2.json() : await resp2.text();
+        console.error('Error al eliminar (direct):', resp2.status, data2);
+        alert((data2 && data2.message) ? data2.message : 'Error al eliminar');
+      } catch(e){ console.error('confirmDeleteById error', e); alert('Error al eliminar'); }
+    };
     </script>
     @yield('scripts')
 </body>

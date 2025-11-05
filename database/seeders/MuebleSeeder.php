@@ -9,7 +9,6 @@ class MuebleSeeder extends Seeder
 {
     public function run(): void
     {
-        // buscar el usuario responsable por email
         $responsable = Usuario::where('email', 'jobmurdan@hotmail.com')->first();
         $responsableId = $responsable ? $responsable->id : null;
 

@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Muebles | Inventario Muebles</title>
 </head>
 <body>
@@ -407,10 +408,12 @@
           <div class="card-actions">
             @if(!empty($isAdmin) && $isAdmin)
               <button type="button" class="btn-edit admin-only" data-mueble='@json($m)'>Editar</button>
-              <form action="{{ url('/muebles/'.$m->id) }}" method="POST" style="margin:0;" class="admin-only">
+              <form method="POST" action="{{ url('/muebles/'.$m->id) }}" style="display:inline;">
                 @csrf
                 @method('DELETE')
-                <button type="submit" data-confirm="¿Eliminar mueble {{ addslashes($m->codigo ?? 'ID '.$m->id) }}?" class="btn-delete" data-confirm-type="delete">Eliminar</button>
+                <button type="button" class="btn-delete" data-confirm="¿Eliminar mueble {{ $m->codigo ?? $m->id }}?" data-confirm-type="delete" data-confirm-callback="confirmDeleteById" data-id="{{ $m->id }}">
+                  Eliminar
+                </button>
               </form>
             @else
               <a href="{{ url('/solicitudes/create') }}?mueble_id={{ $m->id }}" class="btn-edit" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center;">Solicitar</a>
@@ -446,10 +449,12 @@
             <td>
               @if(!empty($isAdmin) && $isAdmin)
                 <button type="button" class="btn-edit admin-only" data-mueble='@json($m)'>Editar</button>
-                <form action="{{ url('/muebles/'.$m->id) }}" method="POST" style="display:inline;margin:0;" class="admin-only">
+                <form method="POST" action="{{ url('/muebles/'.$m->id) }}" style="display:inline;">
                   @csrf
                   @method('DELETE')
-                  <button type="submit" data-confirm="¿Eliminar mueble {{ addslashes($m->codigo ?? 'ID '.$m->id) }}?" class="btn-delete" data-confirm-type="delete">Eliminar</button>
+                  <button type="button" class="btn-delete" data-confirm="¿Eliminar mueble {{ $m->codigo ?? $m->id }}?" data-confirm-type="delete" data-confirm-callback="confirmDeleteById" data-id="{{ $m->id }}">
+                    Eliminar
+                  </button>
                 </form>
               @else
                 <a href="{{ url('/solicitudes/create') }}?mueble_id={{ $m->id }}" class="btn-edit" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center;padding:4px 8px;font-size:0.78rem;">Solicitar</a>
@@ -486,6 +491,7 @@ document.addEventListener('DOMContentLoaded', function(){
   const baseUrl = "{{ url('/') }}";
   const API_BASE = "{{ url('/muebles') }}";
   const IS_ADMIN = {!! json_encode(!empty($isAdmin) && $isAdmin) !!};
+  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
   const STORAGE_KEY = 'muebles_filters_v1';
   const VIEW_KEY = 'muebles_view_mode_v1'; 
   const ADMIN_VIEW_KEY = 'muebles_admin_view_v1'; 
@@ -493,6 +499,53 @@ document.addEventListener('DOMContentLoaded', function(){
   const adminToggle = document.getElementById('admin-toggle');
   const tableWrapper = document.getElementById('table-wrapper');
   const gridEl = document.querySelector('.grid');
+
+  if (typeof window.showConfirmFor !== 'function') {
+    window.showConfirmFor = function(elem){
+      if (!elem) return;
+      const message = elem.getAttribute('data-confirm') || '¿Confirmar acción?';
+      if (document.getElementById('app-confirm-overlay')) {
+        document.getElementById('app-confirm-overlay').querySelector('.confirm-text').textContent = message;
+        document.getElementById('app-confirm-overlay').dataset.elId = Math.random().toString(36).slice(2);
+        document.getElementById('app-confirm-overlay')._targetEl = elem;
+        document.getElementById('app-confirm-overlay').style.display = 'flex';
+        return;
+      }
+      const overlay = document.createElement('div');
+      overlay.id = 'app-confirm-overlay';
+      overlay.style = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.45);z-index:9999;';
+      overlay.innerHTML = `
+        <div style="background:#fff;padding:18px;border-radius:10px;max-width:420px;width:92%;box-shadow:0 12px 40px rgba(2,6,23,0.2);">
+          <div class="confirm-text" style="margin-bottom:12px;font-weight:700;color:#111;">${String(message).replace(/</g,'&lt;')}</div>
+          <div style="display:flex;gap:8px;justify-content:flex-end;">
+            <button type="button" id="confirm-cancel" style="padding:8px 12px;border-radius:8px;border:0;background:#e5e7eb;font-weight:700;cursor:pointer;">Cancelar</button>
+            <button type="button" id="confirm-ok" style="padding:8px 12px;border-radius:8px;border:0;background:linear-gradient(90deg,#ef4444,#d6336c);color:#fff;font-weight:800;cursor:pointer;">Eliminar</button>
+          </div>
+        </div>`;
+      document.body.appendChild(overlay);
+      overlay._targetEl = elem;
+      overlay.querySelector('#confirm-cancel').addEventListener('click', function(){
+        overlay.style.display = 'none';
+      });
+      overlay.querySelector('#confirm-ok').addEventListener('click', function(){
+        overlay.style.display = 'none';
+        try { window.confirmDeleteById(overlay._targetEl); } catch(e){ console.error(e); }
+      });
+    };
+  }
+
+  function hideModalControls(){
+    try {
+      if (viewToggle && viewToggle.parentElement) viewToggle.parentElement.style.display = 'none';
+      if (adminToggle && adminToggle.parentElement) adminToggle.parentElement.style.display = 'none';
+    } catch(e){}
+  }
+  function showModalControls(){
+    try {
+      if (viewToggle && viewToggle.parentElement) viewToggle.parentElement.style.display = '';
+      if (adminToggle && adminToggle.parentElement) adminToggle.parentElement.style.display = '';
+    } catch(e){}
+  }
 
   function setView(mode){
     if(mode === 'table'){
@@ -563,7 +616,6 @@ document.addEventListener('DOMContentLoaded', function(){
       });
       if (!resp.ok) throw new Error('HTTP ' + resp.status);
       let items = await resp.json();
-      // si no es admin, ocultar en cliente los muebles que ya tienen solicitante
       if (!IS_ADMIN && Array.isArray(items)) {
         items = items.filter(m => !m.usuario);
       }
@@ -576,8 +628,16 @@ document.addEventListener('DOMContentLoaded', function(){
           const responsable = m.responsable ? esc((m.responsable.nombre||'') + ' ' + (m.responsable.apellido||'')) : 'ninguno';
           const priceHtml = IS_ADMIN ? (m.monto_unitario ? `<div class="card-price admin-only">$${Number(m.monto_unitario).toFixed(2)}</div>` : `<div class="card-price admin-only"></div>`) : '';
           const actionsHtml = IS_ADMIN
-            ? `<button type="button" class="btn-base btn-edit admin-only" data-mueble='${esc(JSON.stringify(m))}'>Editar</button>
-               <button type="button" class="btn-base btn-delete admin-only" data-id="${esc(m.id)}" data-confirm="¿Eliminar mueble ${esc(m.codigo || ('ID ' + m.id))}?" data-confirm-type="delete" data-confirm-callback="confirmDeleteById">Eliminar</button>`
+            ? `<form method="POST" action="${API_BASE}/${esc(m.id)}" style="display:inline;">
+                 <input type="hidden" name="_token" value="${csrfToken}">
+                 <input type="hidden" name="_method" value="DELETE">
+                 <button type="button" class="btn-base btn-edit" data-mueble='${esc(JSON.stringify(m))}'>Editar</button>
+                 <button type="button" class="btn-base btn-delete"
+                   data-id="${esc(m.id)}"
+                   data-confirm="¿Eliminar mueble ${esc(m.codigo || ('ID ' + m.id))}?"`
+                   data-confirm-type="delete"
+                   data-confirm-callback="confirmDeleteById">Eliminar</button>
+               </form>`
             : `<a class="btn-base btn-new" href="${baseUrl}/solicitudes/create?mueble_id=${m.id}">Solicitar</a>`;
           return `<article class="card" role="listitem" aria-labelledby="mueble-${esc(m.id)}">
               <div class="card-inner">
@@ -640,7 +700,8 @@ document.addEventListener('DOMContentLoaded', function(){
         btn.addEventListener('click', function(evt){
           evt.preventDefault(); evt.stopPropagation();
           if (typeof window.showConfirmFor === 'function') { window.showConfirmFor(this); return; }
-          if (!confirm(this.getAttribute('data-confirm'))) return;
+          const confirmText = this.getAttribute('data-confirm') || '¿Eliminar?';
+          if (!confirm(confirmText)) return;
           window.confirmDeleteById && window.confirmDeleteById(this);
         });
       });
@@ -756,12 +817,22 @@ document.addEventListener('DOMContentLoaded', function(){
   }
 
   function hidePageForModal(){
-    if(filtersEl) filtersEl.style.display = 'none';
-    if(cardsGrid) cardsGrid.style.display = 'none';
+    if (filtersEl) filtersEl.style.display = 'none';
+    if (cardsGrid) cardsGrid.style.display = 'none';
+    // también ocultar la vista comprimida (tabla) cuando se abre el modal
+    if (tableWrapper) tableWrapper.style.display = 'none';
   }
   function showPageForModal(){
-    if(filtersEl) filtersEl.style.display = 'flex';
-    if(cardsGrid) cardsGrid.style.display = 'grid';
+    // restaurar la vista guardada (cards o table) para que vuelva a mostrarse correctamente
+    if (typeof setView === 'function') {
+      try {
+        const storedView = localStorage.getItem(VIEW_KEY) || 'cards';
+        setView(storedView === 'table' ? 'table' : 'cards');
+        return;
+      } catch(e){}
+    }
+    if (filtersEl) filtersEl.style.display = 'flex';
+    if (cardsGrid) cardsGrid.style.display = 'grid';
   }
 
   function openCreate(){
@@ -772,6 +843,8 @@ document.addEventListener('DOMContentLoaded', function(){
     form.querySelectorAll('input,select').forEach(i=> i.value = '');
     const fResp = document.getElementById('f-responsable');
     if (fResp) fResp.value = '';
+    // ocultar controles de vista mientras el modal esté abierto
+    hideModalControls();
     card.style.display = 'block';
     card.classList.add('collapsed');
     hidePageForModal();
@@ -794,6 +867,7 @@ document.addEventListener('DOMContentLoaded', function(){
     document.getElementById('f-estado').value = m.estado || 'bueno';
     document.getElementById('f-nota').value = m.nota || '';
     setPreviewFromRuta(m.ruta_img || '');
+    hideModalControls();
     card.style.display = 'block';
     card.classList.add('collapsed');
     hidePageForModal();
@@ -802,6 +876,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
   if (btnNew) btnNew.addEventListener('click', openCreate);
   if (btnCancel) btnCancel.addEventListener('click', function(){
+    showModalControls();
     window.location.href = "{{ url('/muebles') }}";
   });
 
@@ -893,6 +968,71 @@ document.addEventListener('DOMContentLoaded', function(){
       if (window.history && history.replaceState) history.replaceState(null,'','/muebles');
     });
   }
+
+  // Manejo de eliminación: usa fetch tanto si hay form como si no
+  window.confirmDeleteById = async function(el){
+    if(!el) return;
+    try {
+      const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+      const frm = el.closest('form');
+      if (frm) {
+        console.log('confirmDeleteById: usando fetch con el form', frm.action);
+        // tomar action y FormData del form (incluye _method si existe)
+        const fd = new FormData(frm);
+        // forzar método spoofing a DELETE en caso de que no exista
+        if (!fd.has('_method')) fd.append('_method', 'DELETE');
+        const resp = await fetch(frm.action, {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: {
+            'X-CSRF-TOKEN': token,
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+          },
+          body: fd
+        });
+        if (resp.ok) { location.reload(); return; }
+        const ct = resp.headers.get('content-type') || '';
+        const data = ct.includes('application/json') ? await resp.json() : await resp.text();
+        console.error('Error eliminar (form):', resp.status, data);
+        alert((data && data.message) ? data.message : 'Error al eliminar');
+        return;
+      }
+
+      // si no hay form, usar DELETE directo
+      const id = el.getAttribute('data-id');
+      if (!id) { console.warn('confirmDeleteById: ID no encontrado'); return; }
+      console.log('confirmDeleteById: usando fetch DELETE para id', id);
+      const resp2 = await fetch(`${baseUrl}/muebles/${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+        credentials: 'same-origin',
+        headers: {
+          'X-CSRF-TOKEN': token,
+          'X-Requested-With': 'XMLHttpRequest',
+          'Accept': 'application/json'
+        }
+      });
+      if (resp2.ok) { location.reload(); return; }
+      const ct2 = resp2.headers.get('content-type') || '';
+      const data2 = ct2.includes('application/json') ? await resp2.json() : await resp2.text();
+      console.error('Error eliminar (direct):', resp2.status, data2);
+      alert((data2 && data2.message) ? data2.message : 'Error al eliminar');
+    } catch (e) {
+      console.error('confirmDeleteById error:', e);
+      alert('Error de red al eliminar');
+    }
+  };
+
+  document.addEventListener('click', function(e){
+    const btn = e.target.closest('.btn-delete');
+    if (!btn) return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (typeof window.showConfirmFor === 'function') { window.showConfirmFor(btn); return; }
+    if (typeof window.confirmDeleteById === 'function') { window.confirmDeleteById(btn); return; }
+    const f = btn.closest('form');
+    if (f) f.submit();
+  });
 });
 </script>
 @endsection

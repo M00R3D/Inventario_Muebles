@@ -31,4 +31,14 @@ class Mueble extends Model
     {
         return $this->hasMany(Solicitud::class, 'mueble_id');
     }
+
+    protected static function booted()
+    {
+        static::created(function (Mueble $m) {
+            if (!empty($m->codigo)) return;
+            $newCodigo = 'M' . str_pad($m->id, 4, '0', STR_PAD_LEFT);
+            $m->codigo = $newCodigo;
+            $m->saveQuietly();
+        });
+    }
 }

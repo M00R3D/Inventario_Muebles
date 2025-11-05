@@ -490,6 +490,8 @@ document.addEventListener('DOMContentLoaded', function(){
         });
     }
     const API_BASE = "{{ url('/usuarios') }}";
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+    const IS_ADMIN = {!! json_encode($isAdmin ?? false) !!};
 
     async function fetchAndRenderUsers(filters = {}) {
         const tbody = document.querySelector('#users-table tbody');
@@ -523,10 +525,20 @@ document.addEventListener('DOMContentLoaded', function(){
                     <td class="u-rol">${esc(u.rol)}</td>
                     <td class="u-area">${esc(area)}</td>
                     <td class="u-actions">
-                        @if($isAdmin)
-                            <button class="btn-edit" data-id="${u.id}" type="button">Editar</button>
-                            <button type="button" class="btn-delete" data-confirm="${confirmText}" data-confirm-type="delete" data-confirm-callback="confirmDeleteById">Eliminar</button>
-                        @endif
+                      ${ IS_ADMIN ? `
+                        <button class="btn-edit" data-id="${u.id}" type="button">Editar</button>
+                        <form method="POST" action="${API_BASE}/${u.id}" style="display:inline;">
+                          <input type="hidden" name="_token" value="${csrfToken}">
+                          <input type="hidden" name="_method" value="DELETE">
+                          <button type="button" class="btn-delete"
+                            data-confirm="¿Eliminar usuario ${ (u.nombre||'') + ' ' + (u.apellido||'') }?"
+                            data-confirm-type="delete"
+                            data-confirm-callback="confirmDeleteById"
+                            data-id="${u.id}">
+                            Eliminar
+                          </button>
+                        </form>
+                      ` : '' }
                     </td>
                 </tr>`;
             }).join('') : '<tr><td colspan="7" style="padding:12px">No hay usuarios</td></tr>';
