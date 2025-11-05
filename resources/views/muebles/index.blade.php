@@ -16,9 +16,7 @@
     if (session()->has('usuario_id')) {$current = \App\Models\Usuario::find(session('usuario_id'));}
     $isAdmin = $current && ($current->rol === 'admin');
 
-    // visibleMuebles: si no es admin, ocultamos muebles que ya tienen solicitante (usuario)
     $visibleMuebles = $isAdmin ? $muebles : $muebles->filter(function($m){
-        // considera nulos o falsy como "sin solicitante"
         return empty($m->usuario);
     });
 @endphp
@@ -133,15 +131,12 @@
   .card-actions{ justify-content:flex-start; }
 }
 
-/* admin view helper: when .hide-admin is set on .container ocultará elementos con .admin-only */
 .hide-admin .admin-only { display: none !important; }
-
-/* --- tabla comprimida muy compacta (sin márgenes, sin estilos visuales, fuente más pequeña) --- */
 #table-wrapper.minimal { margin:0; padding:0; }
 #table-view {
   width:100%;
   border-collapse:collapse;
-  font-size:0.78rem; /* fuente más pequeña */
+  font-size:0.78rem;
   background:transparent;
   box-shadow:none;
 }
@@ -162,7 +157,6 @@
 #table-view td.small-desc { max-width:260px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 #table-view .estado-badge { min-width:0; padding:3px 6px; font-size:0.72rem; }
 #table-view img { max-width:36px; max-height:24px; object-fit:cover; margin-right:6px; vertical-align:middle; }
-/* quitar cualquier separación extra del wrapper */
 #table-wrapper.minimal table, #table-wrapper.minimal thead, #table-wrapper.minimal tbody, #table-wrapper.minimal tr, #table-wrapper.minimal th, #table-wrapper.minimal td { border-spacing:0; margin:0; }
 </style>
 
@@ -178,7 +172,6 @@
     </div>
 
     <div style="display:flex;gap:12px;align-items:center">
-      {{-- Vista toggle --}}
       <label style="display:flex;align-items:center;gap:8px;font-weight:700;">
         <span style="font-size:0.9rem;color:#374151;">Vista comprimida</span>
         <input type="checkbox" id="view-toggle" style="width:44px;height:26px;appearance:none;background:#e5e7eb;border-radius:999px;position:relative;cursor:pointer;outline:none;display:inline-block;">
@@ -191,7 +184,6 @@
       </label>
 
       @if(!empty($isAdmin) && $isAdmin)
-        {{-- Admin-mode toggle (solo para admins) --}}
         <label style="display:flex;align-items:center;gap:8px;font-weight:700;">
           <span style="font-size:0.9rem;color:#374151;">Ver como usuario</span>
           <input type="checkbox" id="admin-toggle" style="width:44px;height:26px;appearance:none;background:#e5e7eb;border-radius:999px;position:relative;cursor:pointer;outline:none;display:inline-block;">
@@ -429,7 +421,6 @@
     </div>
   @endif
 
-  {{-- Tabla comprimida (oculta por defecto) --}}
   <div id="table-wrapper" class="minimal" style="display:none;">
     <table id="table-view" role="table" aria-label="Listado comprimido">
       <thead>
@@ -496,8 +487,8 @@ document.addEventListener('DOMContentLoaded', function(){
   const API_BASE = "{{ url('/muebles') }}";
   const IS_ADMIN = {!! json_encode(!empty($isAdmin) && $isAdmin) !!};
   const STORAGE_KEY = 'muebles_filters_v1';
-  const VIEW_KEY = 'muebles_view_mode_v1'; // 'cards' | 'table'
-  const ADMIN_VIEW_KEY = 'muebles_admin_view_v1'; // 'admin' | 'user'
+  const VIEW_KEY = 'muebles_view_mode_v1'; 
+  const ADMIN_VIEW_KEY = 'muebles_admin_view_v1'; 
   const viewToggle = document.getElementById('view-toggle');
   const adminToggle = document.getElementById('admin-toggle');
   const tableWrapper = document.getElementById('table-wrapper');
@@ -517,7 +508,6 @@ document.addEventListener('DOMContentLoaded', function(){
   }
 
   function setAdminView(mode){
-    // mode: 'admin' (mostrar controles) | 'user' (ocultar controles)
     const container = document.querySelector('.container');
     if (!container) return;
     if (mode === 'user') {
@@ -530,13 +520,11 @@ document.addEventListener('DOMContentLoaded', function(){
     try { localStorage.setItem(ADMIN_VIEW_KEY, mode); } catch(e){}
   }
 
-  // inicializar vista desde localStorage
   try {
     const storedView = localStorage.getItem(VIEW_KEY) || 'cards';
     setView(storedView);
   } catch(e){ setView('cards'); }
 
-  // inicializar admin-view solo si el usuario es admin
   try {
     if (IS_ADMIN && adminToggle) {
       const storedAdminView = localStorage.getItem(ADMIN_VIEW_KEY) || 'admin';
@@ -545,7 +533,6 @@ document.addEventListener('DOMContentLoaded', function(){
         setAdminView(this.checked ? 'user' : 'admin');
       });
     } else {
-      // si no es admin aseguramos que no exista la capacidad cliente de mostrar controles admin
       const container = document.querySelector('.container');
       if (container) container.classList.remove('hide-admin');
     }
@@ -581,7 +568,6 @@ document.addEventListener('DOMContentLoaded', function(){
         items = items.filter(m => !m.usuario);
       }
       const esc = s => String(s ?? '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-      // render grid (cartas)
       if (grid) {
         grid.innerHTML = items.length ? items.map(m => {
           const imgUrl = m.ruta_img ? (`${baseUrl}/${esc(m.ruta_img)}`) : (`${baseUrl}/imgs/default.webp`);
@@ -619,7 +605,6 @@ document.addEventListener('DOMContentLoaded', function(){
         }).join('') : '<div class="card">No hay muebles</div>';
       }
 
-      // render tabla comprimida
       if (table) {
         table.innerHTML = items.length ? items.map(m => {
           const codigo = esc(m.codigo || ('ID ' + m.id));
@@ -646,7 +631,6 @@ document.addEventListener('DOMContentLoaded', function(){
         }).join('') : `<tr><td colspan="${IS_ADMIN ? 7 : 6}" style="padding:12px;">No hay muebles</td></tr>`;
       }
 
-      // rebind buttons for dynamic content
       document.querySelectorAll('.btn-edit[data-mueble]').forEach(btn=>{
         btn.addEventListener('click', function(){
           try { const obj = JSON.parse(this.getAttribute('data-mueble')); openEdit(obj); } catch(e){ console.error(e); }
