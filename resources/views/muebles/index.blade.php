@@ -301,6 +301,35 @@
           <label>Nota</label>
           <textarea id="f-nota-modal" name="nota" rows="2" style="width:100%;padding:8px;border-radius:6px;border:1px solid #e5e7eb;"></textarea>
         </div>
+
+        <div style="display:flex;gap:8px;align-items:center;margin-top:8px;width:100%;">
+          <div style="flex:1;min-width:160px;">
+            <label>Carpeta pública</label>
+            <select id="select-folder" style="width:100%;padding:8px;border-radius:6px;border:1px solid #e5e7eb;">
+              <option value="">Selecciona carpeta (public)</option>
+              @isset($dirs)
+                @foreach($dirs as $d)
+                  <option value="{{ $d }}">{{ $d }}</option>
+                @endforeach
+              @endisset
+            </select>
+          </div>
+          <div style="flex:1;min-width:160px;">
+            <label>Archivo</label>
+            <select id="select-file" style="width:100%;padding:8px;border-radius:6px;border:1px solid #e5e7eb;">
+              <option value="">-- elegir --</option>
+            </select>
+          </div>
+          <div style="min-width:140px;text-align:center;">
+            <label>Preview</label>
+            <div style="margin-top:6px;">
+              <div class="preview-wrapper">
+                <img id="ruta-preview" src="{{ asset('imgs/default.webp') }}" alt="Preview" />
+              </div>
+            </div>
+          </div>
+        </div>
+        <input type="hidden" name="ruta_img" id="f-ruta-img" value="">
       </div>
 
       <div style="display:flex;gap:8px;margin-top:10px;">
@@ -423,7 +452,6 @@
 document.addEventListener('DOMContentLoaded', function(){
   const card = document.getElementById('user-form-card');
   const form = document.getElementById('mueble-form');
-  // obtener btnNew UNA vez (no volver a declararlo más abajo)
   const btnNew = document.getElementById('btn-new');
   const btnCancel = document.getElementById('btn-cancel');
   const btnSave = document.getElementById('btn-save');
@@ -442,6 +470,68 @@ document.addEventListener('DOMContentLoaded', function(){
   const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
   const DEFAULT_IMG = "{{ asset('imgs/default.webp') }}";
   const STORAGE_KEY = 'muebles_filters_v1';
+
+  function clearFormFields(formEl){
+    if (!formEl) return;
+    formEl.querySelectorAll('input,select,textarea').forEach(i=>{
+      if (i.name === '_token' || i.name === '_method') return;
+      if (i.type === 'hidden' && i.id !== 'mueble-id' && i.name !== 'ruta_img') return;
+      if (i.type === 'checkbox' || i.type === 'radio') { i.checked = false; return; }
+      try { i.value = ''; } catch(e){}
+    });
+  }
+  async function loadFilesForFolder(folder){
+    if (!fileSelect) return;
+    fileSelect.innerHTML = '<option value="">Cargando…</option>';
+    try {
+      const u = new URL("{{ url('/imagenes/list') }}", window.location.origin);
+      u.searchParams.set('folder', folder || '');
+      const resp = await fetch(u.toString(), {
+        headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept':'application/json', 'X-Requested-With':'XMLHttpRequest' },
+        credentials: 'same-origin'
+      });
+      if (!resp.ok) { fileSelect.innerHTML = '<option value="">Error</option>'; return; }
+      const json = await resp.json();
+      const files = json.files || [];
+      fileSelect.innerHTML = '<option value="">-- elegir --</option>';
+      files.forEach(f => {
+        const opt = document.createElement('option');
+        opt.value = f;
+        opt.textContent = f;
+        fileSelect.appendChild(opt);
+      });
+    } catch (e) {
+      console.error('loadFilesForFolder error', e);
+      fileSelect.innerHTML = '<option value="">Error de red</option>';
+    }
+  }
+  if (folderSelect) {
+    folderSelect.addEventListener('change', function(){
+      const folder = this.value || '';
+      if (!folder) {
+        if (fileSelect) fileSelect.innerHTML = '<option value="">-- elegir --</option>';
+        if (rutaInput) rutaInput.value = '';
+        if (preview) preview.src = DEFAULT_IMG;
+        return;
+      }
+      loadFilesForFolder(folder);
+    });
+  }
+
+  if (fileSelect) {
+    fileSelect.addEventListener('change', function(){
+      const file = this.value || '';
+      const folder = folderSelect ? folderSelect.value : '';
+      if (!file || !folder) {
+        if (rutaInput) rutaInput.value = '';
+        if (preview) preview.src = DEFAULT_IMG;
+        return;
+      }
+      const path = folder + '/' + file;
+      if (rutaInput) rutaInput.value = path;
+      if (preview) preview.src = (path.startsWith('http') ? path : (baseUrl + '/' + path));
+    });
+  }
 
   function readFiltersFromForm(){
     const f = document.getElementById('filters');
@@ -550,23 +640,14 @@ document.addEventListener('DOMContentLoaded', function(){
       if (parts.length >= 2) {
         const folder = parts.slice(0, parts.length - 1).join('/');
         const file = parts[parts.length - 1];
+        if (folderSelect) folderSelect.value = folder;
         if (typeof loadFilesForFolder === 'function' && folderSelect && fileSelect) {
-          folderSelect.value = folder;
           loadFilesForFolder(folder).then(() => {
             const fo = Array.from(fileSelect.options).find(o => o.value === file);
             if (fo) fileSelect.value = file;
           }).catch(()=>{});
-        } else {
-          if (folderSelect) {
-            const optF = Array.from(folderSelect.options).find(o => o.value === folder);
-            if (optF) folderSelect.value = folder;
-          }
-          if (fileSelect) {
-            const optFile = Array.from(fileSelect.options).find(o => o.value === file);
-            if (optFile) fileSelect.value = file;
-          }
         }
-      }
+       }
     } catch(e){
       console.error('setPreviewFromRuta error', e);
     }
@@ -701,7 +782,9 @@ document.addEventListener('DOMContentLoaded', function(){
       form.action = "{{ url('/muebles') }}";
       methodInput.value = 'POST';
       idInput.value = '';
-      form.querySelectorAll('input,select,textarea').forEach(i=> i.value = '');
+      clearFormFields(form);
+      const ruta = document.getElementById('f-ruta-img'); if (ruta) ruta.value = '';
+      const prev = document.getElementById('ruta-preview'); if (prev) prev.src = DEFAULT_IMG;
     }
     hideModalControls();
     const card = document.getElementById('user-form-card');
@@ -712,6 +795,7 @@ document.addEventListener('DOMContentLoaded', function(){
     if (tableWrapper) tableWrapper.style.display = 'none';
     if (cardsGrid) cardsGrid.style.display = 'none';
     if (marcaModal) populateModalModeloOptions(marcaModal.value);
+    setPreviewFromRuta('');
   }
 
   function openEdit(m){
@@ -726,17 +810,18 @@ document.addEventListener('DOMContentLoaded', function(){
       methodInput.value = 'PUT';
       idInput.value = m.id;
       const setIf = (id, val) => { const el = document.getElementById(id); if (el) el.value = val ?? ''; };
-      setIf('f-codigo', m.codigo);
-      setIf('f-descripcion', m.descripcion);
-      setIf('f-fecha', m.fecha_registro);
-      setIf('f-monto', m.monto_unitario);
-      setIf('f-persona', m.persona_id);
-      setIf('f-responsable', m.responsable_id);
-      setIf('f-estado', m.estado);
-      setIf('f-nota', m.nota);
+      setIf('f-codigo-modal', m.codigo);
+      setIf('f-descripcion-modal', m.descripcion);
+      setIf('f-fecha-modal', m.fecha_registro);
+      setIf('f-monto-modal', m.monto_unitario);
+      setIf('f-persona-modal', m.persona_id);
+      setIf('f-responsable-modal', m.responsable_id);
+      setIf('f-estado-modal', m.estado);
+      setIf('f-nota-modal', m.nota);
       setIf('mueble-id', m.id);
       if (marcaModal) marcaModal.value = m.marca ?? '';
       populateModalModeloOptions(m.marca ?? '', m.modelo ?? '');
+      if (m.ruta_img) setPreviewFromRuta(m.ruta_img);
     }
     hideModalControls();
     const card = document.getElementById('user-form-card');
@@ -824,7 +909,9 @@ document.addEventListener('DOMContentLoaded', function(){
       form.action = "{{ url('/muebles') }}";
       methodInput.value = 'POST';
       idInput.value = '';
-      form.querySelectorAll('input,select,textarea').forEach(i=> i.value = '');
+      clearFormFields(form);
+      const ruta = document.getElementById('f-ruta-img'); if (ruta) ruta.value = '';
+      const prev = document.getElementById('ruta-preview'); if (prev) prev.src = DEFAULT_IMG;
     }
     hideModalControls();
     const card = document.getElementById('user-form-card');
@@ -860,6 +947,7 @@ document.addEventListener('DOMContentLoaded', function(){
       setIf('mueble-id', m.id);
       if (marcaModal) marcaModal.value = m.marca ?? '';
       populateModalModeloOptions(m.marca ?? '', m.modelo ?? '');
+      if (m.ruta_img) setPreviewFromRuta(m.ruta_img);
     }
     hideModalControls();
     const card = document.getElementById('user-form-card');
