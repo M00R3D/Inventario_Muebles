@@ -137,6 +137,8 @@
 .card-brand .modelo { font-weight:700; font-size:0.95rem; color:#374151; opacity:0.95; }
 .card-brand .marca-label { font-weight:700; font-size:0.85rem; color:#374151; }
 .card-brand .marca-value { font-weight:900; font-size:1.05rem; color:#111; }
+.invalid { border-color:#ef4444 !important; box-shadow: 0 0 0 4px rgba(239,68,68,0.06); }
+.field-error { color:#b91c1c; font-size:0.85rem; margin-top:6px; font-weight:700; }
 </style>
 
 <div class="container">
@@ -243,7 +245,7 @@
         </div>
         <div style="flex:1 1 160px;">
           <label>Monto unitario</label>
-          <input id="f-monto-modal" name="monto_unitario" required type="number" step="0.01" style="width:100%;padding:8px;border-radius:6px;border:1px solid #e5e7eb;">
+          <input id="f-monto-modal" name="monto_unitario" required type="number" step="0.01" min="0" style="width:100%;padding:8px;border-radius:6px;border:1px solid #e5e7eb;">
         </div>
         <div style="flex:1 1 200px;">
           <label>Marca</label>
@@ -470,6 +472,76 @@ document.addEventListener('DOMContentLoaded', function(){
   const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
   const DEFAULT_IMG = "{{ asset('imgs/default.webp') }}";
   const STORAGE_KEY = 'muebles_filters_v1';
+
+  const EXISTING_MUEBLES = {!! $muebles->map(function($x){ return ['id'=>$x->id,'codigo'=>$x->codigo]; })->values()->toJson() !!};
+  function clearValidation(){
+    document.querySelectorAll('.invalid').forEach(el => el.classList.remove('invalid'));
+    document.querySelectorAll('.field-error').forEach(el => el.remove());
+  }
+  function setFieldError(el, msg){
+    if (!el) return;
+    el.classList.add('invalid');
+    const next = el.nextElementSibling;
+    if (next && next.classList && next.classList.contains('field-error')) {
+      next.textContent = msg;
+      return;
+    }
+    const span = document.createElement('div');
+    span.className = 'field-error';
+    span.textContent = msg;
+    if (el.parentNode) el.parentNode.insertBefore(span, el.nextSibling);
+  }
+  window.MODELOS_POR_MARCA = window.MODELOS_POR_MARCA || {!! json_encode($modelosPorMarca ?? []) !!};
+  const marcaModal = document.getElementById('f-marca-modal');
+  const modeloModal = document.getElementById('f-modelo-modal');
+  function populateModalModeloOptions(selectedMarca = '', selectedModel = ''){
+    const sel = modeloModal;
+    if (!sel) return;
+    sel.innerHTML = '<option value="">(sin modelo)</option>';
+    const map = window.MODELOS_POR_MARCA || {};
+    let list = [];
+    const key = String(selectedMarca || '').trim();
+    if (key && Object.prototype.hasOwnProperty.call(map, key)) {
+      list = map[key] || [];
+    } else {
+      const all = Object.values(map).flat();
+      list = Array.from(new Set((all || []).map(x => String(x||'').trim()).filter(Boolean))).sort();
+    }
+    list.forEach(v => {
+      const o = document.createElement('option');
+      o.value = v; o.textContent = v;
+      if (selectedModel && String(selectedModel).trim() === String(v).trim()) o.selected = true;
+      sel.appendChild(o);
+    });
+  }
+  if (marcaModal) marcaModal.addEventListener('change', function(){ populateModalModeloOptions(this.value); });
+  if (btnNew) {
+    btnNew.addEventListener('click', function(e){ e && e.preventDefault(); openCreate(); });
+  }
+  document.addEventListener('click', function(e){
+    const btn = e.target.closest && e.target.closest('.btn-edit');
+    if (!btn) return;
+    const raw = btn.getAttribute('data-mueble') || btn.dataset.mueble || null;
+    if (!raw) return;
+    e.preventDefault();
+    try {
+      let js = raw;
+      if (typeof js === 'string' && /&quot;|&amp;/.test(js)) {
+        js = js.replace(/&quot;/g,'"').replace(/&amp;/g,'&').replace(/&#39;/g,"'");
+      }
+      const obj = (typeof js === 'object') ? js : JSON.parse(js);
+      openEdit(obj);
+    } catch (err) {
+      console.error('No se pudo parsear data-mueble', err, raw);
+      const id = btn.getAttribute('data-id') || btn.dataset.id;
+      if (id) {
+        fetch(`${API_BASE}/${encodeURIComponent(id)}`, { credentials:'same-origin', headers:{'Accept':'application/json','X-Requested-With':'XMLHttpRequest'} })
+          .then(r => r.ok ? r.json() : Promise.reject(r))
+          .then(json => openEdit(json))
+          .catch(e => console.error('Error cargando mueble para editar', e));
+      }
+    }
+  });
 
   function clearFormFields(formEl){
     if (!formEl) return;
@@ -783,6 +855,7 @@ document.addEventListener('DOMContentLoaded', function(){
       methodInput.value = 'POST';
       idInput.value = '';
       clearFormFields(form);
+      form.dataset.originalCodigo = '';
       const ruta = document.getElementById('f-ruta-img'); if (ruta) ruta.value = '';
       const prev = document.getElementById('ruta-preview'); if (prev) prev.src = DEFAULT_IMG;
     }
@@ -795,7 +868,6 @@ document.addEventListener('DOMContentLoaded', function(){
     if (tableWrapper) tableWrapper.style.display = 'none';
     if (cardsGrid) cardsGrid.style.display = 'none';
     if (marcaModal) populateModalModeloOptions(marcaModal.value);
-    setPreviewFromRuta('');
   }
 
   function openEdit(m){
@@ -809,6 +881,7 @@ document.addEventListener('DOMContentLoaded', function(){
       form.action = "{{ url('/muebles') }}/" + m.id;
       methodInput.value = 'PUT';
       idInput.value = m.id;
+      form.dataset.originalCodigo = (m.codigo ?? '').toString();
       const setIf = (id, val) => { const el = document.getElementById(id); if (el) el.value = val ?? ''; };
       setIf('f-codigo-modal', m.codigo);
       setIf('f-descripcion-modal', m.descripcion);
@@ -832,149 +905,90 @@ document.addEventListener('DOMContentLoaded', function(){
     if (tableWrapper) tableWrapper.style.display = 'none';
     if (cardsGrid) cardsGrid.style.display = 'none';
   }
+  function validateModalForm(){
+    clearValidation();
+    const formEl = document.getElementById('mueble-form');
+    if (!formEl) return { ok:false, errors:{}, focus:null };
+    const errors = {};
+    const get = id => document.getElementById(id);
+    const codigoEl = get('f-codigo-modal');
+    const descripcionEl = get('f-descripcion-modal');
+    const fechaEl = get('f-fecha-modal');
+    const montoEl = get('f-monto-modal');
+    const responsableEl = get('f-responsable-modal');
+    const estadoEl = get('f-estado-modal');
+    const rutaEl = get('f-ruta-img');
 
-  if (btnNew) btnNew.addEventListener('click', openCreate);
+    const codigo = codigoEl?.value.trim() || '';
+    const descripcion = descripcionEl?.value.trim() || '';
+    const fecha = fechaEl?.value || '';
+    const montoStr = montoEl?.value;
+    const monto = montoStr === undefined || montoStr === null || montoStr === '' ? NaN : Number(montoStr);
+    const responsable = responsableEl?.value || '';
+    const estado = estadoEl?.value || '';
+    const ruta = rutaEl?.value || '';
+    const currentId = (document.getElementById('mueble-id')?.value || '').toString();
 
-  document.addEventListener('click', function(e){
-    const editBtn = e.target.closest('.btn-edit[data-mueble]');
-    if (editBtn) {
-      e.preventDefault();
-      e.stopPropagation();
-      try {
-        const json = editBtn.getAttribute('data-mueble') || '{}';
-        const obj = typeof json === 'string' ? JSON.parse(json) : json;
-        openEdit(obj);
-      } catch (err) {
-        console.error('openEdit parse error', err);
+    if (!codigo) errors['f-codigo-modal'] = 'El código es obligatorio.';
+    else {
+      const found = EXISTING_MUEBLES.find(x => x.codigo && x.codigo.toString().trim().toLowerCase() === codigo.toLowerCase());
+      if (found && String(found.id) !== currentId) {
+        errors['f-codigo-modal'] = 'Ya existe un mueble con ese código. Use otro código.';
       }
-      return;
     }
-    const delBtn = e.target.closest('.btn-delete');
-    if (delBtn) {
-      e.preventDefault(); e.stopPropagation();
-      if (typeof window.showConfirmFor === 'function') { window.showConfirmFor(delBtn); return; }
-      if (typeof window.confirmDeleteById === 'function') { window.confirmDeleteById(delBtn); return; }
-      const f = delBtn.closest('form'); if (f) f.submit();
+    if (!descripcion) errors['f-descripcion-modal'] = 'La descripción es obligatoria.';
+    if (!fecha) errors['f-fecha-modal'] = 'La fecha es obligatoria.';
+    if (Number.isNaN(monto)) errors['f-monto-modal'] = 'El monto unitario es obligatorio.';
+    else if (monto < 0) errors['f-monto-modal'] = 'El monto unitario no puede ser negativo.';
+    if (!responsable) errors['f-responsable-modal'] = 'Debe seleccionar un responsable.';
+    if (!estado) errors['f-estado-modal'] = 'El estado es obligatorio.';
+    if (!ruta) errors['f-ruta-img'] = 'Seleccione una imagen (carpeta + archivo) para el mueble.';
+    if (Object.keys(errors).length) {
+      let firstEl = null;
+      Object.entries(errors).forEach(([fid, msg])=>{
+        const el = document.getElementById(fid) || document.querySelector('[name="'+fid+'"]');
+        setFieldError(el, msg);
+        if (!firstEl) firstEl = el;
+      });
+      if (firstEl && typeof firstEl.focus === 'function') firstEl.focus();
+      return { ok:false, errors, focus:firstEl };
     }
-  });
-
-  if (btnCancel) btnCancel.addEventListener('click', function(){
-    showModalControls();
-    const card = document.getElementById('user-form-card');
-    if (card) card.style.display = 'none';
-    const filtersEl = document.getElementById('filters');
-    const gridEl = document.querySelector('.grid');
-    const tableWrapper = document.getElementById('table-wrapper');
-    if (filtersEl) filtersEl.style.display = 'flex';
-    if (gridEl) gridEl.style.display = 'grid';
-    if (tableWrapper) tableWrapper.style.display = 'none';
-    const form = document.getElementById('mueble-form');
-    if (form) form.reset();
-  });
-
-  const MODELOS_POR_MARCA = {!! json_encode($modelosPorMarca ?? []) !!};
-
-  const marcaModal = document.getElementById('f-marca-modal');
-  const modeloModal = document.getElementById('f-modelo-modal');
-
-  function populateModalModeloOptions(selectedMarca, selectedModel = ''){
-    if (!modeloModal) return;
-    modeloModal.innerHTML = '<option value="">(sin modelo)</option>';
-    const key = String(selectedMarca || '').trim();
-    let list = [];
-    if (key !== '' && MODELOS_POR_MARCA && Object.prototype.hasOwnProperty.call(MODELOS_POR_MARCA, key)) {
-      list = MODELOS_POR_MARCA[key];
-    } else {
-      const all = Object.values(MODELOS_POR_MARCA || {}).flat();
-      list = Array.from(new Set((all || []).map(x=>String(x).trim()).filter(Boolean))).sort();
-    }
-    list.forEach(m => {
-      const opt = document.createElement('option');
-      opt.value = m;
-      opt.textContent = m;
-      if (selectedModel && String(selectedModel).trim() === String(m).trim()) opt.selected = true;
-      modeloModal.appendChild(opt);
-    });
+    return { ok:true, errors:{} };
   }
 
-  if (marcaModal) marcaModal.addEventListener('change', function(){ populateModalModeloOptions(this.value); });
-
-  function openCreate(){
-    const title = document.getElementById('form-title');
-    const form = document.getElementById('mueble-form');
-    const methodInput = document.getElementById('form-method');
-    const idInput = document.getElementById('mueble-id');
-    if (title) title.textContent = 'Nuevo mueble';
-    if (form) {
-      form.action = "{{ url('/muebles') }}";
-      methodInput.value = 'POST';
-      idInput.value = '';
-      clearFormFields(form);
-      const ruta = document.getElementById('f-ruta-img'); if (ruta) ruta.value = '';
-      const prev = document.getElementById('ruta-preview'); if (prev) prev.src = DEFAULT_IMG;
-    }
-    hideModalControls();
-    const card = document.getElementById('user-form-card');
-    if (card) { card.style.display = 'block'; card.classList.add('collapsed'); requestAnimationFrame(()=>card.classList.remove('collapsed')); }
-    const filtersEl = document.getElementById('filters');
-    const tableWrapper = document.getElementById('table-wrapper');
-    if (filtersEl) filtersEl.style.display = 'none';
-    if (tableWrapper) tableWrapper.style.display = 'none';
-    if (cardsGrid) cardsGrid.style.display = 'none';
-    if (marcaModal) populateModalModeloOptions(marcaModal.value);
-  }
-
-  function openEdit(m){
-    if (!m) return;
-    const title = document.getElementById('form-title');
-    const form = document.getElementById('mueble-form');
-    const methodInput = document.getElementById('form-method');
-    const idInput = document.getElementById('mueble-id');
-    if (title) title.textContent = 'Editar mueble — ID '+m.id;
-    if (form) {
-      form.action = "{{ url('/muebles') }}/" + m.id;
-      methodInput.value = 'PUT';
-      idInput.value = m.id;
-      const setIf = (id, val) => { const el = document.getElementById(id); if (el) el.value = val ?? ''; };
-      setIf('f-codigo-modal', m.codigo);
-      setIf('f-descripcion-modal', m.descripcion);
-      setIf('f-fecha-modal', m.fecha_registro);
-      setIf('f-monto-modal', m.monto_unitario);
-      setIf('f-persona-modal', m.persona_id);
-      setIf('f-responsable-modal', m.responsable_id);
-      setIf('f-estado-modal', m.estado);
-      setIf('f-nota-modal', m.nota);
-      setIf('mueble-id', m.id);
-      if (marcaModal) marcaModal.value = m.marca ?? '';
-      populateModalModeloOptions(m.marca ?? '', m.modelo ?? '');
-      if (m.ruta_img) setPreviewFromRuta(m.ruta_img);
-    }
-    hideModalControls();
-    const card = document.getElementById('user-form-card');
-    if (card) { card.style.display = 'block'; card.classList.add('collapsed'); requestAnimationFrame(()=>card.classList.remove('collapsed')); }
-    const filtersEl = document.getElementById('filters');
-    const tableWrapper = document.getElementById('table-wrapper');
-    if (filtersEl) filtersEl.style.display = 'none';
-    if (tableWrapper) tableWrapper.style.display = 'none';
-    if (cardsGrid) cardsGrid.style.display = 'none';
-  }
-  if (btnSave) {
-    btnSave.addEventListener('click', function(){
-      const formEl = document.getElementById('mueble-form');
-      if (!formEl) return;
-      const meth = document.getElementById('form-method')?.value || 'POST';
-      formEl.submit();
-    });
-  }
-  if (btnCancel) {
-    btnCancel.addEventListener('click', function(){
-      const cardEl = document.getElementById('user-form-card');
-      if (cardEl) cardEl.style.display = 'none';
-      const f = document.getElementById('mueble-form');
-      if (f) f.reset();
-      populateModalModeloOptions('');
-    });
-  }
+   if (btnSave) {
+     btnSave.addEventListener('click', function(){
+       const formEl = document.getElementById('mueble-form');
+       if (!formEl) return;
+       const v = validateModalForm();
+       if (!v.ok) return;
+       formEl.submit();
+     });
+   }
+   if (btnCancel) {
+     btnCancel.addEventListener('click', function(e){
+       e && e.preventDefault();
+       const cardEl = document.getElementById('user-form-card');
+       if (cardEl) {
+         cardEl.classList.add('collapsed');
+         requestAnimationFrame(() => {
+           cardEl.style.display = 'none';
+           cardEl.classList.remove('collapsed');
+         });
+       }
+       const f = document.getElementById('mueble-form');
+       if (f) {
+         try { f.reset(); } catch(e){}
+         try { clearFormFields(f); } catch(e){}
+       }
+       populateModalModeloOptions('');
+       try { showModalControls(); } catch(e){}
+       if (filtersEl) filtersEl.style.display = 'flex';
+       if (cardsGrid) cardsGrid.style.display = 'grid';
+       const tableWrapper = document.getElementById('table-wrapper');
+       if (tableWrapper) tableWrapper.style.display = 'none';
+     });
+   }
 });
 </script>
 @endsection
