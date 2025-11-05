@@ -7,6 +7,10 @@ use App\Http\Controllers\MuebleController;
 use App\Http\Controllers\ImageController;
 use App\Http\Controllers\SolicitudController;
 use App\Http\Controllers\NotificacionController;
+use App\Http\Controllers\CategoriaController;
+use App\Http\Controllers\ComentarioController;
+use Illuminate\Http\Request;
+use App\Models\Mueble;
 
 Route::get('/', [AuthController::class, 'showLogin']);
 Route::post('/login', [AuthController::class, 'login']);
@@ -55,3 +59,15 @@ Route::post('/notificaciones/{notificacion}/admin/tipo',  [NotificacionControlle
 
 Route::post('/notificaciones/{notificacion}/usuario/marcar-visto', [NotificacionController::class, 'usuarioMarcarVisto'])->name('notificaciones.usuario.marcarVisto');
 Route::post('/notificaciones/{notificacion}/usuario/estado',      [NotificacionController::class, 'usuarioSetEstado'])->name('notificaciones.usuario.setEstado');
+
+Route::resource('categorias', CategoriaController::class);
+Route::resource('comentarios', ComentarioController::class);
+
+Route::get('/api/modelos-por-marca', function(Request $request){
+    $marca = $request->query('marca','');
+    if ($marca === '') return response()->json([], 200);
+    $modelos = Mueble::where('marca', $marca)
+        ->whereNotNull('modelo')->where('modelo','<>','')
+        ->distinct()->orderBy('modelo')->pluck('modelo');
+    return response()->json($modelos);
+});

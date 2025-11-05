@@ -14,6 +14,9 @@ class Mueble extends Model
         'ruta_img',
         'persona_id',
         'responsable_id',
+        'marca',
+        'modelo',
+        'categoria_id',
         'estado'
     ];
 
@@ -30,6 +33,15 @@ class Mueble extends Model
     public function solicitudes()
     {
         return $this->hasMany(Solicitud::class, 'mueble_id');
+    }
+    public function categoria()
+    {
+        return $this->belongsTo(Categoria::class, 'categoria_id');
+    }
+
+    public function comentarios()
+    {
+        return $this->hasMany(Comentario::class, 'mueble_id');
     }
 
     protected static function booted()

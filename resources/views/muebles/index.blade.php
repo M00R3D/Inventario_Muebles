@@ -125,40 +125,18 @@
 .btn-delete:focus{ outline:3px solid rgba(99,102,241,0.12); }
 .read-more{ margin-left:8px; color:#06b6d4; font-weight:700; text-decoration:none; }
 
-@media (max-width:700px){
-  .card-inner{ flex-direction:column; }
-  .card-media{ width:100%; max-height:240px; }
-  .card-top{ flex-direction:row; gap:8px; }
-  .card-actions{ justify-content:flex-start; }
-}
-
-.hide-admin .admin-only { display: none !important; }
-#table-wrapper.minimal { margin:0; padding:0; }
-#table-view {
-  width:100%;
-  border-collapse:collapse;
-  font-size:0.78rem;
-  background:transparent;
-  box-shadow:none;
-}
-#table-view thead th {
-  font-weight:600;
-  padding:6px 6px;
-  border-bottom:1px solid #e6e6e6;
-  text-align:left;
-}
-#table-view td {
-  padding:6px 6px;
-  border-bottom:1px solid #f1f1f1;
-  vertical-align:middle;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-}
-#table-view td.small-desc { max-width:260px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-#table-view .estado-badge { min-width:0; padding:3px 6px; font-size:0.72rem; }
-#table-view img { max-width:36px; max-height:24px; object-fit:cover; margin-right:6px; vertical-align:middle; }
-#table-wrapper.minimal table, #table-wrapper.minimal thead, #table-wrapper.minimal tbody, #table-wrapper.minimal tr, #table-wrapper.minimal th, #table-wrapper.minimal td { border-spacing:0; margin:0; }
+.card-comments { margin-top:8px; font-size:0.85rem; color:var(--muted); display:flex; flex-direction:column; gap:6px; }
+.card-comments .comment { background:#ffffff; border:1px solid #eef2ff; padding:6px 8px; border-radius:8px; color:#374151; display:flex; gap:8px; align-items:flex-start; font-size:0.85rem; }
+.card-comments .comment .author { font-weight:700; color:#111; margin-right:6px; white-space:nowrap; font-size:0.78rem; }
+.card-comments .comment .text { color:var(--muted); word-break:break-word; font-size:0.8rem; }
+.card-comments .comment.more { background:transparent; border:none; color:var(--muted); font-weight:700; padding:0 6px; }
+.card-comments .comment.small { padding:6px 8px; font-size:0.78rem; }
+.card-comments { max-height: calc(3 * 3.2rem); overflow:hidden; }
+.card-brand { margin-top:6px; display:flex; gap:8px; align-items:baseline; }
+.card-brand .marca { font-weight:900; font-size:1.05rem; color:#111; }
+.card-brand .modelo { font-weight:700; font-size:0.95rem; color:#374151; opacity:0.95; }
+.card-brand .marca-label { font-weight:700; font-size:0.85rem; color:#374151; }
+.card-brand .marca-value { font-weight:900; font-size:1.05rem; color:#111; }
 </style>
 
 <div class="container">
@@ -173,30 +151,6 @@
     </div>
 
     <div style="display:flex;gap:12px;align-items:center">
-      <label style="display:flex;align-items:center;gap:8px;font-weight:700;">
-        <span style="font-size:0.9rem;color:#374151;">Vista comprimida</span>
-        <input type="checkbox" id="view-toggle" style="width:44px;height:26px;appearance:none;background:#e5e7eb;border-radius:999px;position:relative;cursor:pointer;outline:none;display:inline-block;">
-        <style>
-          #view-toggle{position:relative;padding:0;margin:0 4px;}
-          #view-toggle:before{content:'';position:absolute;left:3px;top:3px;width:20px;height:20px;background:#fff;border-radius:50%;transition:transform .18s ease, background .18s;}
-          #view-toggle:checked{background:linear-gradient(90deg,#6366f1,#06b6d4);box-shadow:0 6px 18px rgba(99,102,241,0.12);}
-          #view-toggle:checked:before{transform:translateX(18px);}
-        </style>
-      </label>
-
-      @if(!empty($isAdmin) && $isAdmin)
-        <label style="display:flex;align-items:center;gap:8px;font-weight:700;">
-          <span style="font-size:0.9rem;color:#374151;">Ver como usuario</span>
-          <input type="checkbox" id="admin-toggle" style="width:44px;height:26px;appearance:none;background:#e5e7eb;border-radius:999px;position:relative;cursor:pointer;outline:none;display:inline-block;">
-          <style>
-            #admin-toggle{position:relative;padding:0;margin:0 4px;}
-            #admin-toggle:before{content:'';position:absolute;left:3px;top:3px;width:20px;height:20px;background:#fff;border-radius:50%;transition:transform .18s ease, background .18s;}
-            #admin-toggle:checked{background:linear-gradient(90deg,#ef4444,#f97316);box-shadow:0 6px 18px rgba(239,68,68,0.08);}
-            #admin-toggle:checked:before{transform:translateX(18px);}
-          </style>
-        </label>
-      @endif
-
       @if(!empty($isAdmin) && $isAdmin)
         <button id="btn-new" class="btn-base btn-new admin-only" type="button">Nuevo mueble</button>
       @endif
@@ -214,6 +168,24 @@
         <input name="descripcion" type="search" value="{{ request('descripcion') }}" placeholder="buscar descripción" style="padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
       </div>
       <div>
+        <label style="display:block;font-weight:600;font-size:0.9rem;">Marca</label>
+        <select name="marca" style="padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
+          <option value="">Todos</option>
+          @foreach(($marcas ?? collect()) as $ma)
+            <option value="{{ $ma }}" {{ (string)request('marca') === (string)$ma ? 'selected' : '' }}>{{ $ma }}</option>
+          @endforeach
+        </select>
+      </div>
+      <div>
+        <label style="display:block;font-weight:600;font-size:0.9rem;">Modelo</label>
+        <select name="modelo" style="padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
+          <option value="">Todos</option>
+          @foreach(($modelos ?? collect()) as $mo)
+            <option value="{{ $mo }}" {{ (string)request('modelo') === (string)$mo ? 'selected' : '' }}>{{ $mo }}</option>
+          @endforeach
+        </select>
+      </div>
+      <div>
         <label style="display:block;font-weight:600;font-size:0.9rem;">Estado</label>
         <select name="estado" style="padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
           <option value="">Todos</option>
@@ -224,22 +196,22 @@
         </select>
       </div>
       <div>
-        <label style="display:block;font-weight:600;font-size:0.7rem;">Responsable(admin)</label>
-        <label style="display:block;font-weight:600;font-size:0.9rem;">Solicitante(usuario)</label>
-        <select name="persona_id" style="padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
-          <option value="">Todos</option>
-          @foreach($usuarios->where('rol','!=','admin') as $u)
-            <option value="{{ $u->id }}" {{ request('persona_id')==$u->id ? 'selected' : '' }}>{{ $u->nombre }} {{ $u->apellido }}</option>
-          @endforeach
-        </select>
-      </div>
-      <div>
         <label style="display:block;font-weight:600;font-size:0.9rem;">Desde</label>
         <input type="date" name="desde" value="{{ request('desde') }}" style="padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
       </div>
       <div>
         <label style="display:block;font-weight:600;font-size:0.9rem;">Hasta</label>
         <input type="date" name="hasta" value="{{ request('hasta') }}" style="padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
+      </div>
+      <div>
+        <label style="display:block;font-weight:600;font-size:0.9rem;">Solicitante</label>
+        <select name="persona_id" style="padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
+          <option value="">Todos</option>
+          <option value="none" {{ request('persona_id') === 'none' ? 'selected' : '' }}>Ninguno</option>
+          @foreach($usuarios->where('rol','!=','admin') as $u)
+            <option value="{{ $u->id }}" {{ (string)request('persona_id')===(string)$u->id ? 'selected' : '' }}>{{ $u->nombre }} {{ $u->apellido }}</option>
+          @endforeach
+        </select>
       </div>
     </div>
 
@@ -255,91 +227,85 @@
       @csrf
       <input type="hidden" name="_method" id="form-method" value="POST">
       <input type="hidden" name="id" id="mueble-id" value="">
-      <div style="display:flex;flex-wrap:wrap;gap:10px;">
-        <div style="flex:1;min-width:160px;">
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <div style="flex:1 1 220px;">
           <label>Código</label>
-          <input name="codigo" id="f-codigo" type="text" required style="width:100%;padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
+          <input id="f-codigo-modal" name="codigo" required maxlength="50" type="text" style="width:100%;padding:8px;border-radius:6px;border:1px solid #e5e7eb;">
         </div>
-        <div style="flex:1;min-width:200px;">
+        <div style="flex:1 1 220px;">
           <label>Descripción</label>
-          <input name="descripcion" id="f-descripcion" type="text" style="width:100%;padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
+          <input id="f-descripcion-modal" name="descripcion" maxlength="500" type="text" style="width:100%;padding:8px;border-radius:6px;border:1px solid #e5e7eb;">
         </div>
-        <div style="min-width:160px;">
-          <label>Fecha registro</label>
-          <input name="fecha_registro" id="f-fecha" type="date" style="padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
+        <div style="flex:1 1 160px;">
+          <label>Fecha</label>
+          <input id="f-fecha-modal" name="fecha_registro" type="date" style="width:100%;padding:8px;border-radius:6px;border:1px solid #e5e7eb;">
         </div>
-        @if($isAdmin)
-        <div style="min-width:160px;">
+        <div style="flex:1 1 160px;">
           <label>Monto unitario</label>
-          <input name="monto_unitario" id="f-monto" type="number" step="0.01" required style="padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
+          <input id="f-monto-modal" name="monto_unitario" required type="number" step="0.01" style="width:100%;padding:8px;border-radius:6px;border:1px solid #e5e7eb;">
         </div>
-        @endif
-        <div style="flex:1;min-width:160px;">
-          <label>Responsable</label>
+        <div style="flex:1 1 200px;">
+          <label>Marca</label>
+          <select id="f-marca-modal" name="marca" style="width:100%;padding:8px;border-radius:6px;border:1px solid #e5e7eb;">
+            <option value="">(sin marca)</option>
+            @foreach(($marcas ?? collect()) as $ma)
+              <option value="{{ trim($ma) }}">{{ $ma }}</option>
+            @endforeach
+          </select>
+        </div>
+        <div style="flex:1 1 200px;">
+          <label>Modelo</label>
+          <select id="f-modelo-modal" name="modelo" style="width:100%;padding:8px;border-radius:6px;border:1px solid #e5e7eb;">
+            <option value="">(sin modelo)</option>
+            {{-- se rellenará dinámicamente según marca --}}
+          </select>
+        </div>
+        <div style="flex:1 1 220px;">
+          <label>Categoria</label>
+          <select id="f-categoria-modal" name="categoria_id" style="width:100%;padding:8px;border-radius:6px;border:1px solid #e5e7eb;">
+            <option value="">Sin categoría</option>
+            @foreach(\App\Models\Categoria::orderBy('nombre')->get() as $c)
+              <option value="{{ $c->id }}">{{ $c->nombre }}</option>
+            @endforeach
+          </select>
+        </div>
+        <div style="flex:1 1 220px;">
           <label>Solicitante</label>
-          <select name="persona_id" id="f-persona" style="width:100%;padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
+          <select id="f-persona-modal" name="persona_id" style="width:100%;padding:8px;border-radius:6px;border:1px solid #e5e7eb;">
             <option value="">(ninguno)</option>
             @foreach($usuarios->where('rol','!=','admin') as $u)
               <option value="{{ $u->id }}">{{ $u->nombre }} {{ $u->apellido }}</option>
             @endforeach
           </select>
         </div>
-        <div style="flex:1;min-width:160px;">
+        <div style="flex:1 1 220px;">
           <label>Responsable</label>
-          <select name="responsable_id" id="f-responsable" style="width:100%;padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
+          <select id="f-responsable-modal" name="responsable_id" style="width:100%;padding:8px;border-radius:6px;border:1px solid #e5e7eb;">
             <option value="">(ninguno)</option>
-            @foreach($usuarios->where('rol','admin') as $u)
+            @foreach($usuarios as $u)
               <option value="{{ $u->id }}">{{ $u->nombre }} {{ $u->apellido }}</option>
             @endforeach
           </select>
         </div>
-        <div style="min-width:160px;">
+        <div style="flex:1 1 160px;">
           <label>Estado</label>
-          <select name="estado" id="f-estado" required style="padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
+          <select id="f-estado-modal" name="estado" required style="width:100%;padding:8px;border-radius:6px;border:1px solid #e5e7eb;">
             <option value="bueno">Bueno</option>
             <option value="regular">Regular</option>
             <option value="malo">Malo</option>
             <option value="en_reparacion">En reparación</option>
           </select>
         </div>
-        <div style="width:100%;">
+        <div style="flex:1 1 320px;">
           <label>Nota</label>
-          <input name="nota" id="f-nota" type="text" style="width:100%;padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
+          <textarea id="f-nota-modal" name="nota" rows="2" style="width:100%;padding:8px;border-radius:6px;border:1px solid #e5e7eb;"></textarea>
         </div>
-
-        <div style="display:flex;gap:8px;align-items:center;margin-top:8px;">
-          <div style="flex:1;min-width:160px;">
-            <label>Carpeta pública</label>
-            <select id="select-folder" style="width:100%;padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
-              <option value="">Selecciona carpeta (public)</option>
-              @isset($dirs)
-                @foreach($dirs as $d)
-                  <option value="{{ $d }}">{{ $d }}</option>
-                @endforeach
-              @endisset
-            </select>
-          </div>
-          <div style="flex:1;min-width:160px;">
-            <label>Archivo</label>
-            <select id="select-file" style="width:100%;padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
-              <option value="">-- elegir --</option>
-            </select>
-          </div>
-          <div style="min-width:120px;text-align:center;">
-            <label>Preview</label>
-            <div style="margin-top:6px;">
-                <div class="preview-wrapper">
-                    <img id="ruta-preview" src="{{ url('/imgs/default.webp') }}" alt="Preview" />
-                </div>
-            </div>
-          </div>
-        </div>
-        <input type="hidden" name="ruta_img" id="f-ruta-img" value="">
       </div>
 
-      <div style="display:flex;gap:8px;margin-top:12px;">
-        <button type="submit" id="btn-save" class="btn-base btn-save">Guardar</button>
-        <button id="btn-cancel" type="button" class="btn-base btn-cancel">Cancelar</button>
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <button type="button" id="btn-save" class="btn-save btn-base">Guardar</button>
+        <button type="button" id="btn-cancel" class="btn-cancel btn-base">Cancelar</button>
       </div>
     </form>
   </div>
@@ -349,78 +315,67 @@
   @else
     <div class="grid" role="list">
       @foreach($visibleMuebles as $m)
-        <article class="card" role="listitem" aria-labelledby="mueble-{{ $m->id }}">
+        <div class="card" role="listitem" data-id="{{ $m->id }}">
           <div class="card-inner">
             <div class="card-media">
-              @if($m->ruta_img)
-                <img src="{{ asset($m->ruta_img ?? 'imgs/default.webp') }}" alt="Imagen mueble">
-              @else
-                <div style="background:linear-gradient(180deg,#f3f4f6,#e5e7eb);display:flex;align-items:center;justify-content:center;border-radius:8px;color:#9ca3af;padding:18px;">
-                  Sin imagen
-                </div>
-              @endif
+              <img src="{{ $m->ruta_img ? url($m->ruta_img) : asset('imgs/default.webp') }}" alt="{{ $m->codigo ?? 'mueble' }}" onerror="this.src='{{ asset('imgs/default.webp') }}'">
             </div>
-
             <div class="card-info">
               <div class="card-top">
-                <div class="card-title">{{ $m->codigo ?? 'ID '.$m->id }}</div>
-                <?php $estadoClass = 'estado-'.($m->estado ?? ''); ?>
-                <span class="estado-badge {{ $estadoClass }}">{{ ucfirst(str_replace('_',' ', $m->estado ?? '-')) }}</span>
+                <div class="card-title">{{ $m->codigo ?? 'ID '.$m->id }} — {{ \Illuminate\Support\Str::limit($m->descripcion ?? '-', 80) }}</div>
+                <div><span class="estado-badge estado-{{ $m->estado ?? '' }}">{{ ucfirst(str_replace('_',' ', $m->estado ?? '-')) }}</span></div>
               </div>
 
-              <div class="card-desc">
-                @php
-                  $full = trim($m->descripcion ?? '');
-                  if (preg_match('/\R/', $full)) {
-                      $parts = preg_split('/\R+/', $full);
-                      $firstPara = trim($parts[0] ?? '');
-                      $rest = trim(implode("\n\n", array_slice($parts, 1)));
-                      $showRead = $rest !== '';
-                  } else {
-                      $firstPara = \Illuminate\Support\Str::limit($full, 160);
-                      $rest = $full;
-                      $showRead = strlen($full) > strlen($firstPara);
-                  }
-                @endphp
-                <div class="desc-short">{{ \Illuminate\Support\Str::limit($m->descripcion ?? '-', 120) }}</div>
-                @if($showRead)
-                  <a href="#" class="read-more" data-full="{{ $rest }}">Leer más</a>
-                @endif
-                <div class="desc-full" style="display:none;">{{ $rest }}</div>
-              </div>
+              @if(!empty($m->marca) || !empty($m->modelo))
+                <div class="card-brand">
+                  @if(!empty($m->marca)) <div class="marca">{{ $m->marca }}</div> @endif
+                  @if(!empty($m->modelo)) <div class="modelo">{{ $m->modelo }}</div> @endif
+                </div>
+              @endif
+
               <div class="card-meta">
-                @if($isAdmin)
-                <div class="card-price admin-only">${{ number_format($m->monto_unitario ?? 0, 2, ',', '.') }}</div>
-                <div class="card-responsable admin-only"><strong>Responsable(admin):</strong>
-                  {{ $m->responsable ? ($m->responsable->nombre . ' ' . $m->responsable->apellido) : 'ninguno' }}
-                </div>
-                <div class="card-solicitante admin-only"><strong>Solicitante(usuario):</strong>
-                  {{ $m->usuario ? ($m->usuario->nombre . ' ' . $m->usuario->apellido) : 'ninguno' }}
-                </div>
+                @if(!empty($isAdmin) && $isAdmin)
+                  <div class="card-price">${{ number_format($m->monto_unitario ?? 0, 2, ',', '.') }}</div>
+                  <div class="card-responsable"><strong>Responsable:</strong> {{ $m->responsable ? ($m->responsable->nombre . ' ' . $m->responsable->apellido) : 'ninguno' }}</div>
+                @endif
+                <div class="card-solicitante"><strong>Solicitante:</strong> {{ $m->usuario ? ($m->usuario->nombre . ' ' . $m->usuario->apellido) : 'ninguno' }}</div>
               </div>
-              @endif
-              @php $nota = trim($m->nota ?? '') @endphp
-              @if($nota)
-                <div class="mueble-nota">{{ \Illuminate\Support\Str::limit($nota, 120) }}</div>
-              @endif
+
+              @php $commentsToShow = ($m->comentarios ?? collect())->take(3); @endphp
+              <div class="card-comments">
+                <strong>Comentarios:</strong>
+                @if($commentsToShow->isNotEmpty())
+                  @foreach($commentsToShow as $c)
+                    @php $randColor = 'hsl('.rand(0,360).' '.rand(0,6).'% '.(90+rand(0,8)).'%)'; @endphp
+                    <div class="comment small" style="background: {{ $randColor }};">
+                      <div class="author">{{ $c->usuario ? ($c->usuario->nombre . ' ' . $c->usuario->apellido) : 'anonimo' }}</div>
+                      <div class="text">{{ \Illuminate\Support\Str::limit($c->comentario, 200) }}</div>
+                    </div>
+                  @endforeach
+                  @if(($m->comentarios->count() ?? 0) > 3)
+                    <div class="comment more">+{{ $m->comentarios->count() - 3 }} más</div>
+                  @endif
+                @else
+                  <div class="comment small">ninguno</div>
+                @endif
+              </div>
+
+              <div class="card-actions">
+                @if(!empty($isAdmin) && $isAdmin)
+                  <form method="POST" action="{{ url('/muebles/'.$m->id) }}" style="display:inline;">
+                    @csrf @method('DELETE')
+                    <button type="button" class="btn-edit" data-mueble='@json($m)'>Editar</button>
+                    <button type="button" class="btn-delete" data-id="{{ $m->id }}" data-confirm="¿Eliminar mueble {{ $m->codigo ?? $m->id }}?" data-confirm-callback="confirmDeleteById">Eliminar</button>
+                  </form>
+                @else
+                  <a class="btn-base btn-new" href="{{ url('/solicitudes/create?mueble_id=' . $m->id) }}">Solicitar</a>
+                @endif
+              </div>
+
             </div>
           </div>
-          <div class="card-actions">
-            @if(!empty($isAdmin) && $isAdmin)
-              <button type="button" class="btn-edit admin-only" data-mueble='@json($m)'>Editar</button>
-              <form method="POST" action="{{ url('/muebles/'.$m->id) }}" style="display:inline;">
-                @csrf
-                @method('DELETE')
-                <button type="button" class="btn-delete" data-confirm="¿Eliminar mueble {{ $m->codigo ?? $m->id }}?" data-confirm-type="delete" data-confirm-callback="confirmDeleteById" data-id="{{ $m->id }}">
-                  Eliminar
-                </button>
-              </form>
-            @else
-              <a href="{{ url('/solicitudes/create') }}?mueble_id={{ $m->id }}" class="btn-edit" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center;">Solicitar</a>
-            @endif
-          </div>
-        </article>
-         @endforeach
+        </div>
+      @endforeach
     </div>
   @endif
 
@@ -442,28 +397,20 @@
           <tr>
             <td>{{ $m->codigo ?? 'ID '.$m->id }}</td>
             <td class="small-desc">{{ \Illuminate\Support\Str::limit($m->descripcion ?? '-', 60) }}</td>
+         <td class="table-comment">
+           @if($m->comentarios && $m->comentarios->isNotEmpty())
+             @php $first = $m->comentarios->first(); $author = $first->usuario ? ($first->usuario->nombre . ' ' . $first->usuario->apellido) : 'anonimo'; @endphp
+             <strong>{{ $author }}:</strong> {{ \Illuminate\Support\Str::limit($first->comentario, 80) }}
+             @if($m->comentarios->count() > 1) <span style="margin-left:6px;color:var(--muted);font-weight:700;">(+{{ $m->comentarios->count()-1 }})</span> @endif
+           @else
+             ninguno
+           @endif
+         </td>
             <td><span class="estado-badge estado-{{ $m->estado ?? '' }}">{{ ucfirst(str_replace('_',' ', $m->estado ?? '-')) }}</span></td>
-            <td>{{ $m->responsable ? ($m->responsable->nombre . ' ' . $m->responsable->apellido) : 'ninguno' }}</td>
-            <td>{{ $m->usuario ? ($m->usuario->nombre . ' ' . $m->usuario->apellido) : 'ninguno' }}</td>
-            @if($isAdmin)<td class="admin-only">${{ number_format($m->monto_unitario ?? 0, 2, ',', '.') }}</td>@endif
-            <td>
-              @if(!empty($isAdmin) && $isAdmin)
-                <button type="button" class="btn-edit admin-only" data-mueble='@json($m)'>Editar</button>
-                <form method="POST" action="{{ url('/muebles/'.$m->id) }}" style="display:inline;">
-                  @csrf
-                  @method('DELETE')
-                  <button type="button" class="btn-delete" data-confirm="¿Eliminar mueble {{ $m->codigo ?? $m->id }}?" data-confirm-type="delete" data-confirm-callback="confirmDeleteById" data-id="{{ $m->id }}">
-                    Eliminar
-                  </button>
-                </form>
-              @else
-                <a href="{{ url('/solicitudes/create') }}?mueble_id={{ $m->id }}" class="btn-edit" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center;padding:4px 8px;font-size:0.78rem;">Solicitar</a>
-              @endif
-            </td>
-          </tr>
-        @empty
-          <tr><td colspan="{{ $isAdmin ? 7 : 6 }}" style="padding:8px;">No hay muebles</td></tr>
-        @endforelse
+        </tr>
+      @empty
+        <tr><td colspan="{{ $isAdmin ? 7 : 6 }}" style="padding:8px;">No hay muebles</td></tr>
+      @endforelse
       </tbody>
     </table>
   </div>
@@ -476,6 +423,7 @@
 document.addEventListener('DOMContentLoaded', function(){
   const card = document.getElementById('user-form-card');
   const form = document.getElementById('mueble-form');
+  // obtener btnNew UNA vez (no volver a declararlo más abajo)
   const btnNew = document.getElementById('btn-new');
   const btnCancel = document.getElementById('btn-cancel');
   const btnSave = document.getElementById('btn-save');
@@ -492,225 +440,43 @@ document.addEventListener('DOMContentLoaded', function(){
   const API_BASE = "{{ url('/muebles') }}";
   const IS_ADMIN = {!! json_encode(!empty($isAdmin) && $isAdmin) !!};
   const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+  const DEFAULT_IMG = "{{ asset('imgs/default.webp') }}";
   const STORAGE_KEY = 'muebles_filters_v1';
-  const VIEW_KEY = 'muebles_view_mode_v1'; 
-  const ADMIN_VIEW_KEY = 'muebles_admin_view_v1'; 
-  const viewToggle = document.getElementById('view-toggle');
-  const adminToggle = document.getElementById('admin-toggle');
-  const tableWrapper = document.getElementById('table-wrapper');
-  const gridEl = document.querySelector('.grid');
 
-  if (typeof window.showConfirmFor !== 'function') {
-    window.showConfirmFor = function(elem){
-      if (!elem) return;
-      const message = elem.getAttribute('data-confirm') || '¿Confirmar acción?';
-      if (document.getElementById('app-confirm-overlay')) {
-        document.getElementById('app-confirm-overlay').querySelector('.confirm-text').textContent = message;
-        document.getElementById('app-confirm-overlay').dataset.elId = Math.random().toString(36).slice(2);
-        document.getElementById('app-confirm-overlay')._targetEl = elem;
-        document.getElementById('app-confirm-overlay').style.display = 'flex';
-        return;
-      }
-      const overlay = document.createElement('div');
-      overlay.id = 'app-confirm-overlay';
-      overlay.style = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.45);z-index:9999;';
-      overlay.innerHTML = `
-        <div style="background:#fff;padding:18px;border-radius:10px;max-width:420px;width:92%;box-shadow:0 12px 40px rgba(2,6,23,0.2);">
-          <div class="confirm-text" style="margin-bottom:12px;font-weight:700;color:#111;">${String(message).replace(/</g,'&lt;')}</div>
-          <div style="display:flex;gap:8px;justify-content:flex-end;">
-            <button type="button" id="confirm-cancel" style="padding:8px 12px;border-radius:8px;border:0;background:#e5e7eb;font-weight:700;cursor:pointer;">Cancelar</button>
-            <button type="button" id="confirm-ok" style="padding:8px 12px;border-radius:8px;border:0;background:linear-gradient(90deg,#ef4444,#d6336c);color:#fff;font-weight:800;cursor:pointer;">Eliminar</button>
-          </div>
-        </div>`;
-      document.body.appendChild(overlay);
-      overlay._targetEl = elem;
-      overlay.querySelector('#confirm-cancel').addEventListener('click', function(){
-        overlay.style.display = 'none';
-      });
-      overlay.querySelector('#confirm-ok').addEventListener('click', function(){
-        overlay.style.display = 'none';
-        try { window.confirmDeleteById(overlay._targetEl); } catch(e){ console.error(e); }
-      });
+  function readFiltersFromForm(){
+    const f = document.getElementById('filters');
+    if (!f) return {};
+    const get = name => {
+      const el = f.querySelector('[name="'+name+'"]');
+      if (!el) return '';
+      if (el.type === 'checkbox') return el.checked ? (el.value || true) : '';
+      return el.value ?? '';
+    };
+    const persona = get('persona_id');
+    return {
+      codigo: get('codigo'),
+      descripcion: get('descripcion'),
+      marca: get('marca'),
+      modelo: get('modelo'),
+      estado: get('estado'),
+      persona_id: persona === 'none' ? 'none' : (persona || ''),
+      desde: get('desde'),
+      hasta: get('hasta'),
     };
   }
-
-  function hideModalControls(){
+  
+  function applyFiltersToForm(filters = {}){
     try {
-      if (viewToggle && viewToggle.parentElement) viewToggle.parentElement.style.display = 'none';
-      if (adminToggle && adminToggle.parentElement) adminToggle.parentElement.style.display = 'none';
-    } catch(e){}
-  }
-  function showModalControls(){
-    try {
-      if (viewToggle && viewToggle.parentElement) viewToggle.parentElement.style.display = '';
-      if (adminToggle && adminToggle.parentElement) adminToggle.parentElement.style.display = '';
-    } catch(e){}
-  }
-
-  function setView(mode){
-    if(mode === 'table'){
-      if(tableWrapper) tableWrapper.style.display = 'block';
-      if(gridEl) gridEl.style.display = 'none';
-      if(viewToggle) viewToggle.checked = true;
-    } else {
-      if(tableWrapper) tableWrapper.style.display = 'none';
-      if(gridEl) gridEl.style.display = 'grid';
-      if(viewToggle) viewToggle.checked = false;
-    }
-    try { localStorage.setItem(VIEW_KEY, mode); } catch(e){}
-  }
-
-  function setAdminView(mode){
-    const container = document.querySelector('.container');
-    if (!container) return;
-    if (mode === 'user') {
-      container.classList.add('hide-admin');
-      if (adminToggle) adminToggle.checked = true;
-    } else {
-      container.classList.remove('hide-admin');
-      if (adminToggle) adminToggle.checked = false;
-    }
-    try { localStorage.setItem(ADMIN_VIEW_KEY, mode); } catch(e){}
-  }
-
-  try {
-    const storedView = localStorage.getItem(VIEW_KEY) || 'cards';
-    setView(storedView);
-  } catch(e){ setView('cards'); }
-
-  try {
-    if (IS_ADMIN && adminToggle) {
-      const storedAdminView = localStorage.getItem(ADMIN_VIEW_KEY) || 'admin';
-      setAdminView(storedAdminView);
-      adminToggle.addEventListener('change', function(){
-        setAdminView(this.checked ? 'user' : 'admin');
+      const f = document.getElementById('filters');
+      if (!f) return;
+      Object.entries(filters).forEach(([k,v])=>{
+        if (v === null || v === undefined) return;
+        const el = f.querySelector('[name="'+k+'"]') || document.getElementById(k);
+        if (!el) return;
+        if (el.type === 'checkbox') el.checked = !!v;
+        else el.value = String(v);
       });
-    } else {
-      const container = document.querySelector('.container');
-      if (container) container.classList.remove('hide-admin');
-    }
-  } catch(e){ if (IS_ADMIN) setAdminView('admin'); }
-
-  if (viewToggle) {
-    viewToggle.addEventListener('change', function(){
-      setView(this.checked ? 'table' : 'cards');
-    });
-  }
-
-  async function fetchAndRenderMuebles(filters = {}) {
-    const grid = document.querySelector('.grid');
-    const table = document.querySelector('#table-view tbody');
-    if (!grid && !table) return;
-    const params = new URLSearchParams();
-    Object.entries(filters).forEach(([k,v])=>{
-      if (v === null || v === undefined) return;
-      const s = String(v).trim();
-      if (s.length === 0) return;
-      params.set(k, s);
-    });
-    const url = API_BASE + (params.toString() ? ('?' + params.toString()) : '');
-    try {
-      const resp = await fetch(url, {
-        credentials: 'same-origin',
-        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
-      });
-      if (!resp.ok) throw new Error('HTTP ' + resp.status);
-      let items = await resp.json();
-      if (!IS_ADMIN && Array.isArray(items)) {
-        items = items.filter(m => !m.usuario);
-      }
-      const esc = s => String(s ?? '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-      if (grid) {
-        grid.innerHTML = items.length ? items.map(m => {
-          const imgUrl = m.ruta_img ? (`${baseUrl}/${esc(m.ruta_img)}`) : (`${baseUrl}/imgs/default.webp`);
-          const nota = m.nota ? `<div class="mueble-nota">${esc(m.nota)}</div>` : '';
-          const solicitante = m.usuario ? esc((m.usuario.nombre||'') + ' ' + (m.usuario.apellido||'')) : 'ninguno';
-          const responsable = m.responsable ? esc((m.responsable.nombre||'') + ' ' + (m.responsable.apellido||'')) : 'ninguno';
-          const priceHtml = IS_ADMIN ? (m.monto_unitario ? `<div class="card-price admin-only">$${Number(m.monto_unitario).toFixed(2)}</div>` : `<div class="card-price admin-only"></div>`) : '';
-          const actionsHtml = IS_ADMIN
-            ? `<form method="POST" action="${API_BASE}/${esc(m.id)}" style="display:inline;">
-                 <input type="hidden" name="_token" value="${csrfToken}">
-                 <input type="hidden" name="_method" value="DELETE">
-                 <button type="button" class="btn-base btn-edit" data-mueble='${esc(JSON.stringify(m))}'>Editar</button>
-                 <button type="button" class="btn-base btn-delete"
-                   data-id="${esc(m.id)}"
-                   data-confirm="¿Eliminar mueble ${esc(m.codigo || ('ID ' + m.id))}?"`
-                   data-confirm-type="delete"
-                   data-confirm-callback="confirmDeleteById">Eliminar</button>
-               </form>`
-            : `<a class="btn-base btn-new" href="${baseUrl}/solicitudes/create?mueble_id=${m.id}">Solicitar</a>`;
-          return `<article class="card" role="listitem" aria-labelledby="mueble-${esc(m.id)}">
-              <div class="card-inner">
-                <div class="card-media"><img src="${imgUrl}" alt="${esc(m.codigo||'')}" /></div>
-                <div class="card-info">
-                  <div class="card-top">
-                    <div class="card-title">${esc(m.codigo || ('ID ' + m.id))}</div>
-                    <span class="estado-badge estado-${esc(m.estado || '')}">${esc((m.estado || '').replace('_',' '))}</span>
-                  </div>
-                  <div class="card-desc">${esc(m.descripcion || '-')}</div>
-                  ${nota}
-                  <div class="card-meta">
-                    ${priceHtml}
-                    @if($isAdmin)
-                    <div class="card-responsable"><strong>Responsable(admin):</strong> ${responsable}</div>
-                    <div class="card-solicitante"><strong>Solicitante(usuario):</strong> ${solicitante}</div>
-                    @endif
-                  </div>
-                </div>
-              </div>
-              <div class="card-actions">
-                ${actionsHtml}
-              </div>
-            </article>`;
-        }).join('') : '<div class="card">No hay muebles</div>';
-      }
-
-      if (table) {
-        table.innerHTML = items.length ? items.map(m => {
-          const codigo = esc(m.codigo || ('ID ' + m.id));
-          const descripcion = esc((m.descripcion || '-').slice(0, 120));
-          const estado = esc((m.estado || '').replace('_',' '));
-          const responsable = m.responsable ? esc((m.responsable.nombre||'') + ' ' + (m.responsable.apellido||'')) : 'ninguno';
-          const solicitante = m.usuario ? esc((m.usuario.nombre||'') + ' ' + (m.usuario.apellido||'')) : 'ninguno';
-          const monto = IS_ADMIN ? (`<td class="admin-only" style="padding:8px 6px;">$${Number(m.monto_unitario||0).toFixed(2)}</td>`) : '';
-          const actions = IS_ADMIN
-            ? `<td style="padding:6px;">
-                <button type="button" class="btn-edit admin-only" data-mueble='${esc(JSON.stringify(m))}' style="padding:6px 8px;font-size:0.85rem;">Editar</button>
-                <button type="button" class="btn-delete admin-only" data-id="${esc(m.id)}" data-confirm="¿Eliminar mueble ${codigo}?" style="padding:6px 8px;font-size:0.85rem;">Eliminar</button>
-               </td>`
-            : `<td style="padding:6px;"><a class="btn-edit" href="${baseUrl}/solicitudes/create?mueble_id=${m.id}" style="padding:6px 8px;font-size:0.85rem;">Solicitar</a></td>`;
-          return `<tr style="border-bottom:1px solid #f3f4f6;">
-                    <td style="padding:8px 6px;white-space:nowrap;">${codigo}</td>
-                    <td style="padding:8px 6px;max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${descripcion}</td>
-                    <td style="padding:8px 6px;"><span class="estado-badge estado-${esc(m.estado||'')}" style="padding:4px 8px;font-size:0.8rem;">${estado}</span></td>
-                    <td style="padding:8px 6px;">${responsable}</td>
-                    <td style="padding:8px 6px;">${solicitante}</td>
-                    ${monto}
-                    ${actions}
-                  </tr>`;
-        }).join('') : `<tr><td colspan="${IS_ADMIN ? 7 : 6}" style="padding:12px;">No hay muebles</td></tr>`;
-      }
-
-      document.querySelectorAll('.btn-edit[data-mueble]').forEach(btn=>{
-        btn.addEventListener('click', function(){
-          try { const obj = JSON.parse(this.getAttribute('data-mueble')); openEdit(obj); } catch(e){ console.error(e); }
-        });
-      });
-      document.querySelectorAll('.btn-delete[data-id]').forEach(btn=>{
-        btn.addEventListener('click', function(evt){
-          evt.preventDefault(); evt.stopPropagation();
-          if (typeof window.showConfirmFor === 'function') { window.showConfirmFor(this); return; }
-          const confirmText = this.getAttribute('data-confirm') || '¿Eliminar?';
-          if (!confirm(confirmText)) return;
-          window.confirmDeleteById && window.confirmDeleteById(this);
-        });
-      });
-
-    } catch (err) {
-      console.error('Error cargando muebles:', err);
-      if (grid) grid.innerHTML = '<div class="card">Error cargando muebles</div>';
-      if (table) table.innerHTML = `<tr><td colspan="${IS_ADMIN ? 7 : 6}" style="padding:12px;">Error cargando muebles</td></tr>`;
-    }
+    } catch(e){ console.error('applyFiltersToForm', e); }
   }
 
   (function wireFilters(){
@@ -721,7 +487,6 @@ document.addEventListener('DOMContentLoaded', function(){
       const filters = readFiltersFromForm();
       try { localStorage.setItem(STORAGE_KEY, JSON.stringify(filters)); } catch(e){}
       if (typeof fetchAndRenderMuebles === 'function') fetchAndRenderMuebles(filters);
-      if (window.history && history.replaceState) history.replaceState(null, '', '/muebles');
     });
 
     const btnClear = document.getElementById('btn-clear');
@@ -730,14 +495,13 @@ document.addEventListener('DOMContentLoaded', function(){
         evt.preventDefault();
         const ff = document.getElementById('filters');
         if (ff) {
-          ff.querySelectorAll('input,select').forEach(i=>{
+          ff.querySelectorAll('input,select,textarea').forEach(i=>{
             if (i.type === 'checkbox' || i.type === 'radio') i.checked = false;
             else if (i.type !== 'submit' && i.type !== 'button') i.value = '';
           });
         }
         try { localStorage.removeItem(STORAGE_KEY); } catch(e){}
         if (typeof fetchAndRenderMuebles === 'function') fetchAndRenderMuebles({});
-        if (window.history && history.replaceState) history.replaceState(null,'','/muebles');
       });
     }
 
@@ -745,294 +509,384 @@ document.addEventListener('DOMContentLoaded', function(){
       const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
       if (stored && Object.keys(stored).length > 0) {
         applyFiltersToForm(stored);
-        fetchAndRenderMuebles(stored);
-        if (window.history && history.replaceState) history.replaceState(null, '', '/muebles');
+        if (typeof fetchAndRenderMuebles === 'function') fetchAndRenderMuebles(stored);
         return;
       }
     } catch(e){}
-    fetchAndRenderMuebles({});
+    if (typeof fetchAndRenderMuebles === 'function') fetchAndRenderMuebles({});
   })();
 
-  async function loadFilesForFolder(folder){
-    fileSelect.innerHTML = '<option value="">Cargando…</option>';
+  function esc(v){
+    if (v === null || v === undefined) return '';
+    return String(v)
+      .replace(/&/g,'&amp;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;')
+      .replace(/'/g,'&#39;');
+  }
+
+  function randomNearWhite(){
+    const hue = Math.floor(Math.random() * 360);
+    const sat = Math.floor(Math.random() * 6); // 0..5%
+    const light = 92 + Math.floor(Math.random() * 7); // 92..98%
+    return `hsl(${hue} ${sat}% ${light}%)`;
+  }
+
+  function setPreviewFromRuta(ruta){
     try {
-      const u = new URL("{{ url('/imagenes/list') }}", window.location.origin);
-      u.searchParams.set('folder', folder || '');
-      const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-      const resp = await fetch(u.toString(), { headers: {'X-CSRF-TOKEN': token, 'Accept':'application/json'}, credentials:'same-origin' });
-      if (!resp.ok) { fileSelect.innerHTML = '<option value="">Error</option>'; return; }
-      const json = await resp.json();
-      const files = json.files || [];
-      fileSelect.innerHTML = '<option value="">-- elegir --</option>';
-      files.forEach(f => {
-        const opt = document.createElement('option');
-        opt.value = f;
-        opt.textContent = f;
-        fileSelect.appendChild(opt);
-      });
-    } catch(e){
-      console.error(e);
-      fileSelect.innerHTML = '<option value="">Error de red</option>';
-    }
-  }
+      const previewEl = document.getElementById('ruta-preview');
+      const rutaInputEl = document.getElementById('f-ruta-img');
+      if (!previewEl && !rutaInputEl) return;
+      if (!ruta) {
+        if (previewEl) previewEl.src = DEFAULT_IMG;
+        if (rutaInputEl) rutaInputEl.value = '';
+        return;
+      }
+      if (rutaInputEl) rutaInputEl.value = ruta;
+      if (previewEl) previewEl.src = (ruta.startsWith('http') ? ruta : (baseUrl + '/' + ruta));
 
-  if (folderSelect) {
-    folderSelect.addEventListener('change', function(){
-      const folder = this.value || '';
-      if (!folder) { fileSelect.innerHTML = '<option value="">-- elegir --</option>'; return; }
-      loadFilesForFolder(folder);
-    });
-  }
-
-  if (fileSelect) {
-    fileSelect.addEventListener('change', function(){
-      const file = this.value || '';
-      const folder = folderSelect ? folderSelect.value : '';
-      if (!file || !folder) { rutaInput.value = ''; preview.src = baseUrl + '/imgs/default.webp'; return; }
-      const path = folder + '/' + file;
-      rutaInput.value = path;
-      preview.src = baseUrl + '/' + path;
-    });
-  }
-
-  function setPreviewFromRuta(ruta) {
-    if (!ruta) { preview.src = baseUrl + '/imgs/default.webp'; rutaInput.value = ''; return; }
-    rutaInput.value = ruta;
-    preview.src = baseUrl + '/' + ruta;
-    const parts = ruta.split('/');
-    if (parts.length >= 2) {
-      const folder = parts.slice(0, parts.length-1).join('/');
-      const file = parts[parts.length-1];
-      if (folderSelect) {
-        const opt = Array.from(folderSelect.options).find(o=>o.value === folder);
-        if (opt) {
+      const parts = String(ruta).split('/');
+      if (parts.length >= 2) {
+        const folder = parts.slice(0, parts.length - 1).join('/');
+        const file = parts[parts.length - 1];
+        if (typeof loadFilesForFolder === 'function' && folderSelect && fileSelect) {
           folderSelect.value = folder;
-          loadFilesForFolder(folder).then(()=> {
-            const fo = Array.from(fileSelect.options).find(o=>o.value === file);
+          loadFilesForFolder(folder).then(() => {
+            const fo = Array.from(fileSelect.options).find(o => o.value === file);
             if (fo) fileSelect.value = file;
-          });
+          }).catch(()=>{});
+        } else {
+          if (folderSelect) {
+            const optF = Array.from(folderSelect.options).find(o => o.value === folder);
+            if (optF) folderSelect.value = folder;
+          }
+          if (fileSelect) {
+            const optFile = Array.from(fileSelect.options).find(o => o.value === file);
+            if (optFile) fileSelect.value = file;
+          }
         }
       }
+    } catch(e){
+      console.error('setPreviewFromRuta error', e);
     }
   }
 
-  function hidePageForModal(){
-    if (filtersEl) filtersEl.style.display = 'none';
-    if (cardsGrid) cardsGrid.style.display = 'none';
-    // también ocultar la vista comprimida (tabla) cuando se abre el modal
-    if (tableWrapper) tableWrapper.style.display = 'none';
-  }
-  function showPageForModal(){
-    // restaurar la vista guardada (cards o table) para que vuelva a mostrarse correctamente
-    if (typeof setView === 'function') {
-      try {
-        const storedView = localStorage.getItem(VIEW_KEY) || 'cards';
-        setView(storedView === 'table' ? 'table' : 'cards');
-        return;
-      } catch(e){}
+  async function fetchAndRenderMuebles(filters = {}) {
+    const grid = document.querySelector('.grid');
+    const tableBody = document.querySelector('#table-view tbody');
+    const params = new URLSearchParams(filters || {});
+    const url = API_BASE + (params.toString() ? ('?' + params.toString()) : '');
+    try {
+      const resp = await fetch(url, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+      });
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      const items = await resp.json();
+
+      if (grid) {
+        grid.innerHTML = items.length ? items.map(m => {
+          const img = m.ruta_img ? (baseUrl + '/' + m.ruta_img) : DEFAULT_IMG;
+          const solicitante = m.usuario ? esc((m.usuario.nombre||'') + ' ' + (m.usuario.apellido||'')) : 'ninguno';
+          const responsable = m.responsable ? esc((m.responsable.nombre||'') + ' ' + (m.responsable.apellido||'')) : 'ninguno';
+
+          const marcaHtml = m.marca ? `<div class="marca"><div class="marca-label">Marca:</div><div class="marca-value">${esc(m.marca)}</div></div>` : '';
+          const modeloHtml = m.modelo ? `<div class="modelo"><div class="modelo-label">Modelo:</div><div class="modelo-value">${esc(m.modelo)}</div></div>` : '';
+          const brandHtml = (marcaHtml || modeloHtml) ? `<div class="card-brand">${marcaHtml}${modeloHtml}</div>` : '';
+
+          const comments = (m.comentarios || []).slice(0,3);
+          let commentsHtml = comments.length ? comments.map(c => {
+            const author = c.usuario ? esc((c.usuario.nombre||'') + ' ' + (c.usuario.apellido||'')) : 'anonimo';
+            return `<div class="comment small" style="background:${randomNearWhite()};"><div class="author">${author}</div><div class="text">${esc(c.comentario)}</div></div>`;
+          }).join('') : '<div class="comment small">ninguno</div>';
+          if ((m.comentarios || []).length > 3) {
+            commentsHtml += `<div class="comment more">+${(m.comentarios||[]).length - 3} más</div>`;
+          }
+
+          const actionsHtml = IS_ADMIN
+            ? `<form method="POST" action="${API_BASE}/${esc(m.id)}" style="display:inline;">
+                 <input type="hidden" name="_token" value="${csrfToken}">
+                 <input type="hidden" name="_method" value="DELETE">
+                 <button type="button" class="btn-edit" data-mueble='${esc(JSON.stringify(m))}'>Editar</button>
+                 <button type="button" class="btn-delete" data-id="${esc(m.id)}" data-confirm="¿Eliminar mueble ${esc(m.codigo || ('ID ' + m.id))}?" data-confirm-callback="confirmDeleteById">Eliminar</button>
+               </form>`
+            : `<a class="btn-base btn-new" href="${baseUrl}/solicitudes/create?mueble_id=${m.id}">Solicitar</a>`;
+
+          return `<div class="card" role="listitem" data-id="${esc(m.id)}">
+                    <div class="card-inner">
+                      <div class="card-media">
+                        <img src="${esc(img)}" alt="${esc(m.codigo||'mueble')}" onerror="this.src='${DEFAULT_IMG}'">
+                      </div>
+                      <div class="card-info">
+                        <div class="card-top">
+                          <div class="card-title">${esc(m.codigo||('ID '+m.id))} — ${esc(m.descripcion||'')}</div>
+                          <div><span class="estado-badge estado-${esc(m.estado||'')}">${esc((m.estado||'').replace('_',' '))||'-'}</span></div>
+                        </div>
+
+                        ${brandHtml}
+
+                        <div class="card-meta">
+                          ${ IS_ADMIN ? `<div class="card-price">${m.monto_unitario ? ('$' + Number(m.monto_unitario).toFixed(2)) : ''}</div>
+                                         <div class="card-responsable"><strong>Responsable:</strong> ${responsable}</div>` : '' }
+                          <div class="card-solicitante"><strong>Solicitante:</strong> ${solicitante}</div>
+                        </div>
+
+                        <div class="mueble-nota">${esc(m.nota || '')}</div>
+
+                        <div class="card-comments"><strong>Comentarios:</strong>${commentsHtml}</div>
+
+                        <div class="card-actions">${actionsHtml}</div>
+                      </div>
+                    </div>
+                  </div>`;
+        }).join('') : '<div class="card">No hay muebles</div>';
+      }
+
+      if (tableBody) {
+        tableBody.innerHTML = items.length ? items.map(m => {
+          const first = (m.comentarios && m.comentarios[0]) ? m.comentarios[0] : null;
+          const author = first && first.usuario ? esc((first.usuario.nombre||'') + ' ' + (first.usuario.apellido||'')) : 'ninguno';
+          const preview = first ? esc(first.comentario) : 'ninguno';
+          const actionsHtml = IS_ADMIN
+            ? `<form method="POST" action="${API_BASE}/${esc(m.id)}" style="display:inline;">
+                 <input type="hidden" name="_token" value="${csrfToken}">
+                 <input type="hidden" name="_method" value="DELETE">
+                 <button type="button" class="btn-edit" data-mueble='${esc(JSON.stringify(m))}'>Editar</button>
+                 <button type="button" class="btn-delete" data-id="${esc(m.id)}" data-confirm="¿Eliminar mueble ${esc(m.codigo || ('ID ' + m.id))}?" data-confirm-callback="confirmDeleteById">Eliminar</button>
+               </form>`
+            : `<a class="btn-base btn-new" href="${baseUrl}/solicitudes/create?mueble_id=${m.id}">Solicitar</a>`;
+          return `<tr>
+                    <td>${esc(m.codigo||('ID '+m.id))}</td>
+                    <td class="small-desc">${esc(m.descripcion||'')}</td>
+                    <td class="table-comment"><strong>${author}:</strong> ${preview}</td>
+                    <td><span class="estado-badge estado-${esc(m.estado||'')}">${esc((m.estado||'').replace('_',' '))||'-'}</span></td>
+                    <td>${actionsHtml}</td>
+                  </tr>`;
+        }).join('') : `<tr><td colspan="${IS_ADMIN ? 7 : 6}" style="padding:12px">No hay muebles</td></tr>`;
+      }
+
+    } catch (err) {
+      console.error('fetchAndRenderMuebles error', err);
+      if (grid) grid.innerHTML = '<div class="card">Error cargando muebles</div>';
+      if (tableBody) tableBody.innerHTML = `<tr><td colspan="${IS_ADMIN ? 7 : 6}" style="padding:12px">Error cargando muebles</td></tr>`;
     }
-    if (filtersEl) filtersEl.style.display = 'flex';
-    if (cardsGrid) cardsGrid.style.display = 'grid';
+  }
+
+  try { fetchAndRenderMuebles({}); } catch(e){ console.error(e); }
+
+  function hideModalControls(){
+    try {
+      const vt = document.getElementById('view-toggle');
+      const at = document.getElementById('admin-toggle');
+      if (vt && vt.parentElement) vt.parentElement.style.display = 'none';
+      if (at && at.parentElement) at.parentElement.style.display = 'none';
+    } catch(e){}
+  }
+  function showModalControls(){
+    try {
+      const vt = document.getElementById('view-toggle');
+      const at = document.getElementById('admin-toggle');
+      if (vt && vt.parentElement) vt.parentElement.style.display = '';
+      if (at && at.parentElement) at.parentElement.style.display = '';
+    } catch(e){}
   }
 
   function openCreate(){
-    title.textContent = 'Nuevo mueble';
-    form.action = "{{ url('/muebles') }}";
-    methodInput.value = 'POST';
-    idInput.value = '';
-    form.querySelectorAll('input,select').forEach(i=> i.value = '');
-    const fResp = document.getElementById('f-responsable');
-    if (fResp) fResp.value = '';
-    // ocultar controles de vista mientras el modal esté abierto
+    const title = document.getElementById('form-title');
+    const form = document.getElementById('mueble-form');
+    const methodInput = document.getElementById('form-method');
+    const idInput = document.getElementById('mueble-id');
+    if (title) title.textContent = 'Nuevo mueble';
+    if (form) {
+      form.action = "{{ url('/muebles') }}";
+      methodInput.value = 'POST';
+      idInput.value = '';
+      form.querySelectorAll('input,select,textarea').forEach(i=> i.value = '');
+    }
     hideModalControls();
-    card.style.display = 'block';
-    card.classList.add('collapsed');
-    hidePageForModal();
-    requestAnimationFrame(()=> card.classList.remove('collapsed'));
+    const card = document.getElementById('user-form-card');
+    if (card) { card.style.display = 'block'; card.classList.add('collapsed'); requestAnimationFrame(()=>card.classList.remove('collapsed')); }
+    const filtersEl = document.getElementById('filters');
+    const tableWrapper = document.getElementById('table-wrapper');
+    if (filtersEl) filtersEl.style.display = 'none';
+    if (tableWrapper) tableWrapper.style.display = 'none';
+    if (cardsGrid) cardsGrid.style.display = 'none';
+    if (marcaModal) populateModalModeloOptions(marcaModal.value);
   }
+
   function openEdit(m){
-    title.textContent = 'Editar mueble — ID '+m.id;
-    form.action = "{{ url('/muebles') }}/" + m.id;
-    methodInput.value = 'PUT';
-    idInput.value = m.id;
-    document.getElementById('f-codigo').value = m.codigo || '';
-    document.getElementById('f-descripcion').value = m.descripcion || '';
-    document.getElementById('f-fecha').value = m.fecha_registro ? m.fecha_registro : '';
-    document.getElementById('f-monto').value = m.monto_unitario || '';
-    document.getElementById('f-persona').value = m.persona_id || '';
-    try {
-      const fr = document.getElementById('f-responsable');
-      if (fr) fr.value = m.responsable_id || '';
-    } catch(e){}
-    document.getElementById('f-estado').value = m.estado || 'bueno';
-    document.getElementById('f-nota').value = m.nota || '';
-    setPreviewFromRuta(m.ruta_img || '');
+    if (!m) return;
+    const title = document.getElementById('form-title');
+    const form = document.getElementById('mueble-form');
+    const methodInput = document.getElementById('form-method');
+    const idInput = document.getElementById('mueble-id');
+    if (title) title.textContent = 'Editar mueble — ID '+m.id;
+    if (form) {
+      form.action = "{{ url('/muebles') }}/" + m.id;
+      methodInput.value = 'PUT';
+      idInput.value = m.id;
+      const setIf = (id, val) => { const el = document.getElementById(id); if (el) el.value = val ?? ''; };
+      setIf('f-codigo', m.codigo);
+      setIf('f-descripcion', m.descripcion);
+      setIf('f-fecha', m.fecha_registro);
+      setIf('f-monto', m.monto_unitario);
+      setIf('f-persona', m.persona_id);
+      setIf('f-responsable', m.responsable_id);
+      setIf('f-estado', m.estado);
+      setIf('f-nota', m.nota);
+      setIf('mueble-id', m.id);
+      if (marcaModal) marcaModal.value = m.marca ?? '';
+      populateModalModeloOptions(m.marca ?? '', m.modelo ?? '');
+    }
     hideModalControls();
-    card.style.display = 'block';
-    card.classList.add('collapsed');
-    hidePageForModal();
-    requestAnimationFrame(()=> card.classList.remove('collapsed'));
+    const card = document.getElementById('user-form-card');
+    if (card) { card.style.display = 'block'; card.classList.add('collapsed'); requestAnimationFrame(()=>card.classList.remove('collapsed')); }
+    const filtersEl = document.getElementById('filters');
+    const tableWrapper = document.getElementById('table-wrapper');
+    if (filtersEl) filtersEl.style.display = 'none';
+    if (tableWrapper) tableWrapper.style.display = 'none';
+    if (cardsGrid) cardsGrid.style.display = 'none';
   }
 
   if (btnNew) btnNew.addEventListener('click', openCreate);
+
+  document.addEventListener('click', function(e){
+    const editBtn = e.target.closest('.btn-edit[data-mueble]');
+    if (editBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+      try {
+        const json = editBtn.getAttribute('data-mueble') || '{}';
+        const obj = typeof json === 'string' ? JSON.parse(json) : json;
+        openEdit(obj);
+      } catch (err) {
+        console.error('openEdit parse error', err);
+      }
+      return;
+    }
+    const delBtn = e.target.closest('.btn-delete');
+    if (delBtn) {
+      e.preventDefault(); e.stopPropagation();
+      if (typeof window.showConfirmFor === 'function') { window.showConfirmFor(delBtn); return; }
+      if (typeof window.confirmDeleteById === 'function') { window.confirmDeleteById(delBtn); return; }
+      const f = delBtn.closest('form'); if (f) f.submit();
+    }
+  });
+
   if (btnCancel) btnCancel.addEventListener('click', function(){
     showModalControls();
-    window.location.href = "{{ url('/muebles') }}";
+    const card = document.getElementById('user-form-card');
+    if (card) card.style.display = 'none';
+    const filtersEl = document.getElementById('filters');
+    const gridEl = document.querySelector('.grid');
+    const tableWrapper = document.getElementById('table-wrapper');
+    if (filtersEl) filtersEl.style.display = 'flex';
+    if (gridEl) gridEl.style.display = 'grid';
+    if (tableWrapper) tableWrapper.style.display = 'none';
+    const form = document.getElementById('mueble-form');
+    if (form) form.reset();
   });
 
-  document.querySelectorAll('.btn-edit').forEach(btn=>{  });
-  document.addEventListener('click', function(e){
-    const a = e.target.closest('.read-more');
-    if(!a) return;
-    e.preventDefault();
-    const parent = a.closest('.card');
-    const full = a.getAttribute('data-full') || '';
-    const shortEl = parent.querySelector('.desc-short');
-    const fullEl = parent.querySelector('.desc-full');
-    const ell = parent.querySelector('.desc-ellipsis');
-    if(fullEl.style.display === 'none' || fullEl.style.display === ''){
-      shortEl.style.display = 'none';
-      if(ell) ell.style.display = 'none';
-      fullEl.style.display = 'inline';
-      a.textContent = 'Leer menos';
+  const MODELOS_POR_MARCA = {!! json_encode($modelosPorMarca ?? []) !!};
+
+  const marcaModal = document.getElementById('f-marca-modal');
+  const modeloModal = document.getElementById('f-modelo-modal');
+
+  function populateModalModeloOptions(selectedMarca, selectedModel = ''){
+    if (!modeloModal) return;
+    modeloModal.innerHTML = '<option value="">(sin modelo)</option>';
+    const key = String(selectedMarca || '').trim();
+    let list = [];
+    if (key !== '' && MODELOS_POR_MARCA && Object.prototype.hasOwnProperty.call(MODELOS_POR_MARCA, key)) {
+      list = MODELOS_POR_MARCA[key];
     } else {
-      shortEl.style.display = 'inline';
-      if(ell) ell.style.display = 'inline';
-      fullEl.style.display = 'none';
-      a.textContent = 'Leer más';
+      const all = Object.values(MODELOS_POR_MARCA || {}).flat();
+      list = Array.from(new Set((all || []).map(x=>String(x).trim()).filter(Boolean))).sort();
     }
-  });
-
-  if (form){
-    form.addEventListener('submit', async function(evt){
-      evt.preventDefault();
-      function todayStr(offsetDays = 0){
-        const d = new Date();
-        d.setDate(d.getDate() + offsetDays);
-        return d.toISOString().slice(0,10);
-      }
-      const fechaInput = document.getElementById('f-fecha');
-      if (fechaInput && !fechaInput.value) {
-        fechaInput.value = todayStr(0);
-      }
-      const original = btnSave.textContent;
-      btnSave.disabled = true;
-      btnSave.textContent = 'Guardando...';
-      const fd = new FormData(form);
-      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-      try {
-        const resp = await fetch(form.action, {
-          method: 'POST',
-          headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRF-TOKEN': csrfToken,
-            'Accept': 'application/json'
-          },
-          body: fd,
-          credentials: 'include'
-        });
-        const ct = resp.headers.get('content-type') || '';
-        const data = ct.includes('application/json') ? await resp.json() : await resp.text();
-        if (resp.ok) {
-          window.location.href = "{{ url('/muebles') }}";
-          return;
-        }
-        if (resp.status === 422 && data && data.errors){
-          alert(Object.values(data.errors).flat().join('\n'));
-        } else {
-          alert((data && data.message) ? data.message : 'Error al guardar');
-        }
-      } catch(err){
-        console.error(err);
-        alert('Error de red');
-      } finally {
-        btnSave.disabled = false;
-        btnSave.textContent = original;
-      }
+    list.forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = m;
+      opt.textContent = m;
+      if (selectedModel && String(selectedModel).trim() === String(m).trim()) opt.selected = true;
+      modeloModal.appendChild(opt);
     });
   }
 
-  const btnClear = document.getElementById('btn-clear');
-  if (btnClear) {
-    btnClear.addEventListener('click', function(evt){
-      evt.preventDefault();
-      const ff = document.getElementById('filters');
-      if (ff) {
-        ff.querySelectorAll('input,select').forEach(i=>{
-          if (i.type === 'checkbox' || i.type === 'radio') i.checked = false;
-          else if (i.type !== 'submit' && i.type !== 'button') i.value = '';
-        });
-      }
-      try { localStorage.removeItem(STORAGE_KEY); } catch(e){}
-      if (typeof fetchAndRenderMuebles === 'function') fetchAndRenderMuebles({});
-      if (window.history && history.replaceState) history.replaceState(null,'','/muebles');
-    });
+  if (marcaModal) marcaModal.addEventListener('change', function(){ populateModalModeloOptions(this.value); });
+
+  function openCreate(){
+    const title = document.getElementById('form-title');
+    const form = document.getElementById('mueble-form');
+    const methodInput = document.getElementById('form-method');
+    const idInput = document.getElementById('mueble-id');
+    if (title) title.textContent = 'Nuevo mueble';
+    if (form) {
+      form.action = "{{ url('/muebles') }}";
+      methodInput.value = 'POST';
+      idInput.value = '';
+      form.querySelectorAll('input,select,textarea').forEach(i=> i.value = '');
+    }
+    hideModalControls();
+    const card = document.getElementById('user-form-card');
+    if (card) { card.style.display = 'block'; card.classList.add('collapsed'); requestAnimationFrame(()=>card.classList.remove('collapsed')); }
+    const filtersEl = document.getElementById('filters');
+    const tableWrapper = document.getElementById('table-wrapper');
+    if (filtersEl) filtersEl.style.display = 'none';
+    if (tableWrapper) tableWrapper.style.display = 'none';
+    if (cardsGrid) cardsGrid.style.display = 'none';
+    if (marcaModal) populateModalModeloOptions(marcaModal.value);
   }
 
-  // Manejo de eliminación: usa fetch tanto si hay form como si no
-  window.confirmDeleteById = async function(el){
-    if(!el) return;
-    try {
-      const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-      const frm = el.closest('form');
-      if (frm) {
-        console.log('confirmDeleteById: usando fetch con el form', frm.action);
-        // tomar action y FormData del form (incluye _method si existe)
-        const fd = new FormData(frm);
-        // forzar método spoofing a DELETE en caso de que no exista
-        if (!fd.has('_method')) fd.append('_method', 'DELETE');
-        const resp = await fetch(frm.action, {
-          method: 'POST',
-          credentials: 'same-origin',
-          headers: {
-            'X-CSRF-TOKEN': token,
-            'X-Requested-With': 'XMLHttpRequest',
-            'Accept': 'application/json'
-          },
-          body: fd
-        });
-        if (resp.ok) { location.reload(); return; }
-        const ct = resp.headers.get('content-type') || '';
-        const data = ct.includes('application/json') ? await resp.json() : await resp.text();
-        console.error('Error eliminar (form):', resp.status, data);
-        alert((data && data.message) ? data.message : 'Error al eliminar');
-        return;
-      }
-
-      // si no hay form, usar DELETE directo
-      const id = el.getAttribute('data-id');
-      if (!id) { console.warn('confirmDeleteById: ID no encontrado'); return; }
-      console.log('confirmDeleteById: usando fetch DELETE para id', id);
-      const resp2 = await fetch(`${baseUrl}/muebles/${encodeURIComponent(id)}`, {
-        method: 'DELETE',
-        credentials: 'same-origin',
-        headers: {
-          'X-CSRF-TOKEN': token,
-          'X-Requested-With': 'XMLHttpRequest',
-          'Accept': 'application/json'
-        }
-      });
-      if (resp2.ok) { location.reload(); return; }
-      const ct2 = resp2.headers.get('content-type') || '';
-      const data2 = ct2.includes('application/json') ? await resp2.json() : await resp2.text();
-      console.error('Error eliminar (direct):', resp2.status, data2);
-      alert((data2 && data2.message) ? data2.message : 'Error al eliminar');
-    } catch (e) {
-      console.error('confirmDeleteById error:', e);
-      alert('Error de red al eliminar');
+  function openEdit(m){
+    if (!m) return;
+    const title = document.getElementById('form-title');
+    const form = document.getElementById('mueble-form');
+    const methodInput = document.getElementById('form-method');
+    const idInput = document.getElementById('mueble-id');
+    if (title) title.textContent = 'Editar mueble — ID '+m.id;
+    if (form) {
+      form.action = "{{ url('/muebles') }}/" + m.id;
+      methodInput.value = 'PUT';
+      idInput.value = m.id;
+      const setIf = (id, val) => { const el = document.getElementById(id); if (el) el.value = val ?? ''; };
+      setIf('f-codigo-modal', m.codigo);
+      setIf('f-descripcion-modal', m.descripcion);
+      setIf('f-fecha-modal', m.fecha_registro);
+      setIf('f-monto-modal', m.monto_unitario);
+      setIf('f-persona-modal', m.persona_id);
+      setIf('f-responsable-modal', m.responsable_id);
+      setIf('f-estado-modal', m.estado);
+      setIf('f-nota-modal', m.nota);
+      setIf('mueble-id', m.id);
+      if (marcaModal) marcaModal.value = m.marca ?? '';
+      populateModalModeloOptions(m.marca ?? '', m.modelo ?? '');
     }
-  };
-
-  document.addEventListener('click', function(e){
-    const btn = e.target.closest('.btn-delete');
-    if (!btn) return;
-    e.preventDefault();
-    e.stopPropagation();
-    if (typeof window.showConfirmFor === 'function') { window.showConfirmFor(btn); return; }
-    if (typeof window.confirmDeleteById === 'function') { window.confirmDeleteById(btn); return; }
-    const f = btn.closest('form');
-    if (f) f.submit();
-  });
+    hideModalControls();
+    const card = document.getElementById('user-form-card');
+    if (card) { card.style.display = 'block'; card.classList.add('collapsed'); requestAnimationFrame(()=>card.classList.remove('collapsed')); }
+    const filtersEl = document.getElementById('filters');
+    const tableWrapper = document.getElementById('table-wrapper');
+    if (filtersEl) filtersEl.style.display = 'none';
+    if (tableWrapper) tableWrapper.style.display = 'none';
+    if (cardsGrid) cardsGrid.style.display = 'none';
+  }
+  if (btnSave) {
+    btnSave.addEventListener('click', function(){
+      const formEl = document.getElementById('mueble-form');
+      if (!formEl) return;
+      const meth = document.getElementById('form-method')?.value || 'POST';
+      formEl.submit();
+    });
+  }
+  if (btnCancel) {
+    btnCancel.addEventListener('click', function(){
+      const cardEl = document.getElementById('user-form-card');
+      if (cardEl) cardEl.style.display = 'none';
+      const f = document.getElementById('mueble-form');
+      if (f) f.reset();
+      populateModalModeloOptions('');
+    });
+  }
 });
 </script>
 @endsection

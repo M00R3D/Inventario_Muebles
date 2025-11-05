@@ -4,6 +4,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use App\Models\Mueble;
 use App\Models\Usuario;
+use App\Models\Categoria;
 
 class MuebleSeeder extends Seeder
 {
@@ -11,6 +12,11 @@ class MuebleSeeder extends Seeder
     {
         $responsable = Usuario::where('email', 'jobmurdan@hotmail.com')->first();
         $responsableId = $responsable ? $responsable->id : null;
+
+        // intentar obtener algunas categorías por nombre; si no existen usar null
+        $catOficina = Categoria::where('nombre', 'Oficina')->first();
+        $catSala = Categoria::where('nombre', 'Sala')->first();
+        $catAlmacen = Categoria::where('nombre', 'Almacén')->first();
 
         Mueble::insert([
             [
@@ -22,6 +28,9 @@ class MuebleSeeder extends Seeder
                 'ruta_img' => null,
                 'persona_id' => null,
                 'responsable_id' => $responsableId,
+                'marca' => 'MarcaA',
+                'modelo' => 'Escritorio-120',
+                'categoria_id' => $catOficina ? $catOficina->id : null,
                 'estado' => 'bueno',
             ],
             [
@@ -33,6 +42,9 @@ class MuebleSeeder extends Seeder
                 'ruta_img' => 'sillaergonomica/1.webp',
                 'persona_id' => null,
                 'responsable_id' => $responsableId,
+                'marca' => 'ErgoCo',
+                'modelo' => 'E-200',
+                'categoria_id' => $catOficina ? $catOficina->id : null,
                 'estado' => 'regular',
             ],
             [
@@ -44,6 +56,9 @@ class MuebleSeeder extends Seeder
                 'ruta_img' => 'mesareuniones/1.webp',
                 'persona_id' => null,
                 'responsable_id' => $responsableId,
+                'marca' => 'MeetingPro',
+                'modelo' => 'M-3000',
+                'categoria_id' => $catSala ? $catSala->id : null,
                 'estado' => 'bueno',
             ],
             [
@@ -55,6 +70,9 @@ class MuebleSeeder extends Seeder
                 'ruta_img' => 'archivadormetalico/1.jpg',
                 'persona_id' => null,
                 'responsable_id' => $responsableId,
+                'marca' => 'ArchiveX',
+                'modelo' => 'A-90',
+                'categoria_id' => $catAlmacen ? $catAlmacen->id : null,
                 'estado' => 'bueno',
             ],
             [
@@ -66,6 +84,9 @@ class MuebleSeeder extends Seeder
                 'ruta_img' => 'sillavisitas/1.webp',
                 'persona_id' => null,
                 'responsable_id' => $responsableId,
+                'marca' => 'SimpleSeat',
+                'modelo' => 'VS-10',
+                'categoria_id' => $catSala ? $catSala->id : null,
                 'estado' => 'en_reparacion',
             ],
             [
@@ -77,6 +98,9 @@ class MuebleSeeder extends Seeder
                 'ruta_img' => 'mesaauxiliar/2.jpg',
                 'persona_id' => null,
                 'responsable_id' => $responsableId,
+                'marca' => 'Auxi',
+                'modelo' => 'AX-6',
+                'categoria_id' => $catOficina ? $catOficina->id : null,
                 'estado' => 'bueno',
             ],
             [
@@ -88,6 +112,9 @@ class MuebleSeeder extends Seeder
                 'ruta_img' => 'sillaejecutiva/1.jpg',
                 'persona_id' => null,
                 'responsable_id' => $responsableId,
+                'marca' => 'BossSeat',
+                'modelo' => 'BX-1',
+                'categoria_id' => $catOficina ? $catOficina->id : null,
                 'estado' => 'regular',
             ],
             [
@@ -99,6 +126,9 @@ class MuebleSeeder extends Seeder
                 'ruta_img' => 'estantemadera/1.png',
                 'persona_id' => null,
                 'responsable_id' => $responsableId,
+                'marca' => 'WoodLine',
+                'modelo' => 'WL-8',
+                'categoria_id' => $catAlmacen ? $catAlmacen->id : null,
                 'estado' => 'bueno',
             ],
             [
@@ -110,6 +140,9 @@ class MuebleSeeder extends Seeder
                 'ruta_img' => 'mesajuntaspequenia/1.webp',
                 'persona_id' => 1,
                 'responsable_id' => $responsableId,
+                'marca' => 'MeetingPro',
+                'modelo' => 'M-1200',
+                'categoria_id' => $catSala ? $catSala->id : null,
                 'estado' => 'regular',
             ],
             [
@@ -121,6 +154,9 @@ class MuebleSeeder extends Seeder
                 'ruta_img' => 'sillaplegable/1.webp',
                 'persona_id' => 2,
                 'responsable_id' => $responsableId,
+                'marca' => 'Foldy',
+                'modelo' => 'F-1',
+                'categoria_id' => $catSala ? $catSala->id : null,
                 'estado' => 'malo',
             ],
         ]);

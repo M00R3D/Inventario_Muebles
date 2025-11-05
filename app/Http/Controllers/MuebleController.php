@@ -10,11 +10,19 @@ class MuebleController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Mueble::with(['usuario', 'responsable'])->orderBy('id','desc');
+        $query = Mueble::with(['usuario', 'responsable', 'comentarios.usuario', 'categoria'])->orderBy('id','desc');
         if ($request->filled('codigo')) {$query->where('codigo', 'like', '%' . $request->codigo . '%');}
         if ($request->filled('descripcion')) {$query->where('descripcion', 'like', '%' . $request->descripcion . '%');}
+        if ($request->filled('marca')) {$query->where('marca', 'like', '%' . $request->marca . '%');}
+        if ($request->filled('modelo')) {$query->where('modelo', 'like', '%' . $request->modelo . '%');}
         if ($request->filled('estado')) {$query->where('estado', $request->estado);}
-        if ($request->filled('persona_id')) {$query->where('persona_id', $request->persona_id);}
+        if ($request->filled('persona_id')) {
+            if ($request->persona_id === 'none') {
+                $query->whereNull('persona_id');
+            } else {
+                $query->where('persona_id', $request->persona_id);
+            }
+        }
         if ($request->filled('desde')) {$query->whereDate('fecha_registro', '>=', $request->desde);}
         if ($request->filled('hasta')) {$query->whereDate('fecha_registro', '<=', $request->hasta);}
         $currentUser = null;
@@ -27,6 +35,16 @@ class MuebleController extends Controller
         $muebles = $query->get();
         if ($request->wantsJson() || $request->is('api/*')) {return response()->json($muebles);}
         $usuarios = Usuario::all();
+        $marcas = Mueble::whereNotNull('marca')->where('marca','<>','')->distinct()->orderBy('marca')->pluck('marca');
+        $modelos = Mueble::whereNotNull('modelo')->where('modelo','<>','')->distinct()->orderBy('modelo')->pluck('modelo');
+        $modelosPorMarca = Mueble::whereNotNull('marca')
+            ->where('marca','<>','')
+            ->whereNotNull('modelo')
+            ->where('modelo','<>','')
+            ->get(['marca','modelo'])
+            ->groupBy('marca')
+            ->map(function($grp){ return $grp->pluck('modelo')->unique()->sort()->values()->all(); })
+            ->toArray();
         $public = public_path();
         $entries = @scandir($public) ?: [];
         $dirs = [];
@@ -36,7 +54,7 @@ class MuebleController extends Controller
             if (is_dir($path)) $dirs[] = $e;
         }
         sort($dirs);
-        return view('muebles.index', compact('muebles', 'usuarios', 'dirs', 'currentUser', 'isAdmin'));
+        return view('muebles.index', compact('muebles', 'usuarios', 'dirs', 'currentUser', 'isAdmin', 'marcas', 'modelos', 'modelosPorMarca'));
     }
     public function create()
     {
