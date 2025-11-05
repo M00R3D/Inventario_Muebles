@@ -15,6 +15,12 @@
     $current = null;
     if (session()->has('usuario_id')) {$current = \App\Models\Usuario::find(session('usuario_id'));}
     $isAdmin = $current && ($current->rol === 'admin');
+
+    // visibleMuebles: si no es admin, ocultamos muebles que ya tienen solicitante (usuario)
+    $visibleMuebles = $isAdmin ? $muebles : $muebles->filter(function($m){
+        // considera nulos o falsy como "sin solicitante"
+        return empty($m->usuario);
+    });
 @endphp
 <style>
 :root{ --bg:#f8fafc; --card:#fff; --muted:#6b7280; --accent1:#6366f1; --accent2:#06b6d4; }
@@ -126,6 +132,38 @@
   .card-top{ flex-direction:row; gap:8px; }
   .card-actions{ justify-content:flex-start; }
 }
+
+/* admin view helper: when .hide-admin is set on .container ocultará elementos con .admin-only */
+.hide-admin .admin-only { display: none !important; }
+
+/* --- tabla comprimida muy compacta (sin márgenes, sin estilos visuales, fuente más pequeña) --- */
+#table-wrapper.minimal { margin:0; padding:0; }
+#table-view {
+  width:100%;
+  border-collapse:collapse;
+  font-size:0.78rem; /* fuente más pequeña */
+  background:transparent;
+  box-shadow:none;
+}
+#table-view thead th {
+  font-weight:600;
+  padding:6px 6px;
+  border-bottom:1px solid #e6e6e6;
+  text-align:left;
+}
+#table-view td {
+  padding:6px 6px;
+  border-bottom:1px solid #f1f1f1;
+  vertical-align:middle;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+#table-view td.small-desc { max-width:260px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+#table-view .estado-badge { min-width:0; padding:3px 6px; font-size:0.72rem; }
+#table-view img { max-width:36px; max-height:24px; object-fit:cover; margin-right:6px; vertical-align:middle; }
+/* quitar cualquier separación extra del wrapper */
+#table-wrapper.minimal table, #table-wrapper.minimal thead, #table-wrapper.minimal tbody, #table-wrapper.minimal tr, #table-wrapper.minimal th, #table-wrapper.minimal td { border-spacing:0; margin:0; }
 </style>
 
 <div class="container">
@@ -139,9 +177,35 @@
       @endif
     </div>
 
-    <div style="display:flex;gap:8px;align-items:center">
+    <div style="display:flex;gap:12px;align-items:center">
+      {{-- Vista toggle --}}
+      <label style="display:flex;align-items:center;gap:8px;font-weight:700;">
+        <span style="font-size:0.9rem;color:#374151;">Vista comprimida</span>
+        <input type="checkbox" id="view-toggle" style="width:44px;height:26px;appearance:none;background:#e5e7eb;border-radius:999px;position:relative;cursor:pointer;outline:none;display:inline-block;">
+        <style>
+          #view-toggle{position:relative;padding:0;margin:0 4px;}
+          #view-toggle:before{content:'';position:absolute;left:3px;top:3px;width:20px;height:20px;background:#fff;border-radius:50%;transition:transform .18s ease, background .18s;}
+          #view-toggle:checked{background:linear-gradient(90deg,#6366f1,#06b6d4);box-shadow:0 6px 18px rgba(99,102,241,0.12);}
+          #view-toggle:checked:before{transform:translateX(18px);}
+        </style>
+      </label>
+
       @if(!empty($isAdmin) && $isAdmin)
-        <button id="btn-new" class="btn-base btn-new" type="button">Nuevo mueble</button>
+        {{-- Admin-mode toggle (solo para admins) --}}
+        <label style="display:flex;align-items:center;gap:8px;font-weight:700;">
+          <span style="font-size:0.9rem;color:#374151;">Ver como usuario</span>
+          <input type="checkbox" id="admin-toggle" style="width:44px;height:26px;appearance:none;background:#e5e7eb;border-radius:999px;position:relative;cursor:pointer;outline:none;display:inline-block;">
+          <style>
+            #admin-toggle{position:relative;padding:0;margin:0 4px;}
+            #admin-toggle:before{content:'';position:absolute;left:3px;top:3px;width:20px;height:20px;background:#fff;border-radius:50%;transition:transform .18s ease, background .18s;}
+            #admin-toggle:checked{background:linear-gradient(90deg,#ef4444,#f97316);box-shadow:0 6px 18px rgba(239,68,68,0.08);}
+            #admin-toggle:checked:before{transform:translateX(18px);}
+          </style>
+        </label>
+      @endif
+
+      @if(!empty($isAdmin) && $isAdmin)
+        <button id="btn-new" class="btn-base btn-new admin-only" type="button">Nuevo mueble</button>
       @endif
     </div>
   </div>
@@ -287,11 +351,11 @@
     </form>
   </div>
 
-  @if($muebles->isEmpty())
+  @if($visibleMuebles->isEmpty())
     <div class="card">No hay muebles registrados aún.</div>
   @else
     <div class="grid" role="list">
-      @foreach($muebles as $m)
+      @foreach($visibleMuebles as $m)
         <article class="card" role="listitem" aria-labelledby="mueble-{{ $m->id }}">
           <div class="card-inner">
             <div class="card-media">
@@ -333,11 +397,11 @@
               </div>
               <div class="card-meta">
                 @if($isAdmin)
-                <div class="card-price">${{ number_format($m->monto_unitario ?? 0, 2, ',', '.') }}</div>
-                <div class="card-responsable"><strong>Responsable(admin):</strong>
+                <div class="card-price admin-only">${{ number_format($m->monto_unitario ?? 0, 2, ',', '.') }}</div>
+                <div class="card-responsable admin-only"><strong>Responsable(admin):</strong>
                   {{ $m->responsable ? ($m->responsable->nombre . ' ' . $m->responsable->apellido) : 'ninguno' }}
                 </div>
-                <div class="card-solicitante"><strong>Solicitante(usuario):</strong>
+                <div class="card-solicitante admin-only"><strong>Solicitante(usuario):</strong>
                   {{ $m->usuario ? ($m->usuario->nombre . ' ' . $m->usuario->apellido) : 'ninguno' }}
                 </div>
               </div>
@@ -350,8 +414,8 @@
           </div>
           <div class="card-actions">
             @if(!empty($isAdmin) && $isAdmin)
-              <button type="button" class="btn-edit" data-mueble='@json($m)'>Editar</button>
-              <form action="{{ url('/muebles/'.$m->id) }}" method="POST" style="margin:0;">
+              <button type="button" class="btn-edit admin-only" data-mueble='@json($m)'>Editar</button>
+              <form action="{{ url('/muebles/'.$m->id) }}" method="POST" style="margin:0;" class="admin-only">
                 @csrf
                 @method('DELETE')
                 <button type="submit" data-confirm="¿Eliminar mueble {{ addslashes($m->codigo ?? 'ID '.$m->id) }}?" class="btn-delete" data-confirm-type="delete">Eliminar</button>
@@ -364,6 +428,49 @@
          @endforeach
     </div>
   @endif
+
+  {{-- Tabla comprimida (oculta por defecto) --}}
+  <div id="table-wrapper" class="minimal" style="display:none;">
+    <table id="table-view" role="table" aria-label="Listado comprimido">
+      <thead>
+        <tr>
+          <th>Código</th>
+          <th>Descripción</th>
+          <th>Estado</th>
+          <th>Responsable</th>
+          <th>Solicitante</th>
+          @if($isAdmin)<th class="admin-only">Monto</th>@endif
+          <th>Acc.</th>
+        </tr>
+      </thead>
+      <tbody>
+        @forelse($muebles as $m)
+          <tr>
+            <td>{{ $m->codigo ?? 'ID '.$m->id }}</td>
+            <td class="small-desc">{{ \Illuminate\Support\Str::limit($m->descripcion ?? '-', 60) }}</td>
+            <td><span class="estado-badge estado-{{ $m->estado ?? '' }}">{{ ucfirst(str_replace('_',' ', $m->estado ?? '-')) }}</span></td>
+            <td>{{ $m->responsable ? ($m->responsable->nombre . ' ' . $m->responsable->apellido) : 'ninguno' }}</td>
+            <td>{{ $m->usuario ? ($m->usuario->nombre . ' ' . $m->usuario->apellido) : 'ninguno' }}</td>
+            @if($isAdmin)<td class="admin-only">${{ number_format($m->monto_unitario ?? 0, 2, ',', '.') }}</td>@endif
+            <td>
+              @if(!empty($isAdmin) && $isAdmin)
+                <button type="button" class="btn-edit admin-only" data-mueble='@json($m)'>Editar</button>
+                <form action="{{ url('/muebles/'.$m->id) }}" method="POST" style="display:inline;margin:0;" class="admin-only">
+                  @csrf
+                  @method('DELETE')
+                  <button type="submit" data-confirm="¿Eliminar mueble {{ addslashes($m->codigo ?? 'ID '.$m->id) }}?" class="btn-delete" data-confirm-type="delete">Eliminar</button>
+                </form>
+              @else
+                <a href="{{ url('/solicitudes/create') }}?mueble_id={{ $m->id }}" class="btn-edit" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center;padding:4px 8px;font-size:0.78rem;">Solicitar</a>
+              @endif
+            </td>
+          </tr>
+        @empty
+          <tr><td colspan="{{ $isAdmin ? 7 : 6 }}" style="padding:8px;">No hay muebles</td></tr>
+        @endforelse
+      </tbody>
+    </table>
+  </div>
 </div>
 
 @endsection
@@ -389,35 +496,71 @@ document.addEventListener('DOMContentLoaded', function(){
   const API_BASE = "{{ url('/muebles') }}";
   const IS_ADMIN = {!! json_encode(!empty($isAdmin) && $isAdmin) !!};
   const STORAGE_KEY = 'muebles_filters_v1';
+  const VIEW_KEY = 'muebles_view_mode_v1'; // 'cards' | 'table'
+  const ADMIN_VIEW_KEY = 'muebles_admin_view_v1'; // 'admin' | 'user'
+  const viewToggle = document.getElementById('view-toggle');
+  const adminToggle = document.getElementById('admin-toggle');
+  const tableWrapper = document.getElementById('table-wrapper');
+  const gridEl = document.querySelector('.grid');
 
-  function readFiltersFromForm() {
-    const f = document.getElementById('filters');
-    if (!f) return {};
-    const data = {};
-    Array.from(f.elements).forEach(el=>{
-      if (!el.name) return;
-      if (el.type === 'checkbox') data[el.name] = el.checked;
-      else data[el.name] = el.value ?? '';
-    });
-    return data;
+  function setView(mode){
+    if(mode === 'table'){
+      if(tableWrapper) tableWrapper.style.display = 'block';
+      if(gridEl) gridEl.style.display = 'none';
+      if(viewToggle) viewToggle.checked = true;
+    } else {
+      if(tableWrapper) tableWrapper.style.display = 'none';
+      if(gridEl) gridEl.style.display = 'grid';
+      if(viewToggle) viewToggle.checked = false;
+    }
+    try { localStorage.setItem(VIEW_KEY, mode); } catch(e){}
   }
 
-  function applyFiltersToForm(filters = {}) {
-    const f = document.getElementById('filters');
-    if (!f) return;
-    Object.keys(filters).forEach(k=>{
-      const el = f.elements.namedItem(k);
-      if (!el) return;
-      try {
-        if (el.type === 'checkbox') el.checked = !!filters[k];
-        else el.value = filters[k];
-      } catch(e){}
+  function setAdminView(mode){
+    // mode: 'admin' (mostrar controles) | 'user' (ocultar controles)
+    const container = document.querySelector('.container');
+    if (!container) return;
+    if (mode === 'user') {
+      container.classList.add('hide-admin');
+      if (adminToggle) adminToggle.checked = true;
+    } else {
+      container.classList.remove('hide-admin');
+      if (adminToggle) adminToggle.checked = false;
+    }
+    try { localStorage.setItem(ADMIN_VIEW_KEY, mode); } catch(e){}
+  }
+
+  // inicializar vista desde localStorage
+  try {
+    const storedView = localStorage.getItem(VIEW_KEY) || 'cards';
+    setView(storedView);
+  } catch(e){ setView('cards'); }
+
+  // inicializar admin-view solo si el usuario es admin
+  try {
+    if (IS_ADMIN && adminToggle) {
+      const storedAdminView = localStorage.getItem(ADMIN_VIEW_KEY) || 'admin';
+      setAdminView(storedAdminView);
+      adminToggle.addEventListener('change', function(){
+        setAdminView(this.checked ? 'user' : 'admin');
+      });
+    } else {
+      // si no es admin aseguramos que no exista la capacidad cliente de mostrar controles admin
+      const container = document.querySelector('.container');
+      if (container) container.classList.remove('hide-admin');
+    }
+  } catch(e){ if (IS_ADMIN) setAdminView('admin'); }
+
+  if (viewToggle) {
+    viewToggle.addEventListener('change', function(){
+      setView(this.checked ? 'table' : 'cards');
     });
   }
 
   async function fetchAndRenderMuebles(filters = {}) {
     const grid = document.querySelector('.grid');
-    if (!grid) return;
+    const table = document.querySelector('#table-view tbody');
+    if (!grid && !table) return;
     const params = new URLSearchParams();
     Object.entries(filters).forEach(([k,v])=>{
       if (v === null || v === undefined) return;
@@ -432,43 +575,78 @@ document.addEventListener('DOMContentLoaded', function(){
         headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
       });
       if (!resp.ok) throw new Error('HTTP ' + resp.status);
-      const items = await resp.json();
+      let items = await resp.json();
+      // si no es admin, ocultar en cliente los muebles que ya tienen solicitante
+      if (!IS_ADMIN && Array.isArray(items)) {
+        items = items.filter(m => !m.usuario);
+      }
       const esc = s => String(s ?? '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-      grid.innerHTML = items.length ? items.map(m => {
-        const imgUrl = m.ruta_img ? (`${baseUrl}/${esc(m.ruta_img)}`) : (`${baseUrl}/imgs/default.webp`);
-        const nota = m.nota ? `<div class="mueble-nota">${esc(m.nota)}</div>` : '';
-        const solicitante = m.usuario ? esc((m.usuario.nombre||'') + ' ' + (m.usuario.apellido||'')) : 'ninguno';
-        const responsable = m.responsable ? esc((m.responsable.nombre||'') + ' ' + (m.responsable.apellido||'')) : 'ninguno';
-        const priceHtml = IS_ADMIN ? (m.monto_unitario ? `<div class="card-price">$${Number(m.monto_unitario).toFixed(2)}</div>` : `<div class="card-price"></div>`) : '';
-        const actionsHtml = IS_ADMIN
-          ? `<button type="button" class="btn-base btn-edit" data-mueble='${esc(JSON.stringify(m))}'>Editar</button>
-             <button type="button" class="btn-base btn-delete" data-id="${esc(m.id)}" data-confirm="¿Eliminar mueble ${esc(m.codigo || ('ID ' + m.id))}?" data-confirm-type="delete" data-confirm-callback="confirmDeleteById">Eliminar</button>`
-          : `<a class="btn-base btn-new" href="${baseUrl}/solicitudes/create?mueble_id=${m.id}">Solicitar</a>`;
-        return `<article class="card" role="listitem" aria-labelledby="mueble-${esc(m.id)}">
-            <div class="card-inner">
-              <div class="card-media"><img src="${imgUrl}" alt="${esc(m.codigo||'')}" /></div>
-              <div class="card-info">
-                <div class="card-top">
-                  <div class="card-title">${esc(m.codigo || ('ID ' + m.id))}</div>
-                  <span class="estado-badge estado-${esc(m.estado || '')}">${esc((m.estado || '').replace('_',' '))}</span>
-                </div>
-                <div class="card-desc">${esc(m.descripcion || '-')}</div>
-                ${nota}
-                <div class="card-meta">
-                  ${priceHtml}
-                  @if($isAdmin)
-                  <div class="card-responsable"><strong>Responsable(admin):</strong> ${responsable}</div>
-                  <div class="card-solicitante"><strong>Solicitante(usuario):</strong> ${solicitante}</div>
-                  @endif
+      // render grid (cartas)
+      if (grid) {
+        grid.innerHTML = items.length ? items.map(m => {
+          const imgUrl = m.ruta_img ? (`${baseUrl}/${esc(m.ruta_img)}`) : (`${baseUrl}/imgs/default.webp`);
+          const nota = m.nota ? `<div class="mueble-nota">${esc(m.nota)}</div>` : '';
+          const solicitante = m.usuario ? esc((m.usuario.nombre||'') + ' ' + (m.usuario.apellido||'')) : 'ninguno';
+          const responsable = m.responsable ? esc((m.responsable.nombre||'') + ' ' + (m.responsable.apellido||'')) : 'ninguno';
+          const priceHtml = IS_ADMIN ? (m.monto_unitario ? `<div class="card-price admin-only">$${Number(m.monto_unitario).toFixed(2)}</div>` : `<div class="card-price admin-only"></div>`) : '';
+          const actionsHtml = IS_ADMIN
+            ? `<button type="button" class="btn-base btn-edit admin-only" data-mueble='${esc(JSON.stringify(m))}'>Editar</button>
+               <button type="button" class="btn-base btn-delete admin-only" data-id="${esc(m.id)}" data-confirm="¿Eliminar mueble ${esc(m.codigo || ('ID ' + m.id))}?" data-confirm-type="delete" data-confirm-callback="confirmDeleteById">Eliminar</button>`
+            : `<a class="btn-base btn-new" href="${baseUrl}/solicitudes/create?mueble_id=${m.id}">Solicitar</a>`;
+          return `<article class="card" role="listitem" aria-labelledby="mueble-${esc(m.id)}">
+              <div class="card-inner">
+                <div class="card-media"><img src="${imgUrl}" alt="${esc(m.codigo||'')}" /></div>
+                <div class="card-info">
+                  <div class="card-top">
+                    <div class="card-title">${esc(m.codigo || ('ID ' + m.id))}</div>
+                    <span class="estado-badge estado-${esc(m.estado || '')}">${esc((m.estado || '').replace('_',' '))}</span>
+                  </div>
+                  <div class="card-desc">${esc(m.descripcion || '-')}</div>
+                  ${nota}
+                  <div class="card-meta">
+                    ${priceHtml}
+                    @if($isAdmin)
+                    <div class="card-responsable"><strong>Responsable(admin):</strong> ${responsable}</div>
+                    <div class="card-solicitante"><strong>Solicitante(usuario):</strong> ${solicitante}</div>
+                    @endif
+                  </div>
                 </div>
               </div>
-            </div>
-            <div class="card-actions">
-              ${actionsHtml}
-            </div>
-          </article>`;
-      }).join('') : '<div class="card">No hay muebles</div>';
+              <div class="card-actions">
+                ${actionsHtml}
+              </div>
+            </article>`;
+        }).join('') : '<div class="card">No hay muebles</div>';
+      }
 
+      // render tabla comprimida
+      if (table) {
+        table.innerHTML = items.length ? items.map(m => {
+          const codigo = esc(m.codigo || ('ID ' + m.id));
+          const descripcion = esc((m.descripcion || '-').slice(0, 120));
+          const estado = esc((m.estado || '').replace('_',' '));
+          const responsable = m.responsable ? esc((m.responsable.nombre||'') + ' ' + (m.responsable.apellido||'')) : 'ninguno';
+          const solicitante = m.usuario ? esc((m.usuario.nombre||'') + ' ' + (m.usuario.apellido||'')) : 'ninguno';
+          const monto = IS_ADMIN ? (`<td class="admin-only" style="padding:8px 6px;">$${Number(m.monto_unitario||0).toFixed(2)}</td>`) : '';
+          const actions = IS_ADMIN
+            ? `<td style="padding:6px;">
+                <button type="button" class="btn-edit admin-only" data-mueble='${esc(JSON.stringify(m))}' style="padding:6px 8px;font-size:0.85rem;">Editar</button>
+                <button type="button" class="btn-delete admin-only" data-id="${esc(m.id)}" data-confirm="¿Eliminar mueble ${codigo}?" style="padding:6px 8px;font-size:0.85rem;">Eliminar</button>
+               </td>`
+            : `<td style="padding:6px;"><a class="btn-edit" href="${baseUrl}/solicitudes/create?mueble_id=${m.id}" style="padding:6px 8px;font-size:0.85rem;">Solicitar</a></td>`;
+          return `<tr style="border-bottom:1px solid #f3f4f6;">
+                    <td style="padding:8px 6px;white-space:nowrap;">${codigo}</td>
+                    <td style="padding:8px 6px;max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${descripcion}</td>
+                    <td style="padding:8px 6px;"><span class="estado-badge estado-${esc(m.estado||'')}" style="padding:4px 8px;font-size:0.8rem;">${estado}</span></td>
+                    <td style="padding:8px 6px;">${responsable}</td>
+                    <td style="padding:8px 6px;">${solicitante}</td>
+                    ${monto}
+                    ${actions}
+                  </tr>`;
+        }).join('') : `<tr><td colspan="${IS_ADMIN ? 7 : 6}" style="padding:12px;">No hay muebles</td></tr>`;
+      }
+
+      // rebind buttons for dynamic content
       document.querySelectorAll('.btn-edit[data-mueble]').forEach(btn=>{
         btn.addEventListener('click', function(){
           try { const obj = JSON.parse(this.getAttribute('data-mueble')); openEdit(obj); } catch(e){ console.error(e); }
@@ -482,9 +660,11 @@ document.addEventListener('DOMContentLoaded', function(){
           window.confirmDeleteById && window.confirmDeleteById(this);
         });
       });
+
     } catch (err) {
       console.error('Error cargando muebles:', err);
-      grid.innerHTML = '<div class="card">Error cargando muebles</div>';
+      if (grid) grid.innerHTML = '<div class="card">Error cargando muebles</div>';
+      if (table) table.innerHTML = `<tr><td colspan="${IS_ADMIN ? 7 : 6}" style="padding:12px;">Error cargando muebles</td></tr>`;
     }
   }
 
