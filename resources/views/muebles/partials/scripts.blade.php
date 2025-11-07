@@ -133,6 +133,7 @@ document.addEventListener('DOMContentLoaded', function(){
       descripcion: get('descripcion'),
       marca: get('marca'),
       modelo: get('modelo'),
+      categoria_id: get('categoria_id'),
       estado: get('estado'),
       persona_id: persona === 'none' ? 'none' : (persona || ''),
       desde: get('desde'),
@@ -176,6 +177,8 @@ document.addEventListener('DOMContentLoaded', function(){
           });
         }
         try { localStorage.removeItem(STORAGE_KEY); } catch(e){}
+        const catSelClear = document.getElementById('f-categoria-filter');
+        if (catSelClear) catSelClear.dispatchEvent(new Event('change'));
         if (typeof fetchAndRenderMuebles === 'function') fetchAndRenderMuebles({});
       });
     }
@@ -184,13 +187,25 @@ document.addEventListener('DOMContentLoaded', function(){
       const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
       if (stored && Object.keys(stored).length > 0) {
         applyFiltersToForm(stored);
+        const catSelRestore = document.getElementById('f-categoria-filter');
+        if (catSelRestore) catSelRestore.dispatchEvent(new Event('change'));
         if (typeof fetchAndRenderMuebles === 'function') fetchAndRenderMuebles(stored);
         return;
       }
     } catch(e){}
     if (typeof fetchAndRenderMuebles === 'function') fetchAndRenderMuebles({});
   })();
-
+  (function categoryPreview(){
+    const sel = document.getElementById('f-categoria-filter');
+    const img = document.getElementById('categoria-preview-img');
+    const DEFAULT_IMG = "{{ asset('imgs/default.webp') }}";
+    function updatePreviewFromSelect(){
+      if (!sel || !img) return;
+      const opt = sel.options[sel.selectedIndex];
+      const src = (opt && opt.dataset && opt.dataset.img) ? opt.dataset.img : DEFAULT_IMG;
+      img.src = src || DEFAULT_IMG;
+    }
+    if (sel) {sel.addEventListener('change', function(){updatePreviewFromSelect();});updatePreviewFromSelect();}})();
   function esc(v){ if (v === null || v === undefined) return ''; return String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
   function randomNearWhite(){ const hue = Math.floor(Math.random() * 360); const sat = Math.floor(Math.random() * 6); const light = 92 + Math.floor(Math.random() * 7); return `hsl(${hue} ${sat}% ${light}%)`; }
 
@@ -243,7 +258,8 @@ document.addEventListener('DOMContentLoaded', function(){
           const responsable = m.responsable ? esc((m.responsable.nombre||'') + ' ' + (m.responsable.apellido||'')) : 'ninguno';
           const marcaHtml = m.marca ? `<div class="marca"><div class="marca-label">Marca:</div><div class="marca-value">${esc(m.marca)}</div></div>` : '';
           const modeloHtml = m.modelo ? `<div class="modelo"><div class="modelo-label">Modelo:</div><div class="modelo-value">${esc(m.modelo)}</div></div>` : '';
-          const brandHtml = (marcaHtml || modeloHtml) ? `<div class="card-brand">${marcaHtml}${modeloHtml}</div>` : '';
+          const categoriaHtml = (m.categoria && m.categoria.nombre) ? `<div class="categoria"><div class="categoria-label">Categoría:</div><div class="categoria-value">${esc(m.categoria.nombre)}</div></div>` : '';
+          const brandHtml = (marcaHtml || modeloHtml || categoriaHtml) ? `<div class="card-brand">${marcaHtml}${modeloHtml}${categoriaHtml}</div>` : '';
           const comments = (m.comentarios || []).slice(0,3);
           let commentsHtml = comments.length ? comments.map(c => {
             const author = c.usuario ? esc((c.usuario.nombre||'') + ' ' + (c.usuario.apellido||'')) : 'anonimo';

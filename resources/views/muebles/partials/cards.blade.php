@@ -15,6 +15,9 @@
             <div class="card-brand">
               @if(!empty($m->marca)) <div class="marca">{{ $m->marca }}</div> @endif
               @if(!empty($m->modelo)) <div class="modelo">{{ $m->modelo }}</div> @endif
+             @if(!empty($m->categoria))
+               <div class="categoria">{{ optional($m->categoria)->nombre }}</div>
+             @endif
             </div>
           @endif
 

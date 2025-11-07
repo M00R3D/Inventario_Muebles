@@ -105,6 +105,7 @@
 .card-brand { margin-top:6px; display:flex; gap:8px; align-items:baseline; }
 .card-brand .marca { font-weight:900; font-size:1.05rem; color:#111; }
 .card-brand .modelo { font-weight:700; font-size:0.95rem; color:#374151; opacity:0.95; }
+.card-brand .categoria { font-weight:700; font-size:0.95rem; color:#0f172a; opacity:0.9; margin-left:6px; }
 .card-brand .marca-label { font-weight:700; font-size:0.85rem; color:#374151; }
 .card-brand .marca-value { font-weight:900; font-size:1.05rem; color:#111; }
 .invalid { border-color:#ef4444 !important; box-shadow: 0 0 0 4px rgba(239,68,68,0.06); }

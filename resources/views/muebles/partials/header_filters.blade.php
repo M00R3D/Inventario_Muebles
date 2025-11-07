@@ -25,6 +25,32 @@
       <label style="display:block;font-weight:600;font-size:0.9rem;">Descripción</label>
       <input name="descripcion" type="search" value="{{ request('descripcion') }}" placeholder="buscar descripción" style="padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
     </div>
+
+    <div>
+      <label style="display:block;font-weight:600;font-size:0.9rem;">Categoría</label>
+      @php
+        $selectedCategoria = null;
+        if (request('categoria_id')) {
+            $selectedCategoria = \App\Models\Categoria::find(request('categoria_id'));
+        }
+        $catPreviewUrl = $selectedCategoria && $selectedCategoria->ruta_img ? asset($selectedCategoria->ruta_img) : asset('imgs/default.webp');
+      @endphp
+      <div style="display:flex;align-items:center;gap:8px;">
+        <select id="f-categoria-filter" name="categoria_id" style="padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
+          <option value="">Sin Categoría</option>
+          @foreach(\App\Models\Categoria::orderBy('nombre')->get() as $c)
+            <option value="{{ $c->id }}" data-img="{{ $c->ruta_img ? asset($c->ruta_img) : asset('imgs/default.webp') }}" {{ (string)request('categoria_id') === (string)$c->id ? 'selected' : '' }}>
+              {{ $c->nombre }}
+            </option>
+          @endforeach
+        </select>
+
+        <div id="categoria-preview" style="width:56px;height:40px;border-radius:6px;overflow:hidden;border:1px solid #e6e7eb;background:#fff;display:flex;align-items:center;justify-content:center;">
+          <img id="categoria-preview-img" src="{{ $catPreviewUrl }}" alt="preview" style="width:100%;height:100%;object-fit:cover;">
+        </div>
+      </div>
+    </div>
+
     <div>
       <label style="display:block;font-weight:600;font-size:0.9rem;">Marca</label>
       <select name="marca" style="padding:8px;border-radius:8px;border:1px solid #e5e7eb;">

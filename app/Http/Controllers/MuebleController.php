@@ -15,6 +15,7 @@ class MuebleController extends Controller
         if ($request->filled('descripcion')) {$query->where('descripcion', 'like', '%' . $request->descripcion . '%');}
         if ($request->filled('marca')) {$query->where('marca', 'like', '%' . $request->marca . '%');}
         if ($request->filled('modelo')) {$query->where('modelo', 'like', '%' . $request->modelo . '%');}
+        if ($request->filled('categoria_id')) {$query->where('categoria_id', $request->categoria_id);}
         if ($request->filled('estado')) {$query->where('estado', $request->estado);}
         if ($request->filled('persona_id')) {
             if ($request->persona_id === 'none') {
