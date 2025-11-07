@@ -49,12 +49,16 @@
           </div>
 
           <div class="card-actions">
+            <a href="{{ url('/muebles/'.$m->id) }}" class="btn-ghost" style="text-decoration:none;padding:8px 10px;border:1px solid #e5e7eb;border-radius:8px;">Ver detalle</a>
+
             @if(!empty($isAdmin) && $isAdmin)
-              <form method="POST" action="{{ url('/muebles/'.$m->id) }}" style="display:inline;">
-                @csrf @method('DELETE')
+              <div style="display:inline-flex;gap:8px;align-items:center;">
                 <button type="button" class="btn-edit" data-mueble='@json($m)'>Editar</button>
-                <button type="button" class="btn-delete" data-id="{{ $m->id }}" data-confirm="¿Eliminar mueble {{ $m->codigo ?? $m->id }}?" data-confirm-callback="confirmDeleteById">Eliminar</button>
-              </form>
+                <form method="POST" action="{{ url('/muebles/'.$m->id) }}" style="margin:0;padding:0;">
+                  @csrf @method('DELETE')
+                  <button type="button" class="btn-delete" data-id="{{ $m->id }}" data-confirm="¿Eliminar mueble {{ $m->codigo ?? $m->id }}?" data-confirm-callback="confirmDeleteById">Eliminar</button>
+                </form>
+              </div>
             @else
               <a class="btn-base btn-new" href="{{ url('/solicitudes/create?mueble_id=' . $m->id) }}">Solicitar</a>
             @endif

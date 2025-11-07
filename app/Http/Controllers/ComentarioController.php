@@ -21,7 +21,11 @@ class ComentarioController extends Controller
             'usuario_id' => 'nullable|exists:usuarios,id',
             'comentario' => 'required|string'
         ]);
-        $c = Comentario::create($request->only('mueble_id','usuario_id','comentario'));
+        $usuarioId = $request->input('usuario_id') ?? session('usuario_id') ?? null;
+        $data = $request->only('mueble_id','comentario');
+        $data['usuario_id'] = $usuarioId;
+        $c = Comentario::create($data);
+        $c->load('usuario');
         return response()->json($c, 201);
     }
 

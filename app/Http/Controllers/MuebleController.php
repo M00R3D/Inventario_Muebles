@@ -15,7 +15,12 @@ class MuebleController extends Controller
         if ($request->filled('descripcion')) {$query->where('descripcion', 'like', '%' . $request->descripcion . '%');}
         if ($request->filled('marca')) {$query->where('marca', 'like', '%' . $request->marca . '%');}
         if ($request->filled('modelo')) {$query->where('modelo', 'like', '%' . $request->modelo . '%');}
-        if ($request->filled('categoria_id')) {$query->where('categoria_id', $request->categoria_id);}
+
+        // filtro por categoría
+        if ($request->filled('categoria_id')) {
+            $query->where('categoria_id', $request->categoria_id);
+        }
+
         if ($request->filled('estado')) {$query->where('estado', $request->estado);}
         if ($request->filled('persona_id')) {
             if ($request->persona_id === 'none') {
@@ -101,8 +106,14 @@ class MuebleController extends Controller
     }
     public function show(Mueble $mueble)
     {
-        $mueble->load('usuario');
-        return response()->json($mueble);
+        $mueble->load('usuario', 'responsable', 'comentarios.usuario', 'categoria');
+        $currentUser = null;
+        $isAdmin = false;
+        if (session()->has('usuario_id')) {
+            $currentUser = Usuario::find(session('usuario_id'));
+            $isAdmin = $currentUser && ($currentUser->rol === 'admin');
+        }
+        return view('muebles.show', compact('mueble', 'isAdmin'));
     }
     public function edit(Mueble $mueble)
     {

@@ -278,6 +278,8 @@ document.addEventListener('DOMContentLoaded', function(){
                </form>`
             : `<a class="btn-base btn-new" href="${baseUrl}/solicitudes/create?mueble_id=${m.id}">Solicitar</a>`;
 
+          const verDetailHtml = `<a href="${baseUrl}/muebles/${esc(m.id)}" class="btn-ghost" style="text-decoration:none;padding:8px 10px;border:1px solid #e5e7eb;border-radius:8px;display:inline-flex;align-items:center;">Ver detalle</a>`;
+
           return `<div class="card" role="listitem" data-id="${esc(m.id)}">
                     <div class="card-inner">
                       <div class="card-media">
@@ -301,7 +303,10 @@ document.addEventListener('DOMContentLoaded', function(){
 
                         <div class="card-comments"><strong>Comentarios:</strong>${commentsHtml}</div>
 
-                        <div class="card-actions">${actionsHtml}</div>
+                        <div class="card-actions">
+                          ${verDetailHtml}
+                          ${actionsHtml}
+                        </div>
                       </div>
                     </div>
                   </div>`;

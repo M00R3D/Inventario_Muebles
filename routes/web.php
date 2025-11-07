@@ -28,6 +28,7 @@ Route::delete('/usuarios/{usuario}', [UsuarioController::class, 'destroy']);
 Route::get('/muebles', [MuebleController::class, 'index']);
 Route::get('/muebles/create', [MuebleController::class, 'create']);
 Route::post('/muebles', [MuebleController::class, 'store']);
+Route::get('/muebles/{mueble}', [MuebleController::class, 'show']);
 Route::get('/muebles/{mueble}/edit', [MuebleController::class, 'edit']);
 Route::put('/muebles/{mueble}', [MuebleController::class, 'update']);
 Route::delete('/muebles/{mueble}', [MuebleController::class, 'destroy']);

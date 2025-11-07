@@ -12,7 +12,7 @@
 
 .preview-wrapper img { display:block; max-width:320px; max-height:180px; width:auto; height:auto; object-fit:contain; border-radius:6px; }
 
-.card-info{ flex:1 1 auto; display:flex; flex-direction:column; gap:8px; }
+.card-info{ flex:1 1 auto; display:flex; flex-direction:column; gap:8px; overflow:visible; }
 .card-top{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .card-title{ font-weight:800; font-size:1rem; color:#111; max-width:60%; word-break:break-word; }
 .card-desc{ color:var(--muted); font-size:0.95rem; line-height:1.25; }
@@ -39,7 +39,14 @@
 
 .mueble-nota{ display:flex; flex-wrap:wrap; white-space:normal; word-break:break-word; overflow-wrap:break-word; max-width:100%; margin-top:6px; font-size:0.9rem; color:#374151; background:#f8fafc; padding:6px 8px; border-radius:8px; }
 
-.card-actions{ display:flex;gap:50%;  justify-content:flex-start; align-items:center; margin-top:auto; }
+.card-actions{
+  display:flex;
+  gap:8px;
+  justify-content:flex-start;
+  align-items:center;
+  margin-top:auto;
+  flex-wrap:wrap;
+}
 
 .estado-badge{ display:inline-flex; align-items:center; justify-content:center; padding:4px 10px; border-radius:999px; font-size:0.78rem; font-weight:700; min-width:94px; text-align:center; box-shadow:0 2px 6px rgba(2,6,23,0.06); }
 .estado-bueno{ background:#10b981; color:#ffffff; }    
@@ -110,4 +117,21 @@
 .card-brand .marca-value { font-weight:900; font-size:1.05rem; color:#111; }
 .invalid { border-color:#ef4444 !important; box-shadow: 0 0 0 4px rgba(239,68,68,0.06); }
 .field-error { color:#b91c1c; font-size:0.85rem; margin-top:6px; font-weight:700; }
+.btn-ghost{
+  background: transparent;
+  color: #0f172a;
+  padding:8px 10px;
+  border-radius:8px;
+  border:1px solid #e5e7eb;
+  font-weight:700;
+  cursor:pointer;
+  text-decoration:none;
+  display:inline-flex !important;
+  align-items:center;
+  gap:8px;
+  transition: transform .12s ease, background .12s ease, box-shadow .12s ease;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+.btn-ghost:hover{ transform: translateY(-2px); background:#f8fafc; box-shadow:0 6px 18px rgba(2,6,23,0.04); }
 </style>
