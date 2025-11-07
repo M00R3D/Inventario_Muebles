@@ -1,6 +1,11 @@
 @extends('layouts.app')
 @section('title','Editar categoría')
 @section('content')
+<style>
+.uploader { border:2px dashed #e5e7eb; border-radius:10px; padding:18px; display:flex; flex-direction:column; gap:10px; align-items:center; text-align:center; background:#fff; }
+.uploader.dragover { background:#f0f9ff; border-color:#06b6d4; }
+</style>
+
 <div class="card" style="max-width:720px">
     <h3>Editar categoría</h3>
     <form action="{{ route('categorias.update', $categoria->id) }}" method="POST">

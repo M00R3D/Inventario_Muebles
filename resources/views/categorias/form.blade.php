@@ -10,6 +10,7 @@
         <textarea name="descripcion" rows="4" style="width:100%;padding:8px;border-radius:8px;border:1px solid #e5e7eb">{{ old('descripcion', $categoria->descripcion ?? '') }}</textarea>
         @error('descripcion') <div style="color:#ef4444;font-size:.9rem">{{ $message }}</div> @enderror
     </label>
+
     <label>
         <div style="font-weight:700;font-size:0.95rem">Imagen (ruta pública)</div>
 
@@ -22,6 +23,7 @@
             </select>
             <input id="f-ruta-img" name="ruta_img" value="{{ old('ruta_img', $categoria->ruta_img ?? '') }}" placeholder="folder/archivo.jpg" maxlength="200" style="flex:1;padding:8px;border-radius:8px;border:1px solid #e5e7eb" />
         </div>
+
         <div id="ruta-preview" style="margin-top:8px">
             @php
                 $imgPath = old('ruta_img', $categoria->ruta_img ?? '');
@@ -33,6 +35,46 @@
         @error('ruta_img') <div style="color:#ef4444;font-size:.9rem">{{ $message }}</div> @enderror
     </label>
 </div>
+
+<style>
+.uploader { border:2px dashed #e5e7eb; border-radius:10px; padding:18px; display:flex; flex-direction:column; gap:10px; align-items:center; text-align:center; background:#fff; }
+.uploader.dragover { background:#f0f9ff; border-color:#06b6d4; }
+
+.btn-primary {
+  background: linear-gradient(90deg,#06b6d4,#2563eb);
+  color: #fff;
+  padding:8px 12px;
+  border-radius:8px;
+  border:0;
+  font-weight:800;
+  cursor:pointer;
+  transition: transform .12s ease, box-shadow .12s ease, opacity .12s ease;
+  box-shadow:0 8px 20px rgba(2,6,23,0.06);
+}
+.btn-primary:hover{ transform: translateY(-3px); opacity:0.98; }
+.btn-ghost {
+  background: transparent;
+  color: #374151;
+  padding:8px 12px;
+  border-radius:8px;
+  border:1px solid #e5e7eb;
+  font-weight:700;
+  cursor:pointer;
+  transition: transform .12s ease, box-shadow .12s ease, background .12s ease;
+}
+.btn-ghost:hover{ transform: translateY(-2px); background:#f8fafc; }
+</style>
+
+<div id="confirm-modal" style="display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;background:rgba(0,0,0,0.4);">
+    <div style="background:#fff;padding:16px;border-radius:10px;max-width:480px;width:92%;box-shadow:0 12px 36px rgba(2,6,23,0.18);">
+        <div id="confirm-modal-message" style="font-weight:700;margin-bottom:12px;font-size:1rem;">¿Confirmar acción?</div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;">
+            <button type="button" id="confirm-modal-cancel" class="btn-ghost">Cancelar</button>
+            <button type="button" id="confirm-modal-ok" class="btn-primary">Confirmar</button>
+        </div>
+    </div>
+</div>
+
 @section('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function(){
@@ -143,6 +185,42 @@ document.addEventListener('DOMContentLoaded', function(){
         setPreview(val);
     });
     setPreview(rutaInput.value);
+
+    const modal = document.getElementById('confirm-modal');
+    const modalMsg = document.getElementById('confirm-modal-message');
+    const modalOk = document.getElementById('confirm-modal-ok');
+    const modalCancel = document.getElementById('confirm-modal-cancel');
+
+    function openConfirm(message, onConfirm){
+        modalMsg.textContent = message || '¿Confirmar?';
+        modal.style.display = 'flex';
+        function cleanup(){
+            modal.style.display = 'none';
+            modalOk.removeEventListener('click', okHandler);
+            modalCancel.removeEventListener('click', cancelHandler);
+        }
+        function okHandler(e){ cleanup(); onConfirm && onConfirm(); }
+        function cancelHandler(e){ cleanup(); }
+        modalOk.addEventListener('click', okHandler);
+        modalCancel.addEventListener('click', cancelHandler);
+    }
+
+    const surroundingForm = (function(){
+        const scripts = document.getElementsByTagName('script');
+        const thisScript = scripts[scripts.length - 1];
+        let el = thisScript && thisScript.parentElement;
+        while(el && el.tagName !== 'FORM') el = el.parentElement;
+        return el || document.querySelector('form');
+    })();
+
+    if (surroundingForm){
+        surroundingForm.addEventListener('submit', function(e){
+            e.preventDefault();
+            openConfirm('¿Deseas guardar la categoría?', function(){
+                surroundingForm.submit();
+            });
+        }, { once: false });
+    }
 });
 </script>
 @endsection
