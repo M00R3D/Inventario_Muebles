@@ -1,11 +1,15 @@
 <!DOCTYPE html>
 @php
     $current = null;
-    if (session()->has('usuario_id')) {
-        $current = \App\Models\Usuario::find(session('usuario_id'));
-    }
+    if (session()->has('usuario_id')) {$current = \App\Models\Usuario::find(session('usuario_id'));}
     $isAdmin = $current && ($current->rol === 'admin');
+    function _sidebar_icon_html(string $clave, string $emoji = '•') {
+        $ruta = \App\Models\Configuracion::getRuta($clave);
+        if ($ruta && file_exists(public_path($ruta))) {$url = asset($ruta);return '<img src="'.e($url).'" alt="'.e($clave).'" class="sidebar-icon-img" />';}
+        return '<span class="sidebar-icon-emoji">'.e($emoji).'</span>';
+    }
 @endphp
+
 <div class="sidebar" id="sidebar" role="navigation" aria-label="Barra lateral">
     <div class="sidebar-card">
         <header class="sidebar-header">
@@ -13,27 +17,88 @@
         </header>
         <nav class="sidebar-nav" aria-label="Navegación principal">
             <ul>
-                <li><a href="{{ url('/dashboard') }}"><span class="icon">🏠</span><span class="label">Dashboard</span></a></li>
-                @if($isAdmin)
-                <li><a href="{{ url('/usuarios') }}"><span class="icon">👥</span><span class="label">Usuarios</span></a></li>
                 <li>
-                    <a href="{{ url('/categorias') }}">
-                        <span class="icon">🗂️</span>
-                        <span class="label">Categorías</span>
-                    </a>
+                  <a href="{{ url('/dashboard') }}">
+                    {!! _sidebar_icon_html('icon_dashboard','🏠') !!}
+                    <span class="label">Dashboard</span>
+                  </a>
                 </li>
-                @endif
-                <li><a href="{{ url('/muebles') }}"><span class="icon">🪑</span><span class="label">Inventario</span></a></li>
+
                 @if($isAdmin)
-                    <li><a href="{{ url('/imagenes') }}"><span class="icon">🖼️</span><span class="label">Imágenes</span></a></li>
-                    <li><a href="{{ url('/notificaciones') }}"><span class="icon">🔔</span><span class="label">Notificaciones</span></a></li>
+                    <li>
+                      <a href="{{ url('/usuarios') }}">
+                        {!! _sidebar_icon_html('icon_usuarios','👥') !!}
+                        <span class="label">Usuarios</span>
+                      </a>
+                    </li>
+                    <li>
+                      <a href="{{ url('/categorias') }}">
+                        {!! _sidebar_icon_html('icon_categorias','🗂️') !!}
+                        <span class="label">Categorías</span>
+                      </a>
+                    </li>
                 @endif
-                <li><a href="{{ url('/solicitudes') }}"><span class="icon">📩</span><span class="label">Solicitudes</span></a></li>
+
+                <li>
+                  <a href="{{ url('/muebles') }}">
+                    {!! _sidebar_icon_html('icon_muebles','🪑') !!}
+                    <span class="label">Inventario</span>
+                  </a>
+                </li>
+
+                @if($isAdmin)
+                    <li>
+                      <a href="{{ url('/imagenes') }}">
+                        {!! _sidebar_icon_html('icon_imagenes','🖼️') !!}
+                        <span class="label">Imágenes</span>
+                      </a>
+                    </li>
+
+                    <li>
+                      <a href="{{ url('/notificaciones') }}">
+                        {!! _sidebar_icon_html('icon_notificaciones','🔔') !!}
+                        <span class="label">Notificaciones</span>
+                      </a>
+                    </li>
+
+                    <li>
+                      <a href="{{ route('configuracion.index') }}">
+                        {!! _sidebar_icon_html('icon_configuracion','⚙️') !!}
+                        <span class="label">Configuración</span>
+                      </a>
+                    </li>
+                @endif
+
+                <li>
+                  <a href="{{ url('/solicitudes') }}">
+                    {!! _sidebar_icon_html('icon_solicitudes','📩') !!}
+                    <span class="label">Solicitudes</span>
+                  </a>
+                </li>
             </ul>
         </nav>
     </div>
 </div>
+
 <style>
+.sidebar-icon-img, .sidebar-icon-emoji {
+  width:40px;
+  height:40px;
+  min-width:40px;
+  display:inline-grid;
+  place-items:center;
+  border-radius:8px;
+  margin-right:8px;
+  flex-shrink:0;
+  box-sizing:border-box;
+  overflow:hidden;
+}
+.sidebar-icon-img {
+  object-fit:contain;
+  background:transparent;
+  display:block;
+}
+.sidebar-icon-emoji { font-size:20px; line-height:1; }
 :root{
     --bg-1: #e0e7ff;
     --bg-2: #f0fdfa;
@@ -61,7 +126,7 @@
     box-shadow: var(--shadow);
     transform-origin: left center;
     position: sticky;
-    top: 52px; 
+    top: 52px;
     height: calc(100vh - 52px);
 }
 .sidebar.open{ transform: translateY(0); }

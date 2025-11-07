@@ -66,6 +66,7 @@ Route::post('/notificaciones/{notificacion}/usuario/estado',      [NotificacionC
 
 Route::resource('categorias', CategoriaController::class);
 Route::resource('comentarios', ComentarioController::class);
+Route::resource('configuracion', \App\Http\Controllers\ConfiguracionController::class)->only(['index','edit','update']);
 
 Route::get('/api/modelos-por-marca', function(Request $request){
     $marca = $request->query('marca','');

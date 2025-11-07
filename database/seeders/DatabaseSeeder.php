@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
             ComentarioSeeder::class,
             SolicitudSeeder::class,
             NotificacionSeeder::class,
+            ConfiguracionSeeder::class,
         ]);
     }
 }
