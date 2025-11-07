@@ -33,6 +33,9 @@ Route::put('/muebles/{mueble}', [MuebleController::class, 'update']);
 Route::delete('/muebles/{mueble}', [MuebleController::class, 'destroy']);
 
 Route::get('/imagenes', [ImageController::class, 'index']);
+
+Route::get('/imagenes/dirs', [ImageController::class, 'dirs']);
+
 Route::get('/imagenes/list', [ImageController::class, 'list']);
 Route::post('/imagenes/upload', [ImageController::class, 'upload']);
 

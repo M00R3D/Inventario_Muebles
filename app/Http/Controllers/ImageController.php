@@ -21,6 +21,21 @@ class ImageController extends Controller
         sort($dirs);
         return view('images.index', ['dirs' => $dirs]);
     }
+
+    public function dirs(Request $request)
+    {
+        $public = public_path();
+        $entries = @scandir($public) ?: [];
+        $dirs = [];
+        foreach ($entries as $e) {
+            if ($e === '.' || $e === '..') continue;
+            $path = $public . DIRECTORY_SEPARATOR . $e;
+            if (is_dir($path)) $dirs[] = $e;
+        }
+        sort($dirs);
+        return response()->json(['dirs' => $dirs]);
+    }
+
     public function upload(Request $request)
     {
         $request->validate([

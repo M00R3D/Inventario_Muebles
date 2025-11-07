@@ -5,7 +5,7 @@ use Illuminate\Database\Eloquent\Model;
 class Categoria extends Model
 {
     protected $table = 'categorias';
-    protected $fillable = ['nombre','descripcion'];
+    protected $fillable = ['nombre','descripcion','ruta_img'];
 
     public function muebles()
     {

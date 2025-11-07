@@ -10,6 +10,7 @@ return new class extends Migration {
         Schema::create('categorias', function (Blueprint $table) {
             $table->increments('id');
             $table->string('nombre', 150)->nullable(false)->unique();
+            $table->string('ruta_img', 200)->nullable();
             $table->string('descripcion', 500)->nullable();
             $table->timestamps();
         });
