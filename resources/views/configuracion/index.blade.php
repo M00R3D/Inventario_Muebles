@@ -31,7 +31,7 @@
           <td style="padding:8px;vertical-align:middle">{{ $cfg->clave }}</td>
           <td style="padding:8px;vertical-align:middle">{{ $cfg->nombre }}</td>
           <td style="padding:8px;vertical-align:middle">
-            <a href="{{ route('configuracion.edit', $cfg->id) }}" class="btn-edit" style="text-decoration:none">Editar</a>
+            <a href="{{ route('configuracion.edit', $cfg->id) }}" class="btn-ghost" style="text-decoration:none">Editar</a>
           </td>
         </tr>
       @empty
@@ -40,4 +40,7 @@
     </tbody>
   </table>
 </div>
+<style>
+.btn-ghost { background:transparent; border:1px solid #e5e7eb; padding:8px 12px; border-radius:8px; color:#374151; text-decoration:none; display:inline-block; }
+</style>
 @endsection

@@ -26,6 +26,9 @@
 .cat-actions .cat-delete:hover{ transform: translateY(-3px); opacity:0.98; }
 .table-action-link{ color:inherit; text-decoration:none; display:inline-block; }
 .inline-form { display:inline-block; margin:0; padding:0; }
+.btn-primary{ background: linear-gradient(90deg,#06b6d4,#2563eb); color:#fff; padding:8px 12px; border-radius:8px; border:0; font-weight:700; }
+.btn-ghost{ background:transparent; border:1px solid #e5e7eb; padding:8px 12px; border-radius:8px; color:#374151; text-decoration:none; display:inline-block; }
+.btn-danger{ background: linear-gradient(90deg,#ef4444,#d94660); color:#fff; padding:8px 12px; border-radius:8px; border:0; font-weight:700; }
 </style>
 
 <div class="card">
@@ -60,12 +63,11 @@
                     <td style="padding:8px;vertical-align:middle">{{ $c->nombre }}</td>
                     <td style="padding:8px;vertical-align:middle">{{ $c->descripcion }}</td>
                     <td style="padding:8px;vertical-align:middle" class="cat-actions">
-                        <a href="{{ route('categorias.edit', $c->id) }}" class="cat-edit table-action-link" style="margin-right:8px;">Editar</a>
-
+                        <a href="{{ route('categorias.edit', $c->id) }}" class="btn-ghost" style="margin-right:8px;">Editar</a>
                         <form action="{{ route('categorias.destroy', $c->id) }}" method="POST" class="inline-form" style="display:inline;">
                             @csrf
                             @method('DELETE')
-                            <button type="button" class="cat-delete" data-confirm="¿Eliminar categoría {{ $c->nombre }}?" >Eliminar</button>
+                            <button type="button" class="btn-danger" data-confirm="¿Eliminar categoría {{ $c->nombre }}?" >Eliminar</button>
                         </form>
                     </td>
                 </tr>

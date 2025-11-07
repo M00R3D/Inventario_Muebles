@@ -68,6 +68,8 @@ Route::resource('categorias', CategoriaController::class);
 Route::resource('comentarios', ComentarioController::class);
 Route::resource('configuracion', \App\Http\Controllers\ConfiguracionController::class)->only(['index','edit','update']);
 
+Route::post('/configuracion/apply-colors', [\App\Http\Controllers\ConfiguracionController::class, 'applyColors'])->name('configuracion.applyColors');
+
 Route::get('/api/modelos-por-marca', function(Request $request){
     $marca = $request->query('marca','');
     if ($marca === '') return response()->json([], 200);

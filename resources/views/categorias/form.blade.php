@@ -40,39 +40,21 @@
 .uploader { border:2px dashed #e5e7eb; border-radius:10px; padding:18px; display:flex; flex-direction:column; gap:10px; align-items:center; text-align:center; background:#fff; }
 .uploader.dragover { background:#f0f9ff; border-color:#06b6d4; }
 
-.btn-primary {
-  background: linear-gradient(90deg,#06b6d4,#2563eb);
-  color: #fff;
-  padding:8px 12px;
-  border-radius:8px;
-  border:0;
-  font-weight:800;
-  cursor:pointer;
-  transition: transform .12s ease, box-shadow .12s ease, opacity .12s ease;
-  box-shadow:0 8px 20px rgba(2,6,23,0.06);
-}
-.btn-primary:hover{ transform: translateY(-3px); opacity:0.98; }
-.btn-ghost {
-  background: transparent;
-  color: #374151;
-  padding:8px 12px;
-  border-radius:8px;
-  border:1px solid #e5e7eb;
-  font-weight:700;
-  cursor:pointer;
-  transition: transform .12s ease, box-shadow .12s ease, background .12s ease;
-}
-.btn-ghost:hover{ transform: translateY(-2px); background:#f8fafc; }
+.btn-primary { background: linear-gradient(90deg,#10b981,#059669); color:#fff; padding:8px 12px; border-radius:8px; border:0; font-weight:700; cursor:pointer; }
+.btn-ghost { background:transparent; border:1px solid #e5e7eb; padding:8px 12px; border-radius:8px; color:#374151; }
+.btn-danger { background: linear-gradient(90deg,#ef4444,#d94660); color:#fff; padding:8px 12px; border-radius:8px; border:0; font-weight:700; }
+#confirm-modal { display:none; position:fixed; inset:0; align-items:center; justify-content:center; background:rgba(0,0,0,0.4); }
+#confirm-modal .modal-card { background:#fff;padding:16px;border-radius:10px; max-width:480px; width:92%; }
 </style>
 
-<div id="confirm-modal" style="display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;background:rgba(0,0,0,0.4);">
-    <div style="background:#fff;padding:16px;border-radius:10px;max-width:480px;width:92%;box-shadow:0 12px 36px rgba(2,6,23,0.18);">
-        <div id="confirm-modal-message" style="font-weight:700;margin-bottom:12px;font-size:1rem;">¿Confirmar acción?</div>
-        <div style="display:flex;gap:8px;justify-content:flex-end;">
-            <button type="button" id="confirm-modal-cancel" class="btn-ghost">Cancelar</button>
-            <button type="button" id="confirm-modal-ok" class="btn-primary">Confirmar</button>
-        </div>
+<div id="confirm-modal" style="display:none;">
+  <div class="modal-card">
+    <div id="confirm-modal-message" style="font-weight:700;margin-bottom:12px;font-size:1rem;">¿Confirmar acción?</div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button type="button" id="confirm-modal-cancel" class="btn-ghost">Cancelar</button>
+        <button type="button" id="confirm-modal-ok" class="btn-primary">Confirmar</button>
     </div>
+  </div>
 </div>
 
 @section('scripts')

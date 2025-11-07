@@ -31,7 +31,31 @@
     </div>
     @error('ruta_img') <div style="color:#ef4444;font-size:.9rem">{{ $message }}</div> @enderror
   </label>
+
+  <label>
+    <div style="display:flex;gap:12px;align-items:center;">
+      <div>
+        <div style="font-weight:700;font-size:0.95rem">Color normal</div>
+        <input type="color" name="normal_color" value="{{ old('normal_color', $configuracion->normal_color ?? '#f59e0b') }}" style="width:56px;height:36px;border:0;padding:0;background:transparent;">
+      </div>
+      <div>
+        <div style="font-weight:700;font-size:0.95rem">Color hover</div>
+        <input type="color" name="hover_color" value="{{ old('hover_color', $configuracion->hover_color ?? ($configuracion->normal_color ?? '#f97316')) }}" style="width:56px;height:36px;border:0;padding:0;background:transparent;">
+      </div>
+      <div style="flex:1">
+        <div style="font-weight:700;font-size:0.95rem">Vista previa</div>
+        <div id="icon-preview" style="width:48px;height:48px;border-radius:8px;margin-top:6px;box-shadow:0 6px 18px rgba(15,23,42,0.06);"></div>
+      </div>
+    </div>
+  </label>
 </div>
+
+{{-- Small style helpers para inputs y preview --}}
+<style>
+.btn-primary { background: linear-gradient(90deg,#06b6d4,#6366f1); color:#fff; padding:8px 12px; border-radius:8px; border:0; font-weight:700; cursor:pointer; }
+.btn-ghost { background:transparent; border:1px solid #e5e7eb; padding:8px 12px; border-radius:8px; color:#374151; }
+#icon-preview { width:48px; height:48px; border-radius:8px; overflow:hidden; display:inline-grid; place-items:center; }
+</style>
 
 @section('scripts')
 <script>
@@ -101,6 +125,44 @@ document.addEventListener('DOMContentLoaded', function(){
   folderSelect.addEventListener('change', function(){ const f = this.value || ''; if (!f) { fileSelect.innerHTML = '<option value="">-- elegir carpeta primero --</option>'; fileSelect.disabled = true; return; } loadFilesForFolder(f); });
   fileSelect.addEventListener('change', function(){ const file = this.value || ''; const folder = folderSelect.value || ''; if (!file || !folder) return; const path = folder + '/' + file; rutaInput.value = path; setPreview(path); });
   rutaInput.addEventListener('input', function(){ setPreview((this.value||'').trim()); });
+
+  const preview = document.getElementById('icon-preview');
+  const normalInput = document.querySelector('input[name="normal_color"]');
+  const hoverInput = document.querySelector('input[name="hover_color"]');
+
+  function renderPreview(){
+    const ruta = (rutaInput && rutaInput.value) ? rutaInput.value : '';
+    preview.innerHTML = '';
+    const span = document.createElement('span');
+    span.style.display = 'inline-block';
+    span.style.width = '100%';
+    span.style.height = '100%';
+    span.style.borderRadius = '8px';
+    span.style.backgroundColor = normalInput ? normalInput.value : '#f59e0b';
+    span.style.webkitMaskRepeat = 'no-repeat';
+    span.style.maskRepeat = 'no-repeat';
+    span.style.webkitMaskPosition = 'center';
+    span.style.maskPosition = 'center';
+    span.style.webkitMaskSize = 'contain';
+    span.style.maskSize = 'contain';
+    if (ruta) {
+      const url = ruta.startsWith('http') ? ruta : (window.location.origin + '/' + ruta.replace(/^\/+/, ''));
+      span.style.webkitMaskImage = "url('" + url + "')";
+      span.style.maskImage = "url('" + url + "')";
+    } else {
+      span.textContent = '⚙️';
+      span.style.background = 'transparent';
+      span.style.fontSize = '18px';
+      span.style.display = 'grid';
+      span.style.placeItems = 'center';
+    }
+    preview.appendChild(span);
+  }
+
+  if (normalInput) normalInput.addEventListener('input', renderPreview);
+  if (hoverInput) hoverInput.addEventListener('input', renderPreview);
+  if (rutaInput) rutaInput.addEventListener('input', renderPreview);
+  renderPreview();
 });
 </script>
 @endsection

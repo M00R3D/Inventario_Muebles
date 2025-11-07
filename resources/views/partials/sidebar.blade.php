@@ -4,8 +4,17 @@
     if (session()->has('usuario_id')) {$current = \App\Models\Usuario::find(session('usuario_id'));}
     $isAdmin = $current && ($current->rol === 'admin');
     function _sidebar_icon_html(string $clave, string $emoji = '•') {
-        $ruta = \App\Models\Configuracion::getRuta($clave);
-        if ($ruta && file_exists(public_path($ruta))) {$url = asset($ruta);return '<img src="'.e($url).'" alt="'.e($clave).'" class="sidebar-icon-img" />';}
+        $cfg = \App\Models\Configuracion::where('clave', $clave)->first();
+        $ruta = $cfg?->ruta_img;
+        $normal = $cfg?->normal_color ?? '#f59e0b';
+        $hover = $cfg?->hover_color ?? $normal;
+        if ($ruta && file_exists(public_path($ruta))) {
+            $url = asset($ruta);
+            // set only the CSS variables (no inline background-color)
+            $style = "--icon-color: {$normal}; --icon-color-hover: {$hover};";
+            $style .= " -webkit-mask-image: url('{$url}'); mask-image: url('{$url}'); -webkit-mask-size: contain; mask-size: contain; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; -webkit-mask-position: center; mask-position: center;";
+            return '<span class="sidebar-icon-mask" style="'.e($style).'"></span>';
+        }
         return '<span class="sidebar-icon-emoji">'.e($emoji).'</span>';
     }
 @endphp
@@ -62,7 +71,7 @@
                     </li>
 
                     <li>
-                      <a href="{{ route('configuracion.index') }}">
+                      <a href="{{ route('configuracion.index') }}" style="--icon-color:#f59e0b;">
                         {!! _sidebar_icon_html('icon_configuracion','⚙️') !!}
                         <span class="label">Configuración</span>
                       </a>
@@ -79,26 +88,41 @@
         </nav>
     </div>
 </div>
-
 <style>
-.sidebar-icon-img, .sidebar-icon-emoji {
-  width:40px;
-  height:40px;
-  min-width:40px;
+.tint-blue { filter: invert(1) sepia(1) saturate(8000%) hue-rotate(180deg) brightness(0.95); }
+.sidebar-icon-mask, .sidebar-icon-emoji {
+  width:48px;
+  height:48px;
+  min-width:48px;
   display:inline-grid;
   place-items:center;
-  border-radius:8px;
+  border-radius:10px;
   margin-right:8px;
   flex-shrink:0;
   box-sizing:border-box;
   overflow:hidden;
 }
-.sidebar-icon-img {
-  object-fit:contain;
-  background:transparent;
-  display:block;
+.sidebar-icon-mask {
+  display:inline-block;
+  width:48px;height:48px;border-radius:10px;overflow:hidden;
+  background-color: var(--icon-color, #f59e0b);
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  transition: transform .12s ease, background-color .12s ease;
 }
-.sidebar-icon-emoji { font-size:20px; line-height:1; }
+.sidebar-icon-mask:hover {
+  background-color: var(--icon-color-hover, var(--icon-color));
+  transform: translateY(-2px) scale(1.02);
+}
+.sidebar-nav a:hover .sidebar-icon-mask {
+  background-color: var(--icon-color-hover, var(--icon-color));
+}
+
+.sidebar-icon-emoji { font-size:22px; line-height:1; display:inline-grid; place-items:center; }
 :root{
     --bg-1: #e0e7ff;
     --bg-2: #f0fdfa;
@@ -110,6 +134,7 @@
     --radius: 12px;
     --shadow: 0 8px 28px rgba(15,23,42,0.06);
     --ease: cubic-bezier(.16,.84,.44,1);
+    --icon-color: #f59e0b;
 }
 .sidebar{
     width: 260px;

@@ -9,14 +9,14 @@ class ConfiguracionSeeder extends Seeder
     public function run(): void
     {
         $defaults = [
-            ['clave' => 'icon_dashboard',      'nombre' => 'Dashboard',      'ruta_img' => 'icons/home.png'],
-            ['clave' => 'icon_muebles',        'nombre' => 'Muebles',        'ruta_img' => 'icons/muebles.png'],
-            ['clave' => 'icon_categorias',     'nombre' => 'Categorías',     'ruta_img' => 'icons/categorias.png'],
-            ['clave' => 'icon_usuarios',       'nombre' => 'Usuarios',       'ruta_img' => 'icons/usuarios.png'],
-            ['clave' => 'icon_solicitudes',    'nombre' => 'Solicitudes',    'ruta_img' => 'icons/solicitudes.png'],
-            ['clave' => 'icon_notificaciones', 'nombre' => 'Notificaciones', 'ruta_img' => 'icons/notificaciones.png'],
-            ['clave' => 'icon_configuracion',  'nombre' => 'Configuración',  'ruta_img' => 'icons/configuracion.png'],
-            ['clave' => 'icon_imagenes',       'nombre' => 'Imágenes',       'ruta_img' => 'icons/imagenes.png'],
+            ['clave' => 'icon_dashboard',     'nombre' => 'Dashboard',       'ruta_img' => 'icons/home.png', 'normal_color' => '#5e5492', 'hover_color' => '#383569'],
+            ['clave' => 'icon_muebles',       'nombre' => 'Muebles',         'ruta_img' => 'icons/muebles.png', 'normal_color' => '#5e5492', 'hover_color' => '#383569'],
+            ['clave' => 'icon_categorias',    'nombre' => 'Categorías',      'ruta_img' => 'icons/categorias.png', 'normal_color' => '#5e5492', 'hover_color' => '#383569'],
+            ['clave' => 'icon_usuarios',      'nombre' => 'Usuarios',        'ruta_img' => 'icons/usuarios.png', 'normal_color' => '#5e5492', 'hover_color' => '#383569'],
+            ['clave' => 'icon_solicitudes',   'nombre' => 'Solicitudes',     'ruta_img' => 'icons/solicitudes.png', 'normal_color' => '#5e5492', 'hover_color' => '#383569'],
+            ['clave' => 'icon_notificaciones','nombre' => 'Notificaciones',  'ruta_img' => 'icons/notificaciones.png', 'normal_color' => '#5e5492', 'hover_color' => '#383569'],
+            ['clave' => 'icon_configuracion', 'nombre' => 'Configuración',   'ruta_img' => 'icons/configuracion.png', 'normal_color' => '#5e5492', 'hover_color' => '#383569'],
+            ['clave' => 'icon_imagenes',      'nombre' => 'Imágenes',        'ruta_img' => 'icons/imagenes.png', 'normal_color' => '#5e5492', 'hover_color' => '#383569'],
         ];
 
         foreach ($defaults as $d) {
