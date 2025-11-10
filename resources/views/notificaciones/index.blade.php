@@ -13,14 +13,47 @@
 @section('content')
 @php
     $current = null;
-    if (session()->has('usuario_id')) {$current = \App\Models\Usuario::find(session('usuario_id'));}
+    if (session()->has('usuario_id')) {
+        $current = \App\Models\Usuario::find(session('usuario_id'));
+    }
     $isAdmin = $current && ($current->rol === 'admin');
+
     use Carbon\Carbon;
     Carbon::setLocale('es');
+
     $estadoOrder = ['cerrada' => 0, 'abierta' => 1, 'vista' => 2];
     $tmp = $notificaciones->sortByDesc('fecha_creacion');
-    $notificaciones_sorted = $tmp->sortBy(function($n) use ($estadoOrder) {return $estadoOrder[$n->estado] ?? 99;})->values();
+    $notificaciones_sorted = $tmp->sortBy(function($n) use ($estadoOrder) {
+        return $estadoOrder[$n->estado] ?? 99;
+    })->values();
+
     $perPage = 10;
+    $icons = ['prueba'=>'🧪','aprobada'=>'✅','rechazada'=>'❌','otra'=>'🔔'];
+
+    $ligadas = collect();
+    $aud_todos = collect();
+    $aud_admins = collect();
+    $aud_usuarios = collect();
+    $cerradas = collect();
+    $abiertas = collect();
+    $vistas = collect();
+
+    if ($isAdmin && $current) {
+        $ligadas = $notificaciones_sorted->filter(fn($x) => isset($x->id_admin) && $x->id_admin == $current->id)->values();
+        $aud_todos = $notificaciones_sorted->filter(fn($x) => ($x->audiencia ?? '') === 'todos')->values();
+        $aud_admins = $notificaciones_sorted->filter(fn($x) => ($x->audiencia ?? '') === 'admins')->values();
+        $aud_usuarios = $notificaciones_sorted->filter(fn($x) => ($x->audiencia ?? '') === 'usuarios')->values();
+        $cerradas = $notificaciones_sorted->filter(fn($x) => ($x->estado ?? '') === 'cerrada')->values();
+        $abiertas = $notificaciones_sorted->filter(fn($x) => ($x->estado ?? '') === 'abierta')->values();
+        $vistas   = $notificaciones_sorted->filter(fn($x) => ($x->estado ?? '') === 'vista')->values();
+    } else {
+        if ($current) {
+            $visible = $notificaciones_sorted->filter(fn($n) => !empty($n->id_usuario) && $n->id_usuario == $current->id)->values();
+            $cerradas = $visible->filter(fn($x) => ($x->estado ?? '') === 'cerrada')->values();
+            $abiertas = $visible->filter(fn($x) => ($x->estado ?? '') === 'abierta')->values();
+            $vistas   = $visible->filter(fn($x) => ($x->estado ?? '') === 'vista')->values();
+        }
+    }
 @endphp
 
 <style>
@@ -90,13 +123,6 @@
         $cerradas = $notificaciones_sorted->filter(fn($x)=> ($x->estado ?? '') === 'cerrada')->values();
         $abiertas = $notificaciones_sorted->filter(fn($x)=> ($x->estado ?? '') === 'abierta')->values();
         $vistas   = $notificaciones_sorted->filter(fn($x)=> ($x->estado ?? '') === 'vista')->values();
-        $icons = ['prueba'=>'🧪','aprobada'=>'✅','rechazada'=>'❌','otra'=>'🔔'];
-        if ($isAdmin) {
-            $ligadas = $notificaciones_sorted->filter(fn($x)=> isset($x->id_admin) && $x->id_admin == $current->id)->values();
-            $aud_todos = $notificaciones_sorted->filter(fn($x)=> ($x->audiencia ?? '') === 'todos')->values();
-            $aud_admins = $notificaciones_sorted->filter(fn($x)=> ($x->audiencia ?? '') === 'admins')->values();
-            $aud_usuarios = $notificaciones_sorted->filter(fn($x)=> ($x->audiencia ?? '') === 'usuarios')->values();
-        }
     @endphp
     @if($isAdmin)
         <h3 style="margin-top:8px;margin-bottom:6px;color:#374151;">Notificaciones ligadas a mi (ID {{ $current->id }})</h3>

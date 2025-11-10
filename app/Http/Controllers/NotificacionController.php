@@ -27,7 +27,10 @@ class NotificacionController extends Controller
 
         $current = null;
         if (session()->has('usuario_id')) {$current = Usuario::find(session('usuario_id'));}
-        if ($current && $current->rol !== 'admin') {$query->where('id_usuario', $current->id);}
+        if ($current && $current->rol !== 'admin') {
+            $query->where('id_usuario', $current->id);
+        }
+
         $notificaciones = $query->get();
         if ($request->wantsJson() || $request->is('api/*')) {return response()->json($notificaciones);}
         $usuarios = Usuario::all();

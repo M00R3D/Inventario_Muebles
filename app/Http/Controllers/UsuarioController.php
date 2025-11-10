@@ -68,7 +68,7 @@ class UsuarioController extends Controller
             Notificacion::create([
                 'id_admin' => $actorId,
                 'id_usuario' => $usuario->id,
-                'audiencia' => 'usuario',
+                'audiencia' => 'usuarios',
                 'estado' => 'cerrada',
                 'tipo' => 'prueba',
                 'descripcion' => "Bienvenido {$usuario->nombre}. Tu cuenta fue creada por: {$actorName}",
@@ -137,7 +137,7 @@ class UsuarioController extends Controller
                 Notificacion::create([
                     'id_admin' => $actorId,
                     'id_usuario' => $usuario->id,
-                    'audiencia' => 'usuario',
+                    'audiencia' => 'usuarios',
                     'estado' => 'cerrada',
                     'tipo' => 'otra',
                     'descripcion' => "Tus datos fueron actualizados por: {$actorName}. Cambios: " . implode('; ', $changed),
