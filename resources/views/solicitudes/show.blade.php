@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Solicitud #' . ($solicitud->id ?? 'Detalle') . ' | Inventario Muebles')
+@section('title', 'Detalle de solicitud | Inventario Muebles')
 
 @section('content')
 @php
@@ -15,12 +15,32 @@
         try { $creado_hace = $solicitud->created_at->locale('es')->diffForHumans(); } catch(\Throwable $e) { $creado_hace = Carbon::parse($solicitud->created_at)->locale('es')->diffForHumans(); }
     }
 @endphp
+
+<style>
+.estado-badge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:4px 10px;
+  border-radius:999px;
+  font-size:0.78rem;
+  font-weight:700;
+  min-width:94px;
+  text-align:center;
+  box-shadow:0 2px 6px rgba(2,6,23,0.06);
+}
+.estado-bueno{ background:#10b981; color:#ffffff; }
+.estado-regular{ background:#f59e0b; color:#0b0b0b; }
+.estado-malo{ background:#ef4444; color:#ffffff; }
+.estado-en_reparacion{ background:#6366f1; color:#ffffff; }
+</style>
+
 <div style="max-width:1000px;margin:18px auto;padding:12px;">
     <header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
         <div>
             <h1 style="margin:0;font-size:1.25rem;">Detalle de solicitud</h1>
             <div style="color:#6b7280;margin-top:6px;">
-                Solicitud #{{ $solicitud->id }}
+                Solicitud creada hace:
                 @if($creado_hace) — <small style="font-weight:700">{{ $creado_hace }}</small>@endif
             </div>
         </div>
@@ -52,15 +72,32 @@
         </aside>
         <section style="background:#fff;padding:16px;border-radius:10px;box-shadow:0 8px 24px rgba(2,6,23,0.06);">
             <dl style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                @if($isAdmin)
                 <div>
                     <label style="font-weight:700;color:#374151;">ID</label>
                     <div style="margin-top:6px;">{{ $solicitud->id }}</div>
                 </div>
-
+                @endif 
                 <div>
                     <label style="font-weight:700;color:#374151;">Estado</label>
-                    <div style="margin-top:6px;font-weight:800;color:{{ $solicitud->estado === 'aprobada' ? '#059669' : ($solicitud->estado === 'rechazada' ? '#ef4444' : '#92400e') }};">
-                        {{ ucfirst($solicitud->estado ?? 'pendiente') }}
+                    <div style="margin-top:6px;">
+                        @php
+                            $estado = strtolower($solicitud->estado ?? 'pendiente');
+                            $map = [
+                                'aprobada' => 'estado-bueno',
+                                'aprobado' => 'estado-bueno',
+                                'pendiente' => 'estado-regular',
+                                'pendiente_revision' => 'estado-regular',
+                                'rechazada' => 'estado-malo',
+                                'rechazado' => 'estado-malo',
+                                'en_reparacion' => 'estado-en_reparacion',
+                                'reparacion' => 'estado-en_reparacion',
+                            ];
+                            $cls = $map[$estado] ?? 'estado-regular';
+                        @endphp
+                        <span class="estado-badge {{ $cls }}">
+                            {{ ucfirst(str_replace('_',' ',$estado)) }}
+                        </span>
                     </div>
                 </div>
 

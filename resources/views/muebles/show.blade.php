@@ -15,6 +15,11 @@
 .badge{display:inline-flex;padding:6px 10px;border-radius:999px;font-weight:800;font-size:.85rem}
 .badge-estado{background:linear-gradient(90deg,#f1f5f9,#eef2ff);color:#0f172a;box-shadow:0 6px 20px rgba(2,6,23,0.04)}
 .badge-cat{background:linear-gradient(90deg,#e6f7ff,#f0f9ff);color:#075985;border:1px solid rgba(3,105,161,0.06)}
+.estado-badge{ display:inline-flex; align-items:center; justify-content:center; padding:4px 10px; border-radius:999px; font-size:0.78rem; font-weight:700; min-width:94px; text-align:center; box-shadow:0 2px 6px rgba(2,6,23,0.06); }
+.estado-bueno{ background:#10b981; color:#ffffff; }    
+.estado-regular{ background:#f59e0b; color:#0b0b0b; }  
+.estado-malo{ background:#ef4444; color:#ffffff; }     
+.estado-en_reparacion{ background:#6366f1; color:#ffffff; } 
 .info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:6px}
 .info-item{background:#fbfdff;padding:10px;border-radius:8px;border:1px solid #eef2ff;color:#0f172a}
 .desc{color:#475569;padding:10px;background:#fbfdff;border-radius:8px;border:1px solid #eef2ff}
@@ -61,7 +66,7 @@
 
         <div style="text-align:right">
           <div class="meta-row">
-            <div class="badge badge-estado">Estado: {{ ucfirst(str_replace('_',' ',$mueble->estado)) }}</div>
+            <div><span class="estado-badge estado-{{ $mueble->estado ?? '' }}">{{ ucfirst(str_replace('_',' ', $mueble->estado ?? '-')) }}</span></div>
             @if($mueble->categoria)
               <div class="badge badge-cat">Categoría: {{ $mueble->categoria->nombre }}</div>
             @endif
@@ -118,8 +123,6 @@
     </div>
   </div>
 </div>
-
-<!-- modal de confirmación estilizado (usar en lugar de confirm() del navegador) -->
 <div id="confirm-modal-global" style="display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;background:rgba(0,0,0,0.4);">
   <div style="background:#fff;padding:16px;border-radius:10px;max-width:420px;width:92%;box-shadow:0 12px 36px rgba(2,6,23,0.18);">
     <div id="confirm-modal-global-msg" style="font-weight:700;margin-bottom:12px;">¿Confirmar acción?</div>
