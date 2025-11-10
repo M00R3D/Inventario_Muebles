@@ -1,0 +1,17 @@
+notificaciones tienen audiencia(admins,todos,usuarios,(mas raro aun, privada))
+
+notificaciones tienen id_admin: a los admins les debe salir en un recuadro aparte las notificaciones que estan ligados a ellos, y en otro recuadro mas abajo un recuadro con todas las notificaciones(y pueden cargar las notificaciones de cualquiera de las 3 audiencias(admins,todos y usuarios))
+
+notificaciones tienen id_usuario: a los usuarios no admin les debe salir solamente las notificaciones que estan ligadas a su id_usuario(y pueden cargar las notificaciones de las audiencias(todos y usuarios) solamente)
+
+las notificaciones con audiencia privada solo la podran ver los usuarios que tengan un id relacionado a la notificacion, ya sea un usuario o admin
+
+
+
+notificaciones tienen estado(cerrada, abierta, vista), el objetivo de esto es que en la campana de notificaciones desplegable salga un numero con todas las notificaciones cerradas que esten dentro de la visualizacion habilitada para el usuario dependiendo su id, o si es admin o usuario normal, y una vez abierta la pantalla de notificaciones todas las notificaciones que tenian el estado "cerrada" deben pasar al estado "abierta", tambien falta crear una pantalla detalle de notificaciones con un boton muy grande y notable para marcar las notificaciones como vistas, entonces en la lista de notificaciones view deben cargar las abiertas y vistas en 2 tablas respectivamente, y las cerradas solo podran ser vistas desde el pequeño desplegable de la campana que le sale a los usuarios
+
+pensando en esto anterior tambien estaria bien añadir la posibilidad de que se le despligue el mismo recuadro de la navbar desde la campana de notificaciones que esta programada para usuarios normales ya que la campana a los admins les sale en la sidebar que tambien puedan abrir las notificaciones desde ese origen
+
+si hay un campo ruta, debe salir tambien un boton que nos permita ir al detalle de lo que trata la notificacion, dicho boton si no esta ligado a alguna ruta su notificacion, solo nos debe abrir el detalle de la notificacion sin llevarnos a alguna otra ruta ni de solicitud ni de mueble
+
+campo tipo... los mas comunes deberian ser: solicitud aprobada, solicitud pendiente, solicitud rechazada, notificaciones del sistema,,,,,,POR VERSE MAS TIPOS COMUNES
