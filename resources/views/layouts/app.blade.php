@@ -78,8 +78,7 @@
                     $__current = \App\Models\Usuario::find(session('usuario_id'));
                 }
             ?>
-            <?php if($__current && in_array($__current->rol, ['empleado','tecnico'])): ?>
-                {{-- campana desplegable para empleados / técnicos --}}
+            <?php if($__current && ($__current->rol ?? '') !== 'admin'): ?>
                 <?php echo $__env->make('partials.notification_bell', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
             <?php endif; ?>
 

@@ -30,6 +30,13 @@ class NotificacionController extends Controller
         if ($current && $current->rol !== 'admin') {
             $query->where('id_usuario', $current->id);
         }
+        if (!($request->wantsJson() || $request->is('api/*'))) {
+            $visibilityQ = Notificacion::query();
+            if ($current && $current->rol !== 'admin') {
+                $visibilityQ->where('id_usuario', $current->id);
+            }
+            $visibilityQ->where('estado', 'cerrada')->update(['estado' => 'abierta', 'fecha_visto' => null]);
+        }
 
         $notificaciones = $query->get();
         if ($request->wantsJson() || $request->is('api/*')) {return response()->json($notificaciones);}

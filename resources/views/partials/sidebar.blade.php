@@ -10,7 +10,6 @@
         $hover = $cfg?->hover_color ?? $normal;
         if ($ruta && file_exists(public_path($ruta))) {
             $url = asset($ruta);
-            // set only the CSS variables (no inline background-color)
             $style = "--icon-color: {$normal}; --icon-color-hover: {$hover};";
             $style .= " -webkit-mask-image: url('{$url}'); mask-image: url('{$url}'); -webkit-mask-size: contain; mask-size: contain; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; -webkit-mask-position: center; mask-position: center;";
             return '<span class="sidebar-icon-mask" style="'.e($style).'"></span>';
@@ -18,7 +17,6 @@
         return '<span class="sidebar-icon-emoji">'.e($emoji).'</span>';
     }
 @endphp
-
 <div class="sidebar" id="sidebar" role="navigation" aria-label="Barra lateral">
     <div class="sidebar-card">
         <header class="sidebar-header">
@@ -59,11 +57,33 @@
                         <span class="label">Imágenes</span>
                       </a>
                     </li>
-                    <li>
-                      <a href="{{ url('/notificaciones') }}" title="notificaciones">
-                        {!! _sidebar_icon_html('icon_notificaciones','🔔') !!}
-                        <span class="label">Notificaciones</span>
+                    <li style="position:relative;">
+                      <a href="#" id="sidebar-notif-trigger" class="sidebar-nav-link sidebar-notif-link" role="button" aria-haspopup="true" aria-expanded="false" title="Notificaciones">
+                          {!! _sidebar_icon_html('icon_notificaciones','🔔') !!}
+                          <span class="label">Notificaciones</span>
                       </a>
+                      @include('partials.notification_bell', ['_only_menu' => true, '_sidebar_origin' => true, '_container_id' => 'nav-notifications-sidebar'])
+                      <script>
+                        document.addEventListener('DOMContentLoaded', function(){
+                            const api = window.initNotificationBell('nav-notifications-sidebar');
+                            const trigger = document.getElementById('sidebar-notif-trigger');
+                            if (!trigger || !api) return;
+                            trigger.addEventListener('click', function(e){
+                                e.preventDefault();
+                                e.stopPropagation();
+                                api.container.classList.add('sidebar-origin');
+                                api.toggle();
+                                const expanded = api.container.querySelector('.notif-menu')?.classList.contains('open') || false;
+                                trigger.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+                            });
+                            document.addEventListener('click', function(ev){
+                                if (!trigger.contains(ev.target) && !api.container.contains(ev.target)) {
+                                    api.close();
+                                    trigger.setAttribute('aria-expanded', 'false');
+                                }
+                            });
+                        });
+                      </script>
                     </li>
                 @endif
                 @if($isAdmin)
@@ -212,4 +232,33 @@
 @media (min-width:769px){
     #dashboard-root .sidebar{ margin-right:16px; }
 }
+.sidebar-nav-link.sidebar-notif-link {
+    display:flex;
+    align-items:center;
+    gap:0.75rem;
+    text-decoration:none;
+    padding:0.6rem;
+    border-radius:10px;
+    color:var(--text);
+    background:transparent;
+    transition:background 180ms var(--ease), transform 160ms var(--ease);
+    font-weight:700;
+    cursor:pointer;
+}
+.sidebar-nav-link.sidebar-notif-link .sidebar-icon-mask,
+.sidebar-nav-link.sidebar-notif-link .sidebar-icon-emoji {
+    display:inline-grid;
+    place-items:center;
+    border-radius:10px;
+    font-size:18px;
+    flex-shrink:0;
+}
+.sidebar-nav-link.sidebar-notif-link .label { color:var(--muted); }
+.sidebar-nav-link.sidebar-notif-link:hover {
+    background: linear-gradient(90deg, rgba(99,102,241,0.06), rgba(14,165,233,0.03));
+    transform: translateY(-2px);
+}
+.sidebar-nav-link.sidebar-notif-link:active { transform: translateY(-1px) scale(0.998); }
+.sidebar.collapsed .sidebar-nav-link.sidebar-notif-link .label { display:none; opacity:0; transform:translateX(-6px); pointer-events:none; }
+.nav-notifications.sidebar-origin { position:absolute; right:8px; top:6px; }
 </style>
