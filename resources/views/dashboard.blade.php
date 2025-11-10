@@ -218,44 +218,6 @@
     display: flex;
 }
 
-.sidebar {
-    width: 250px;
-    background-color: #333;
-    color: #fff;
-    height: 100vh;
-    padding: 20px;
-}
-
-.sidebar h2 {
-    color: #fff;
-    text-align: center;
-}
-
-.sidebar ul {
-    list-style: none;
-    padding: 0;
-}
-
-.sidebar ul li {
-    margin: 15px 0;
-}
-
-.sidebar ul li a {
-    color: #fff;
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-}
-
-.sidebar ul li a:hover {
-    background-color: #575757;
-    padding: 10px;
-    border-radius: 5px;
-}
-
-.sidebar ul li a .icon {
-    margin-right: 10px;
-}
 
 .content {
     flex: 1;
