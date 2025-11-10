@@ -43,6 +43,7 @@ Route::post('/imagenes/upload', [ImageController::class, 'upload']);
 Route::get('/solicitudes', [SolicitudController::class, 'index']);
 Route::get('/solicitudes/create', [SolicitudController::class, 'create']);
 Route::post('/solicitudes', [SolicitudController::class, 'store']);
+Route::get('/solicitudes/{solicitud}', [SolicitudController::class, 'show']);
 Route::get('/solicitudes/{solicitud}/edit', [SolicitudController::class, 'edit']);
 Route::put('/solicitudes/{solicitud}', [SolicitudController::class, 'update']);
 Route::delete('/solicitudes/{solicitud}', [SolicitudController::class, 'destroy']);

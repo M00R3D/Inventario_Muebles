@@ -60,30 +60,39 @@ class SolicitudController extends Controller
             $data['estado'] = 'pendiente';
         }
         $solicitud = Solicitud::create($data);
+        try {
+            $actorId = session('usuario_id') ?? null;
+            $actor = $actorId ? Usuario::find($actorId) : null;
+            $actorName = $actor ? ($actor->nombre . ' ' . $actor->apellido) : 'Sistema';
+            $destUserId = $solicitud->persona_id ?? null;
+            $aud = $destUserId ? 'usuarios' : 'admins';
+            $descripcion = "Nueva solicitud #{$solicitud->id} creada por {$actorName}. Periodo: " . ($data['fecha_inicio'] ?? '-') . " → " . ($data['fecha_fin'] ?? '-');
 
-        $current = session()->has('usuario_id') ? Usuario::find(session('usuario_id')) : null;
-        $nombreUsuario = $current ? trim($current->nombre . ' ' . $current->apellido) : ($request->input('persona_nombre') ?? 'Usuario');
-        $descripcion = "{$nombreUsuario} ha creado la solicitud #{$solicitud->id}. Periodo: " . ($data['fecha_inicio'] ?? '-') . " → " . ($data['fecha_fin'] ?? '-');
-
-        Notificacion::create([
-            'id_admin'      => session('usuario_id') ?? null,
-            'id_usuario'    => $current ? $current->id : ($data['persona_id'] ?? null),
-            'audiencia'     => 'todos',
-            'estado'        => 'cerrada',
-            'tipo'          => 'otra',
-            'descripcion'   => $descripcion,
-            'fecha_creacion'=> Carbon::now()->toDateTimeString(),
-            'fecha_visto'   => null,
-            'ruta'          => url("/solicitudes/{$solicitud->id}")
-        ]);
+            Notificacion::create([
+                'id_admin'      => $actorId,
+                'id_usuario'    => $destUserId,
+                'audiencia'     => $aud,
+                'estado'        => 'cerrada',
+                'tipo'          => 'solicitud pendiente',
+                'descripcion'   => $descripcion,
+                'fecha_creacion'=> Carbon::now()->toDateTimeString(),
+                'fecha_visto'   => null,
+                'ruta'          => url("/solicitudes/{$solicitud->id}")
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('Error creando notificación para solicitud: ' . $e->getMessage());
+        }
 
         if ($request->wantsJson() || $request->is('api/*')) {return response()->json($solicitud, 201);}
         return redirect('/solicitudes')->with('success','Solicitud creada correctamente.');
     }
-    public function show(Solicitud $solicitud)
+    public function show(Solicitud $solicitud, Request $request)
     {
         $solicitud->load(['mueble', 'usuario']);
-        return response()->json($solicitud);
+        if ($request->wantsJson() || $request->is('api/*')) {
+            return response()->json($solicitud);
+        }
+        return view('solicitudes.show', compact('solicitud'));
     }
     public function edit(Solicitud $solicitud)
     {
