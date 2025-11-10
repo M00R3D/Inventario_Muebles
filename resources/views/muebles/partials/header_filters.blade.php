@@ -89,11 +89,17 @@
     </div>
     <div>
       <label style="display:block;font-weight:600;font-size:0.9rem;">Solicitante</label>
+      @php
+        $usuariosList = $usuarios ?? \App\Models\Usuario::all();
+        $solicitantes = $usuariosList->filter(fn($u) => ($u->rol ?? '') !== 'admin')->values();
+      @endphp
       <select name="persona_id" style="padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
         <option value="">Todos</option>
         <option value="none" {{ request('persona_id') === 'none' ? 'selected' : '' }}>Ninguno</option>
-        @foreach($usuarios->where('rol','!=','admin') as $u)
-          <option value="{{ $u->id }}" {{ (string)request('persona_id')===(string)$u->id ? 'selected' : '' }}>{{ $u->nombre }} {{ $u->apellido }}</option>
+        @foreach($solicitantes as $u)
+          <option value="{{ $u->id }}" {{ (string)request('persona_id') === (string)$u->id ? 'selected' : '' }}>
+            {{ $u->nombre }} {{ $u->apellido }}
+          </option>
         @endforeach
       </select>
     </div>

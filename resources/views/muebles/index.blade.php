@@ -28,7 +28,7 @@
   @include('muebles.partials.header_filters')
   @include('muebles.partials.modal_form')
   @if($visibleMuebles->isEmpty())
-    <div class="card">No hay muebles registrados aún.</div>
+    <div class="card">No hay muebles disponibles para ver.</div>
   @else
     @include('muebles.partials.cards', ['visibleMuebles' => $visibleMuebles])
   @endif

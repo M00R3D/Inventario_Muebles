@@ -1,5 +1,15 @@
+@php
+  $items = isset($visibleMuebles) ? collect($visibleMuebles) : (isset($muebles) ? collect($muebles) : collect());
+  $isAdminFlag = !empty($isAdmin) && $isAdmin;
+  if (! $isAdminFlag) {
+      $items = $items->filter(function($m){
+          return is_null($m->persona_id);
+      })->values();
+  }
+@endphp
+
 <div class="grid" role="list">
-  @foreach($visibleMuebles as $m)
+  @foreach($items as $m)
     <div class="card" role="listitem" data-id="{{ $m->id }}">
       <div class="card-inner">
         <div class="card-media">
@@ -69,3 +79,26 @@
     </div>
   @endforeach
 </div>
+
+@if(empty($isAdmin) || !$isAdmin)
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  try {
+    const sel = document.querySelector('form#filters select[name="persona_id"], form#sol-filters select[name="persona_id"]');
+    if (sel) {
+      const container = sel.closest('div') || sel.parentElement;
+      if (container) container.style.display = 'none';
+      const form = sel.closest('form');
+      if (form && !form.querySelector('input[name="persona_id_hidden_for_none"]')) {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'persona_id';
+        input.value = 'none';
+        input.setAttribute('data-added-by-js','1');
+        form.appendChild(input);
+      }
+    }
+  } catch(e){ console.error('hide persona_id filter error', e); }
+});
+</script>
+@endif

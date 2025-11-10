@@ -61,6 +61,18 @@ class SolicitudController extends Controller
         }
         $solicitud = Solicitud::create($data);
         try {
+            if ($currentUser && ! $isAdmin && !empty($data['mueble_id'])) {
+                $mueble = Mueble::find($data['mueble_id']);
+                if ($mueble) {
+                    $mueble->persona_id = $currentUser->id;
+                    $mueble->save();
+                }
+            }
+        } catch (\Throwable $e) {
+            \Log::error('Error asignando solicitante al mueble tras crear solicitud: ' . $e->getMessage());
+        }
+
+        try {
             $actorId = session('usuario_id') ?? null;
             $actor = $actorId ? Usuario::find($actorId) : null;
             $actorName = $actor ? ($actor->nombre . ' ' . $actor->apellido) : 'Sistema';

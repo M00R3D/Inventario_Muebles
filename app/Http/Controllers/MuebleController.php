@@ -15,8 +15,6 @@ class MuebleController extends Controller
         if ($request->filled('descripcion')) {$query->where('descripcion', 'like', '%' . $request->descripcion . '%');}
         if ($request->filled('marca')) {$query->where('marca', 'like', '%' . $request->marca . '%');}
         if ($request->filled('modelo')) {$query->where('modelo', 'like', '%' . $request->modelo . '%');}
-
-        // filtro por categoría
         if ($request->filled('categoria_id')) {
             $query->where('categoria_id', $request->categoria_id);
         }
@@ -37,6 +35,10 @@ class MuebleController extends Controller
             $currentUser = Usuario::find(session('usuario_id'));
             $isAdmin = $currentUser && ($currentUser->rol === 'admin');
         }
+        if (! $isAdmin) {
+            $query->whereNull('persona_id');
+        }
+
         if (! $isAdmin) {$query->where('estado', '!=', 'en_reparacion');}
         $muebles = $query->get();
         if ($request->wantsJson() || $request->is('api/*')) {return response()->json($muebles);}
