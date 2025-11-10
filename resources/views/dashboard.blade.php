@@ -56,7 +56,9 @@
 .icon-muebles{ background:linear-gradient(180deg,#06b6d4,#0891b2); }
 .icon-solicitudes{ background:linear-gradient(180deg,#f59e0b,#f97316); }
 .icon-images{ background:linear-gradient(180deg,#10b981,#059669); }
-
+.icon-notificaciones{ background: linear-gradient(180deg,#f97316,#f59e0b); }
+.icon-categorias{ background: linear-gradient(180deg,#06b6d4,#0ea5e9); }
+.icon-configuracion{ background: linear-gradient(180deg,#374151,#6b7280); }
 .summary-row{ display:flex; gap:12px; flex-wrap:wrap; margin-bottom:18px; }
 .summary-item{ background:#fff; padding:12px 14px; border-radius:12px; box-shadow:0 8px 20px rgba(2,6,23,0.04); min-width:160px; }
 .summary-item .num{ font-weight:800; font-size:1.25rem; color:#0f172a; }
@@ -73,14 +75,26 @@
       </div>
     </div>
     <div style="text-align:right;">
-      <div style="color:#6b7280;font-weight:700;">Accesos rápidos</div>
-      <div class="links-list" aria-hidden="false">
-        <a class="link-chip" href="{{ url('/muebles') }}">Inventario</a>
-        <a class="link-chip" href="{{ url('/solicitudes') }}">Solicitudes</a>
-        <a class="link-chip" href="{{ url('/usuarios') }}">Usuarios</a>
-        @if($isAdmin)
-          <a class="link-chip" href="{{ url('/imagenes') }}">Imágenes</a>
-        @endif
+      <div style="color:#6b7280;font-weight:700;">Acciones disponibles</div>
+      @php
+        $acciones = [
+          ['label'=>'Dashboard','url'=>url('/dashboard'),'roles'=>['admin','empleado','tecnico']],
+          ['label'=>'Usuarios','url'=>url('/usuarios'),'roles'=>['admin']],
+          ['label'=>'Inventario','url'=>url('/muebles'),'roles'=>['admin','empleado','tecnico']],
+          ['label'=>'Solicitudes','url'=>url('/solicitudes'),'roles'=>['admin','empleado','tecnico']],
+          ['label'=>'Imágenes','url'=>url('/imagenes'),'roles'=>['admin']],
+          ['label'=>'Notificaciones','url'=>url('/notificaciones'),'roles'=>['admin','empleado','tecnico']],
+          ['label'=>'Categorías','url'=>url('/categorias'),'roles'=>['admin']],
+          ['label'=>'Configuración','url'=>route('configuracion.index'),'roles'=>['admin']],
+        ];
+        $rolActual = $current?->rol ?? 'invitado';
+      @endphp
+      <div class="links-list" aria-hidden="false" style="justify-content:flex-end;">
+        @foreach($acciones as $a)
+          @if(in_array($rolActual, $a['roles']))
+            <a class="link-chip" href="{{ $a['url'] }}">{{ $a['label'] }}</a>
+          @endif
+        @endforeach
       </div>
     </div>
   </div>
@@ -103,14 +117,8 @@
 
     <div class="dashboard-grid" role="list">
       <a class="card-cta" href="{{ url('/usuarios') }}" role="listitem" aria-label="Usuarios">
-        <div class="title"><span class="icon-circle icon-users">👥</span> Gestión de usuarios</div>
-        <div class="desc">
-          @if($isAdmin)
-            Administración total del CRUD de usuarios.
-          @else
-            {{ pickRandom($texts['usuarios']) }}
-          @endif
-        </div>
+        <div class="title"><span class="icon-circle icon-users" aria-hidden="true"> </span> Gestión de usuarios</div>
+        <div class="desc">Administración total del CRUD de usuarios.</div>
         <div class="meta">
           <span style="color:#64748b;font-weight:700;">Ver usuarios</span>
           <span><span class="card-btn">Ir</span></span>
@@ -118,14 +126,8 @@
       </a>
 
       <a class="card-cta" href="{{ url('/muebles') }}" role="listitem" aria-label="Inventario">
-        <div class="title"><span class="icon-circle icon-muebles">🪑</span> Inventario y mueble</div>
-        <div class="desc">
-          @if($isAdmin)
-            Administración total del CRUD de muebles.
-          @else
-            {{ pickRandom($texts['muebles']) }}
-          @endif
-        </div>
+        <div class="title"><span class="icon-circle icon-muebles" aria-hidden="true"> </span> Inventario y mueble</div>
+        <div class="desc">Administración total del CRUD de muebles.</div>
         <div class="meta">
           <span style="color:#64748b;font-weight:700;">Gestionar inventario</span>
           <span><span class="card-btn">Ir</span></span>
@@ -133,26 +135,45 @@
       </a>
 
       <a class="card-cta" href="{{ url('/solicitudes') }}" role="listitem" aria-label="Solicitudes">
-        <div class="title"><span class="icon-circle icon-solicitudes">📩</span> Solicitudes</div>
-        <div class="desc">
-          @if($isAdmin)
-            Administración total del CRUD de solicitudes.
-          @else
-            {{ pickRandom($texts['solicitudes']) }}
-          @endif
-        </div>
+        <div class="title"><span class="icon-circle icon-solicitudes" aria-hidden="true"> </span> Solicitudes</div>
+        <div class="desc">Administración total del CRUD de solicitudes.</div>
         <div class="meta">
           <span style="color:#64748b;font-weight:700;">Revisar solicitudes</span>
           <span><span class="card-btn">Ir</span></span>
         </div>
       </a>
 
+      <a class="card-cta" href="{{ url('/notificaciones') }}" role="listitem" aria-label="Notificaciones">
+        <div class="title"><span class="icon-circle icon-notificaciones" aria-hidden="true"> </span> Notificaciones</div>
+        <div class="desc">Ver y gestionar notificaciones por audiencia, estado y destino.</div>
+        <div class="meta">
+          <span style="color:#64748b;font-weight:700;">Ir a notificaciones</span>
+          <span><span class="card-btn">Ir</span></span>
+        </div>
+      </a>
+
+      <a class="card-cta" href="{{ url('/categorias') }}" role="listitem" aria-label="Categorías">
+        <div class="title"><span class="icon-circle icon-categorias" aria-hidden="true"> </span> Categorías</div>
+        <div class="desc">Gestiona las categorías utilizadas por los muebles.</div>
+        <div class="meta">
+          <span style="color:#64748b;font-weight:700;">Administrar categorías</span>
+          <span><span class="card-btn">Ir</span></span>
+        </div>
+      </a>
+
+      <a class="card-cta" href="{{ route('configuracion.index') }}" role="listitem" aria-label="Configuración">
+        <div class="title"><span class="icon-circle icon-configuracion" aria-hidden="true"> </span> Configuración</div>
+        <div class="desc">Ajustes de la aplicación: tema, colores y opciones globales.</div>
+        <div class="meta">
+          <span style="color:#64748b;font-weight:700;">Configuración</span>
+          <span><span class="card-btn">Ir</span></span>
+        </div>
+      </a>
+
       @if($isAdmin)
       <a class="card-cta" href="{{ url('/imagenes') }}" role="listitem" aria-label="Imágenes">
-        <div class="title"><span class="icon-circle icon-images">🖼️</span> Imágenes</div>
-        <div class="desc">
-          Administración total del CRUD de imágenes.
-        </div>
+        <div class="title"><span class="icon-circle icon-images" aria-hidden="true"> </span> Imágenes</div>
+        <div class="desc">Administración total del CRUD de imágenes.</div>
         <div class="meta">
           <span style="color:#64748b;font-weight:700;">Administrar imágenes</span>
           <span><span class="card-btn">Ir</span></span>
