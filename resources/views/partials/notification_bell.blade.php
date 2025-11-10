@@ -1,7 +1,27 @@
+@php
+if (!isset($iconHtml)) {
+    try {
+        $cfg = \App\Models\Configuracion::where('clave','icon_notificaciones')->first();
+        if ($cfg && $cfg->ruta_img && file_exists(public_path($cfg->ruta_img))) {
+            $url = asset($cfg->ruta_img);
+            $normal = $cfg->normal_color ?? '#f59e0b';
+            $hover = $cfg->hover_color ?? $normal;
+            $style = "--icon-color: {$normal}; --icon-color-hover: {$hover};";
+            $style .= " -webkit-mask-image: url('{$url}'); mask-image: url('{$url}'); -webkit-mask-size: contain; mask-size: contain; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; -webkit-mask-position: center; mask-position: center;";
+            $iconHtml = '<span class="sidebar-icon-mask" style="'.e($style).'"></span>';
+        } else {
+            $iconHtml = '<span class="notif-ico">🔔</span>';
+        }
+    } catch (\Throwable $e) {
+        $iconHtml = '<span class="notif-ico">🔔</span>';
+    }
+}
+@endphp
+
 <div id="{{ $_container_id ?? 'nav-notifications' }}" class="nav-notifications {{ isset($_sidebar_origin) && $_sidebar_origin ? 'sidebar-origin' : '' }}">
     @unless(isset($_only_menu) && $_only_menu)
     <button class="notif-btn" type="button" aria-haspopup="true" aria-expanded="false" title="Notificaciones">
-        <span class="notif-ico">🔔</span>
+        {!! $iconHtml !!}
         <span class="notif-count badge">0</span>
     </button>
     @endunless
@@ -15,8 +35,8 @@
 
 <style>
 .nav-notifications { position:relative; display:inline-flex; align-items:center; gap:8px; margin-left:12px; }
-.notif-btn { background:transparent;border:0;cursor:pointer;display:inline-flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;transition:background .12s ease, transform .08s ease;color:var(--muted,#6b7280);font-weight:700; }
-.notif-ico { font-size:18px; line-height:1; }
+.notif-btn { background:transparent;border:0;cursor:pointer;display:inline-flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;transition:background .12s ease, transform .08s ease;color:var(--text, #0f172a);font-weight:700; }
+.notif-ico { font-size:18px; line-height:1; display:inline-block; margin-right:6px; }
 .badge, .notif-count { display:inline-block; min-width:20px; padding:2px 6px; border-radius:999px; background: linear-gradient(90deg,#ef4444,#f97316); color:#fff; font-size:12px; font-weight:800; text-align:center; }
 
 
@@ -72,6 +92,21 @@
 .notif-list .notif-item .actions .open-link { font-size:12px;color:#0ea5e9;text-decoration:none; font-weight:700; }
 .notif-footer { padding-top:6px; border-top:1px solid #f3f4f6; text-align:center; margin-top:6px; }
 .notif-see-all { display:inline-block; padding:8px 12px; background:#111827;color:#fff;border-radius:8px;text-decoration:none;font-weight:800;font-size:13px; }
+.notif-btn {
+    background:transparent;
+    border:0;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    padding:6px 8px;
+    border-radius:8px;
+    transition:background .12s ease, transform .08s ease;
+    color:var(--text, #0f172a); /* cambio: usar color de texto principal */
+    font-weight:700;
+}
+.sidebar-icon-mask { width:28px; height:28px; display:inline-block; border-radius:8px; margin-right:6px; }
+.notif-ico { font-size:18px; line-height:1; display:inline-block; margin-right:6px; }
 </style>
 
 <script>
@@ -100,7 +135,9 @@ window.initNotificationBell = function(containerIdOrEl) {
 
             if (!display.length) {
                 list.innerHTML = '<div class="notif-empty" style="padding:12px;text-align:center;color:#374151;">Sin notificaciones cerradas</div>';
-                if (container && container.classList.contains('sidebar-origin')) {
+                if (container && container.classList.contains('sidebar-origin') && container.__userTriggered && !container.__redirecting) {
+                    container.__redirecting = true;
+                    container.__userTriggered = false;
                     setTimeout(()=> { window.location.href = '/notificaciones'; }, 300);
                 }
                 return;
@@ -187,6 +224,7 @@ window.initNotificationBell = function(containerIdOrEl) {
     if (btn) {
         btn.addEventListener('click', function(ev){
             ev.stopPropagation();
+            container.__userTriggered = true;
             toggleMenu();
         });
     }
@@ -195,4 +233,48 @@ window.initNotificationBell = function(containerIdOrEl) {
     });
     return { open: openMenu, close: closeMenu, toggle: toggleMenu, load: loadNotifs, container };
 };
+document.addEventListener('DOMContentLoaded', function(){
+    document.querySelectorAll('.nav-notifications').forEach(function(el){
+        if (el.__notifInit) return;
+        try {
+            const api = window.initNotificationBell(el);
+            el.__notifInit = true;
+            el.__notifApi = api;
+            if (api && typeof api.load === 'function') api.load();
+        } catch (e) {
+            console.error('initNotificationBell error', e);
+        }
+    });
+    document.addEventListener('click', function(ev){
+        const btn = ev.target.closest('.notif-btn');
+        if (!btn) return;
+        const container = btn.closest('.nav-notifications');
+        if (!container) return;
+        let api = container.__notifApi;
+        if (!api) {
+            api = window.initNotificationBell(container) || null;
+            container.__notifApi = api;
+        }
+        ev.stopPropagation();
+        container.__userTriggered = true;
+        if (api && typeof api.toggle === 'function') {
+            api.toggle();
+        } else {
+            const menu = container.querySelector('.notif-menu');
+            if (!menu) return;
+            if (menu.classList.contains('open')) {
+                menu.classList.remove('open');
+                menu.setAttribute('aria-hidden','true');
+                const handler = function(){ menu.style.display = 'none'; menu.removeEventListener('transitionend', handler); };
+                menu.addEventListener('transitionend', handler);
+            } else {
+                menu.style.display = 'block';
+                menu.getBoundingClientRect();
+                menu.classList.add('open');
+                menu.setAttribute('aria-hidden','false');
+                try { if (typeof window.fetch === 'function') { /* no-op */ } } catch(e){}
+            }
+        }
+    });
+});
 </script>

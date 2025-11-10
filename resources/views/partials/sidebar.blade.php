@@ -71,6 +71,7 @@
                             trigger.addEventListener('click', function(e){
                                 e.preventDefault();
                                 e.stopPropagation();
+                                api.container.__userTriggered = true;
                                 api.container.classList.add('sidebar-origin');
                                 api.toggle();
                                 const expanded = api.container.querySelector('.notif-menu')?.classList.contains('open') || false;
