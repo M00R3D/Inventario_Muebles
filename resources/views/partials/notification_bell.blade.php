@@ -222,11 +222,20 @@ window.initNotificationBell = function(containerIdOrEl) {
     menu.style.display = 'none';
     menu.classList.remove('open');
     if (btn) {
-        btn.addEventListener('click', function(ev){
-            ev.stopPropagation();
-            container.__userTriggered = true;
-            toggleMenu();
-        });
+        // si ya estamos en la vista /notificaciones, no desplegar el menú: redirigir a la vista
+        if (window.location.pathname.startsWith('/notificaciones')) {
+            btn.addEventListener('click', function(ev){
+                ev.stopPropagation();
+                // evitar abrir el menú aquí, llevar a la vista completa
+                window.location.href = '/notificaciones';
+            });
+        } else {
+            btn.addEventListener('click', function(ev){
+                ev.stopPropagation();
+                container.__userTriggered = true;
+                toggleMenu();
+            });
+        }
     }
     document.addEventListener('click', function(ev){
         if (!container.contains(ev.target)) closeMenu();
@@ -250,6 +259,11 @@ document.addEventListener('DOMContentLoaded', function(){
         if (!btn) return;
         const container = btn.closest('.nav-notifications');
         if (!container) return;
+        if (window.location.pathname.startsWith('/notificaciones')) {
+            ev.preventDefault();
+            window.location.href = '/notificaciones';
+            return;
+        }
         let api = container.__notifApi;
         if (!api) {
             api = window.initNotificationBell(container) || null;

@@ -71,6 +71,10 @@
                             trigger.addEventListener('click', function(e){
                                 e.preventDefault();
                                 e.stopPropagation();
+                                if (window.location.pathname.startsWith('/notificaciones')) {
+                                    window.location.href = '/notificaciones';
+                                    return;
+                                }
                                 api.container.__userTriggered = true;
                                 api.container.classList.add('sidebar-origin');
                                 api.toggle();
