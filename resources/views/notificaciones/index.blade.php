@@ -20,6 +20,7 @@
     $estadoOrder = ['cerrada' => 0, 'abierta' => 1, 'vista' => 2];
     $tmp = $notificaciones->sortByDesc('fecha_creacion');
     $notificaciones_sorted = $tmp->sortBy(function($n) use ($estadoOrder) {return $estadoOrder[$n->estado] ?? 99;})->values();
+    $perPage = 10;
 @endphp
 
 <style>
@@ -57,6 +58,10 @@
 #notifications .notif-success { background: linear-gradient(90deg,#10b981,#059669); }
 #notifications .notif-error { background: linear-gradient(90deg,#ef4444,#b91c1c); }
 #notifications .notif-info { background: linear-gradient(90deg,#6366f1,#06b6d4); }
+.table-pager { text-align:right;color:#6b7280;font-size:0.85rem;margin-top:6px;margin-bottom:12px; display:flex; gap:8px; align-items:center; justify-content:flex-end; }
+.table-pager button.pager-btn { background:#f3f4f6;border:1px solid #e5e7eb;padding:6px 8px;border-radius:6px;cursor:pointer;font-weight:700; }
+.table-pager button.pager-btn:disabled { opacity:0.5; cursor:default; }
+.table-pager .page-indicator { min-width:90px; text-align:center; color:#374151; font-weight:700; }
 </style>
 
 <div style="padding:16px;max-width:1100px;margin:0 auto;">
@@ -86,155 +91,184 @@
         $abiertas = $notificaciones_sorted->filter(fn($x)=> ($x->estado ?? '') === 'abierta')->values();
         $vistas   = $notificaciones_sorted->filter(fn($x)=> ($x->estado ?? '') === 'vista')->values();
         $icons = ['prueba'=>'🧪','aprobada'=>'✅','rechazada'=>'❌','otra'=>'🔔'];
+        if ($isAdmin) {
+            $ligadas = $notificaciones_sorted->filter(fn($x)=> isset($x->id_admin) && $x->id_admin == $current->id)->values();
+            $aud_todos = $notificaciones_sorted->filter(fn($x)=> ($x->audiencia ?? '') === 'todos')->values();
+            $aud_admins = $notificaciones_sorted->filter(fn($x)=> ($x->audiencia ?? '') === 'admins')->values();
+            $aud_usuarios = $notificaciones_sorted->filter(fn($x)=> ($x->audiencia ?? '') === 'usuarios')->values();
+        }
     @endphp
-
-    {{-- Tabla: Cerradas --}}
-    <h3 style="margin-top:8px;margin-bottom:6px;color:#374151;">Cerradas</h3>
-    <div class="list-card" style="overflow-x:auto;background:#fff;border-radius:10px;padding:8px;box-shadow:0 6px 18px rgba(0,0,0,0.06);margin-bottom:12px;">
-        <table style="width:100%;border-collapse:collapse;min-width:720px;">
-            <thead>
-                <tr style="text-align:left;color:#374151;border-bottom:1px solid #e5e7eb;">
-                    @if($isAdmin)<th style="padding:10px 12px;">ID</th>@endif
-                    <th style="padding:10px 12px;">Tipo</th>
-                    <th style="padding:10px 12px;">Descripción</th>
-                    <th style="padding:10px 12px;">Fecha creación</th>
-                    @if($isAdmin)<th style="padding:10px 12px;">Usuario</th>@endif
-                    @if($isAdmin)<th style="padding:10px 12px;width:190px;">Acciones</th>@endif
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($cerradas as $n)
-                    <tr style="border-bottom:1px solid #f3f4f6;">
-                        @if($isAdmin)<td style="padding:10px 12px;">{{ $n->id }}</td>@endif
-                        <td style="padding:10px 12px;">
-                            <span style="display:inline-flex;gap:8px;align-items:center;">
-                                <span aria-hidden="true">{{ $icons[$n->tipo] ?? '🔔' }}</span>
-                                <span style="font-weight:700;text-transform:capitalize;">{{ $n->tipo }}</span>
-                            </span>
-                        </td>
-                        <td style="padding:10px 12px;">{{ Str::limit($n->descripcion, 120) }}</td>
-                        <td style="padding:10px 12px;">
-                            @if(!empty($n->fecha_creacion))
-                                {{ ucfirst(\Carbon\Carbon::parse($n->fecha_creacion)->locale('es')->isoFormat('dddd, D [de] MMMM YYYY, HH:mm')) }}
-                            @else - @endif
-                        </td>
-                        @if($isAdmin)
-                            <td style="padding:10px 12px;">{{ optional($n->usuario)->nombre ? optional($n->usuario)->nombre . ' ' . optional($n->usuario)->apellido : 'Todos' }}</td>
-                            <td style="padding:10px 12px;width:190px;">
-                                <button type="button" class="btn-edit" data-notif='@json($n)' style="background:linear-gradient(90deg,#6366f1,#06b6d4);color:#fff;padding:6px 8px;border-radius:8px;border:0;font-weight:700;margin-right:6px;cursor:pointer;">Editar</button>
-                                <form action="{{ url('/notificaciones/'.$n->id) }}" method="POST" style="display:inline">
-                                    @csrf @method('DELETE')
-                                    <button type="submit" data-confirm="¿Eliminar notificación #{{ $n->id }}?" style="background:linear-gradient(90deg,#ef4444,#f97316);color:#fff;padding:6px 8px;border-radius:8px;border:0;cursor:pointer;" data-confirm-type="delete">Eliminar</button>
-                                </form>
-                            </td>
-                        @endif
+    @if($isAdmin)
+        <h3 style="margin-top:8px;margin-bottom:6px;color:#374151;">Notificaciones ligadas a mi (ID {{ $current->id }})</h3>
+        <div class="list-card" style="overflow-x:auto;background:#fff;border-radius:10px;padding:8px;box-shadow:0 6px 18px rgba(0,0,0,0.06);margin-bottom:6px;">
+            <table id="table-ligadas" style="width:100%;border-collapse:collapse;min-width:720px;">
+                <thead>
+                    <tr style="text-align:left;color:#374151;border-bottom:1px solid #e5e7eb;">
+                        <th style="padding:10px 12px;">ID</th>
+                        <th style="padding:10px 12px;">Tipo</th>
+                        <th style="padding:10px 12px;">Descripción</th>
+                        <th style="padding:10px 12px;">Fecha creación</th>
+                        <th style="padding:10px 12px;">Usuario</th>
+                        <th style="padding:10px 12px;width:190px;">Acciones</th>
                     </tr>
-                @empty
-                    <tr><td colspan="{{ $isAdmin ? 6 : 4 }}" style="padding:12px;">No hay notificaciones cerradas.</td></tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
+                </thead>
+                <tbody id="tbody-ligadas" data-items='@json($ligadas)'></tbody>
+            </table>
+        </div>
+        @if($ligadas->count() > $perPage)
+            <div class="table-pager" data-target="ligadas">
+                <button class="pager-btn prev" data-target="ligadas" aria-label="Anterior">‹</button>
+                <div class="page-indicator" id="indicator-ligadas">Página <strong>1</strong> de <strong>{{ ceil($ligadas->count() / $perPage) }}</strong></div>
+                <button class="pager-btn next" data-target="ligadas" aria-label="Siguiente">›</button>
+            </div>
+        @endif
 
-    {{-- Tabla: Abiertas --}}
-    <h3 style="margin-top:8px;margin-bottom:6px;color:#374151;">Abiertas</h3>
-    <div class="list-card" style="overflow-x:auto;background:#fff;border-radius:10px;padding:8px;box-shadow:0 6px 18px rgba(0,0,0,0.06);margin-bottom:12px;">
-        <table style="width:100%;border-collapse:collapse;min-width:720px;">
-            <thead>
-                <tr style="text-align:left;color:#374151;border-bottom:1px solid #e5e7eb;">
-                    @if($isAdmin)<th style="padding:10px 12px;">ID</th>@endif
-                    <th style="padding:10px 12px;">Tipo</th>
-                    <th style="padding:10px 12px;">Descripción</th>
-                    <th style="padding:10px 12px;">Fecha creación</th>
-                    @if($isAdmin)<th style="padding:10px 12px;">Usuario</th>@endif
-                    @if($isAdmin)<th style="padding:10px 12px;width:190px;">Acciones</th>@endif
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($abiertas as $n)
-                    <tr style="border-bottom:1px solid #f3f4f6;">
-                        @if($isAdmin)<td style="padding:10px 12px;">{{ $n->id }}</td>@endif
-                        <td style="padding:10px 12px;">
-                            <span style="display:inline-flex;gap:8px;align-items:center;">
-                                <span aria-hidden="true">{{ $icons[$n->tipo] ?? '🔔' }}</span>
-                                <span style="font-weight:700;text-transform:capitalize;">{{ $n->tipo }}</span>
-                            </span>
-                        </td>
-                        <td style="padding:10px 12px;">{{ Str::limit($n->descripcion, 120) }}</td>
-                        <td style="padding:10px 12px;">
-                            @if(!empty($n->fecha_creacion))
-                                {{ ucfirst(\Carbon\Carbon::parse($n->fecha_creacion)->locale('es')->isoFormat('dddd, D [de] MMMM YYYY, HH:mm')) }}
-                            @else - @endif
-                        </td>
-                        @if($isAdmin)
-                            <td style="padding:10px 12px;">{{ optional($n->usuario)->nombre ? optional($n->usuario)->nombre . ' ' . optional($n->usuario)->apellido : 'Todos' }}</td>
-                            <td style="padding:10px 12px;width:190px;">
-                                <button type="button" class="btn-edit" data-notif='@json($n)' style="background:linear-gradient(90deg,#6366f1,#06b6d4);color:#fff;padding:6px 8px;border-radius:8px;border:0;font-weight:700;margin-right:6px;cursor:pointer;">Editar</button>
-                                <form action="{{ url('/notificaciones/'.$n->id) }}" method="POST" style="display:inline">
-                                    @csrf @method('DELETE')
-                                    <button type="submit" data-confirm="¿Eliminar notificación #{{ $n->id }}?" style="background:linear-gradient(90deg,#ef4444,#f97316);color:#fff;padding:6px 8px;border-radius:8px;border:0;cursor:pointer;">Eliminar</button>
-                                </form>
-                            </td>
-                        @endif
+        <h3 style="margin-top:8px;margin-bottom:6px;color:#374151;">Audiencia: todos</h3>
+        <div class="list-card" style="overflow-x:auto;background:#fff;border-radius:10px;padding:8px;box-shadow:0 6px 18px rgba(0,0,0,0.06);margin-bottom:6px;">
+            <table id="table-aud-todos" style="width:100%;border-collapse:collapse;min-width:720px;">
+                <thead>
+                    <tr style="text-align:left;color:#374151;border-bottom:1px solid #e5e7eb;">
+                        <th style="padding:10px 12px;">ID</th>
+                        <th style="padding:10px 12px;">Tipo</th>
+                        <th style="padding:10px 12px;">Descripción</th>
+                        <th style="padding:10px 12px;">Fecha creación</th>
+                        <th style="padding:10px 12px;">Usuario</th>
+                        <th style="padding:10px 12px;width:190px;">Acciones</th>
                     </tr>
-                @empty
-                    <tr><td colspan="{{ $isAdmin ? 6 : 4 }}" style="padding:12px;">No hay notificaciones abiertas.</td></tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
+                </thead>
+                <tbody id="tbody-aud_todos" data-items='@json($aud_todos)'></tbody>
+            </table>
+        </div>
+        @if($aud_todos->count() > $perPage)
+            <div class="table-pager" data-target="aud_todos">
+                <button class="pager-btn prev" data-target="aud_todos" aria-label="Anterior">‹</button>
+                <div class="page-indicator" id="indicator-aud_todos">Página <strong>1</strong> de <strong>{{ ceil($aud_todos->count() / $perPage) }}</strong></div>
+                <button class="pager-btn next" data-target="aud_todos" aria-label="Siguiente">›</button>
+            </div>
+        @endif
 
-    {{-- Tabla: Vistas --}}
-    <h3 style="margin-top:8px;margin-bottom:6px;color:#374151;">Vistas</h3>
-    <div class="list-card" style="overflow-x:auto;background:#fff;border-radius:10px;padding:8px;box-shadow:0 6px 18px rgba(0,0,0,0.06);margin-bottom:12px;">
-        <table style="width:100%;border-collapse:collapse;min-width:720px;">
-            <thead>
-                <tr style="text-align:left;color:#374151;border-bottom:1px solid #e5e7eb;">
-                    @if($isAdmin)<th style="padding:10px 12px;">ID</th>@endif
-                    <th style="padding:10px 12px;">Tipo</th>
-                    <th style="padding:10px 12px;">Descripción</th>
-                    <th style="padding:10px 12px;">Fecha creación</th>
-                    @if($isAdmin)<th style="padding:10px 12px;">Usuario</th>@endif
-                    @if($isAdmin)<th style="padding:10px 12px;width:190px;">Acciones</th>@endif
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($vistas as $n)
-                    <tr style="border-bottom:1px solid #f3f4f6;">
-                        @if($isAdmin)<td style="padding:10px 12px;">{{ $n->id }}</td>@endif
-                        <td style="padding:10px 12px;">
-                            <span style="display:inline-flex;gap:8px;align-items:center;">
-                                <span aria-hidden="true">{{ $icons[$n->tipo] ?? '🔔' }}</span>
-                                <span style="font-weight:700;text-transform:capitalize;">{{ $n->tipo }}</span>
-                            </span>
-                        </td>
-                        <td style="padding:10px 12px;">{{ Str::limit($n->descripcion, 120) }}</td>
-                        <td style="padding:10px 12px;">
-                            @if(!empty($n->fecha_creacion))
-                                {{ ucfirst(\Carbon\Carbon::parse($n->fecha_creacion)->locale('es')->isoFormat('dddd, D [de] MMMM YYYY, HH:mm')) }}
-                            @else - @endif
-                        </td>
-                        @if($isAdmin)
-                            <td style="padding:10px 12px;">{{ optional($n->usuario)->nombre ? optional($n->usuario)->nombre . ' ' . optional($n->usuario)->apellido : 'Todos' }}</td>
-                            <td style="padding:10px 12px;width:190px;">
-                                <button type="button" class="btn-edit" data-notif='@json($n)' style="background:linear-gradient(90deg,#6366f1,#06b6d4);color:#fff;padding:6px 8px;border-radius:8px;border:0;font-weight:700;margin-right:6px;cursor:pointer;">Editar</button>
-                                <form action="{{ url('/notificaciones/'.$n->id) }}" method="POST" style="display:inline">
-                                    @csrf @method('DELETE')
-                                    <button type="submit" data-confirm="¿Eliminar notificación #{{ $n->id }}?" style="background:linear-gradient(90deg,#ef4444,#f97316);color:#fff;padding:6px 8px;border-radius:8px;border:0;cursor:pointer;">Eliminar</button>
-                                </form>
-                            </td>
-                        @endif
+        <h3 style="margin-top:8px;margin-bottom:6px;color:#374151;">Audiencia: admins</h3>
+        <div class="list-card" style="overflow-x:auto;background:#fff;border-radius:10px;padding:8px;box-shadow:0 6px 18px rgba(0,0,0,0.06);margin-bottom:6px;">
+            <table id="table-aud-admins" style="width:100%;border-collapse:collapse;min-width:720px;">
+                <thead>
+                    <tr style="text-align:left;color:#374151;border-bottom:1px solid #e5e7eb;">
+                        <th style="padding:10px 12px;">ID</th>
+                        <th style="padding:10px 12px;">Tipo</th>
+                        <th style="padding:10px 12px;">Descripción</th>
+                        <th style="padding:10px 12px;">Fecha creación</th>
+                        <th style="padding:10px 12px;">Usuario</th>
+                        <th style="padding:10px 12px;width:190px;">Acciones</th>
                     </tr>
-                @empty
-                    <tr><td colspan="{{ $isAdmin ? 6 : 4 }}" style="padding:12px;">No hay notificaciones vistas.</td></tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
-    {{-- end split tables --}}
+                </thead>
+                <tbody id="tbody-aud_admins" data-items='@json($aud_admins)'></tbody>
+            </table>
+        </div>
+        @if($aud_admins->count() > $perPage)
+            <div class="table-pager" data-target="aud_admins">
+                <button class="pager-btn prev" data-target="aud_admins" aria-label="Anterior">‹</button>
+                <div class="page-indicator" id="indicator-aud_admins">Página <strong>1</strong> de <strong>{{ ceil($aud_admins->count() / $perPage) }}</strong></div>
+                <button class="pager-btn next" data-target="aud_admins" aria-label="Siguiente">›</button>
+            </div>
+        @endif
+
+        <h3 style="margin-top:8px;margin-bottom:6px;color:#374151;">Audiencia: usuarios</h3>
+        <div class="list-card" style="overflow-x:auto;background:#fff;border-radius:10px;padding:8px;box-shadow:0 6px 18px rgba(0,0,0,0.06);margin-bottom:6px;">
+            <table id="table-aud-usuarios" style="width:100%;border-collapse:collapse;min-width:720px;">
+                <thead>
+                    <tr style="text-align:left;color:#374151;border-bottom:1px solid #e5e7eb;">
+                        <th style="padding:10px 12px;">ID</th>
+                        <th style="padding:10px 12px;">Tipo</th>
+                        <th style="padding:10px 12px;">Descripción</th>
+                        <th style="padding:10px 12px;">Fecha creación</th>
+                        <th style="padding:10px 12px;">Usuario</th>
+                        <th style="padding:10px 12px;width:190px;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody-aud_usuarios" data-items='@json($aud_usuarios)'></tbody>
+            </table>
+        </div>
+        @if($aud_usuarios->count() > $perPage)
+            <div class="table-pager" data-target="aud_usuarios">
+                <button class="pager-btn prev" data-target="aud_usuarios" aria-label="Anterior">‹</button>
+                <div class="page-indicator" id="indicator-aud_usuarios">Página <strong>1</strong> de <strong>{{ ceil($aud_usuarios->count() / $perPage) }}</strong></div>
+                <button class="pager-btn next" data-target="aud_usuarios" aria-label="Siguiente">›</button>
+            </div>
+        @endif
+    @else
+        <h3 style="margin-top:8px;margin-bottom:6px;color:#374151;">Cerradas</h3>
+        <div class="list-card" style="overflow-x:auto;background:#fff;border-radius:10px;padding:8px;box-shadow:0 6px 18px rgba(0,0,0,0.06);margin-bottom:6px;">
+            <table id="table-cerradas" style="width:100%;border-collapse:collapse;min-width:720px;">
+                <thead>
+                    <tr style="text-align:left;color:#374151;border-bottom:1px solid #e5e7eb;">
+                        @if($isAdmin)<th style="padding:10px 12px;">ID</th>@endif
+                        <th style="padding:10px 12px;">Tipo</th>
+                        <th style="padding:10px 12px;">Descripción</th>
+                        <th style="padding:10px 12px;">Fecha creación</th>
+                        @if($isAdmin)<th style="padding:10px 12px;">Usuario</th>@endif
+                        @if($isAdmin)<th style="padding:10px 12px;width:190px;">Acciones</th>@endif
+                    </tr>
+                </thead>
+                <tbody id="tbody-cerradas" data-items='@json($cerradas)'></tbody>
+            </table>
+        </div>
+        @if($cerradas->count() > $perPage)
+            <div class="table-pager" data-target="cerradas">
+                <button class="pager-btn prev" data-target="cerradas" aria-label="Anterior">‹</button>
+                <div class="page-indicator" id="indicator-cerradas">Página <strong>1</strong> de <strong>{{ ceil($cerradas->count() / $perPage) }}</strong></div>
+                <button class="pager-btn next" data-target="cerradas" aria-label="Siguiente">›</button>
+            </div>
+        @endif
+
+        <h3 style="margin-top:8px;margin-bottom:6px;color:#374151;">Abiertas</h3>
+        <div class="list-card" style="overflow-x:auto;background:#fff;border-radius:10px;padding:8px;box-shadow:0 6px 18px rgba(0,0,0,0.06);margin-bottom:6px;">
+            <table id="table-abiertas" style="width:100%;border-collapse:collapse;min-width:720px;">
+                <thead>
+                    <tr style="text-align:left;color:#374151;border-bottom:1px solid #e5e7eb;">
+                        @if($isAdmin)<th style="padding:10px 12px;">ID</th>@endif
+                        <th style="padding:10px 12px;">Tipo</th>
+                        <th style="padding:10px 12px;">Descripción</th>
+                        <th style="padding:10px 12px;">Fecha creación</th>
+                        @if($isAdmin)<th style="padding:10px 12px;">Usuario</th>@endif
+                        @if($isAdmin)<th style="padding:10px 12px;width:190px;">Acciones</th>@endif
+                    </tr>
+                </thead>
+                <tbody id="tbody-abiertas" data-items='@json($abiertas)'></tbody>
+            </table>
+        </div>
+        @if($abiertas->count() > $perPage)
+            <div class="table-pager" data-target="abiertas">
+                <button class="pager-btn prev" data-target="abiertas" aria-label="Anterior">‹</button>
+                <div class="page-indicator" id="indicator-abiertas">Página <strong>1</strong> de <strong>{{ ceil($abiertas->count() / $perPage) }}</strong></div>
+                <button class="pager-btn next" data-target="abiertas" aria-label="Siguiente">›</button>
+            </div>
+        @endif
+
+        <h3 style="margin-top:8px;margin-bottom:6px;color:#374151;">Vistas</h3>
+        <div class="list-card" style="overflow-x:auto;background:#fff;border-radius:10px;padding:8px;box-shadow:0 6px 18px rgba(0,0,0,0.06);margin-bottom:6px;">
+            <table id="table-vistas" style="width:100%;border-collapse:collapse;min-width:720px;">
+                <thead>
+                    <tr style="text-align:left;color:#374151;border-bottom:1px solid #e5e7eb;">
+                        @if($isAdmin)<th style="padding:10px 12px;">ID</th>@endif
+                        <th style="padding:10px 12px;">Tipo</th>
+                        <th style="padding:10px 12px;">Descripción</th>
+                        <th style="padding:10px 12px;">Fecha creación</th>
+                        @if($isAdmin)<th style="padding:10px 12px;">Usuario</th>@endif
+                        @if($isAdmin)<th style="padding:10px 12px;width:190px;">Acciones</th>@endif
+                    </tr>
+                </thead>
+                <tbody id="tbody-vistas" data-items='@json($vistas)'></tbody>
+            </table>
+        </div>
+        @if($vistas->count() > $perPage)
+            <div class="table-pager" data-target="vistas">
+                <button class="pager-btn prev" data-target="vistas" aria-label="Anterior">‹</button>
+                <div class="page-indicator" id="indicator-vistas">Página <strong>1</strong> de <strong>{{ ceil($vistas->count() / $perPage) }}</strong></div>
+                <button class="pager-btn next" data-target="vistas" aria-label="Siguiente">›</button>
+            </div>
+        @endif
+    @endif
 </div>
 
-{{-- Modal / formulario para crear / editar --}}
 <div id="notif-form-card" class="modal-card collapsed" style="display:none;background:#fff;border-radius:10px;padding:12px;box-shadow:0 6px 18px rgba(0,0,0,0.06);margin:16px auto;max-width:1100px;">
     <h2 id="notif-form-title" style="margin:0 0 8px 0;font-size:1.05rem;">Nueva notificación</h2>
     <form id="notif-form" method="POST" action="{{ url('/notificaciones') }}">
@@ -302,197 +336,103 @@
 @section('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function(){
-    const card = document.getElementById('notif-form-card');
-    const notifsTable = document.getElementById('notifs-table');
-    const btnNew = document.getElementById('btn-new');
-    const btnCancel = document.getElementById('notif-cancel');
-    const form = document.getElementById('notif-form');
-    const methodInput = document.getElementById('notif-form-method');
-    const idInput = document.getElementById('notif-id');
-    const title = document.getElementById('notif-form-title');
-    const fechaVistoRow = document.getElementById('f-fecha_visto_row');
-    const fechaVistoInput = document.getElementById('f-fecha_visto');
-    const notifications = document.getElementById('notifications');
-    function showNotification(message, type = 'info', timeout = 3500) {
-        if (!notifications) return;
-        const el = document.createElement('div');
-        el.className = 'notif notif-'+type;
-        el.innerText = message;
-        notifications.appendChild(el);
-        requestAnimationFrame(()=> el.classList.add('visible'));
-        setTimeout(()=> {
-            el.classList.remove('visible');
-            el.addEventListener('transitionend', ()=> el.remove(), { once: true });
-        }, timeout);
+    const perPage = {{ $perPage }};
+    const isAdmin = {{ $isAdmin ? 'true' : 'false' }};
+    const icons = @json($icons);
+
+    function escapeHtml(s){ if(!s && s!==0) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    function formatDate(d){
+        if(!d) return '-';
+        try { const dt = new Date(d); if(isNaN(dt)) return escapeHtml(d); return dt.toLocaleString('es-ES', { weekday:'long', year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit' }); }
+        catch(e){ return escapeHtml(d); }
     }
-    function hideTable() {
-        if (!notifsTable) return;
-        if (notifsTable.classList.contains('closing') || getComputedStyle(notifsTable).display === 'none') return;
-        notifsTable.classList.add('closing');
-        const onEnd = function() {
-            notifsTable.style.display = 'none';
-            notifsTable.classList.remove('closing');
-            notifsTable.classList.add('collapsed');
-            notifsTable.removeEventListener('transitionend', onEnd);
-        };
-        notifsTable.addEventListener('transitionend', onEnd);
+
+    function renderRow(n){
+        const tipoIcon = icons[n.tipo] ?? '🔔';
+        const usuarioNombre = (n.usuario && n.usuario.nombre) ? (escapeHtml(n.usuario.nombre) + ' ' + escapeHtml(n.usuario.apellido ?? '')) : 'Todos';
+        const descripcion = escapeHtml(n.descripcion || '');
+        const fecha = n.fecha_creacion ? formatDate(n.fecha_creacion) : '-';
+        const ruta = n.ruta ? escapeHtml(n.ruta) : '';
+        return `<tr style="border-bottom:1px solid #f3f4f6;">
+            <td style="padding:10px 12px;">${escapeHtml(n.id)}</td>
+            <td style="padding:10px 12px;">
+                <span style="display:inline-flex;gap:8px;align-items:center;">
+                    <span aria-hidden="true">${tipoIcon}</span>
+                    <span style="font-weight:700;text-transform:capitalize;">${escapeHtml(n.tipo)}</span>
+                </span>
+            </td>
+            <td style="padding:10px 12px;">${descripcion}</td>
+            <td style="padding:10px 12px;">${fecha}</td>
+            <td style="padding:10px 12px;">${usuarioNombre}</td>
+            <td style="padding:10px 12px;width:190px;">
+                <button type="button" class="btn-edit" data-notif='${escapeHtml(JSON.stringify(n))}' style="background:linear-gradient(90deg,#6366f1,#06b6d4);color:#fff;padding:6px 8px;border-radius:8px;border:0;font-weight:700;margin-right:6px;cursor:pointer;">Editar</button>
+                <form action="/notificaciones/${escapeHtml(n.id)}" method="POST" style="display:inline">
+                    <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="_method" value="DELETE">
+                    <button type="submit" data-confirm="¿Eliminar notificación #${escapeHtml(n.id)}?" style="background:linear-gradient(90deg,#ef4444,#f97316);color:#fff;padding:6px 8px;border-radius:8px;border:0;cursor:pointer;" data-confirm-type="delete">Eliminar</button>
+                </form>
+            </td>
+        </tr>`;
     }
-    function showTable() {
-        if (!notifsTable) return;
-        if (getComputedStyle(notifsTable).display !== 'none') {
-            notifsTable.classList.remove('collapsed');
-            return;
-        }
-        notifsTable.style.display = 'block';
-        notifsTable.classList.add('collapsed');
-        requestAnimationFrame(()=> {
-            notifsTable.classList.remove('collapsed');
+
+    function renderTable(key, page){
+        const tbody = document.getElementById('tbody-' + key);
+        if(!tbody) return;
+        const items = JSON.parse(tbody.getAttribute('data-items') || '[]');
+        const total = items.length;
+        const totalPages = Math.max(1, Math.ceil(total / perPage));
+        page = Math.max(1, Math.min(page, totalPages));
+        const start = (page -1) * perPage;
+        const slice = items.slice(start, start + perPage);
+        tbody.innerHTML = slice.map(n => renderRow(n)).join('') || `<tr><td colspan="${isAdmin ? 6 : 4}" style="padding:12px;">No hay resultados.</td></tr>`;
+        const indicator = document.getElementById('indicator-' + key);
+        if(indicator) indicator.innerHTML = `Página <strong>${page}</strong> de <strong>${totalPages}</strong> — total ${total}`;
+        document.querySelectorAll(`.pager-btn[data-target="${key}"]`).forEach(btn=>{
+            const dir = btn.classList.contains('prev') ? 'prev' : 'next';
+            if(dir === 'prev') btn.disabled = (page <= 1);
+            else btn.disabled = (page >= totalPages);
+        });
+        document.querySelectorAll(`#tbody-${key} .btn-edit`).forEach(btn=>{
+            btn.removeEventListener('click', btn._handler);
+            const handler = function(){
+                try {
+                    const notif = JSON.parse(this.getAttribute('data-notif'));
+                    if(typeof openEdit === 'function') { openEdit(notif); }
+                    else { console.log('Editar', notif); }
+                } catch(e) { console.error('invalid notif json', e); }
+            };
+            btn._handler = handler;
+            btn.addEventListener('click', handler);
         });
     }
-
-    function closeModalAnimated() {
-        if (!card) return;
-        card.classList.add('closing');
-        card.addEventListener('transitionend', function handler() {
-            card.style.display = 'none';
-            card.classList.remove('closing');
-            if (form) {
-                form.reset();
-                methodInput.value = 'POST';
-                idInput.value = '';
-            }
-            showTable();
-            card.removeEventListener('transitionend', handler);
-        });
-    }
-
-    function openCreate() {
-        title.textContent = 'Nueva notificación';
-        form.action = "{{ url('/notificaciones') }}";
-        methodInput.value = 'POST';
-        idInput.value = '';
-        form.querySelectorAll('input, textarea, select').forEach(i => { if(i.tagName==='SELECT') i.selectedIndex = 0; else i.value = ''; });
-        const estadoEl = document.getElementById('f-estado');
-        if (estadoEl) estadoEl.value = 'cerrada';
-        fechaVistoRow.style.display = 'none';
-        if (fechaVistoInput) fechaVistoInput.value = '';
-        card.style.display = 'block';
-        card.classList.add('collapsed');
-        hideTable();
-        requestAnimationFrame(()=> {
-            card.classList.remove('collapsed');
-            card.scrollIntoView({behavior:'smooth', block:'center'});
-        });
-    }
-
-    function openEdit(notif) {
-        title.textContent = 'Editar notificación — ID ' + notif.id;
-        form.action = "{{ url('/notificaciones') }}/" + notif.id;
-        methodInput.value = 'PUT';
-        idInput.value = notif.id || '';
-        document.getElementById('f-id_usuario').value = notif.id_usuario || '';
-        document.getElementById('f-estado').value = notif.estado || 'cerrada';
-        document.getElementById('f-tipo').value = notif.tipo || 'prueba';
-        document.getElementById('f-ruta').value = notif.ruta || '';
-        document.getElementById('f-descripcion').value = notif.descripcion || '';
-        if (notif.fecha_visto) {
-            fechaVistoRow.style.display = 'block';
-            try {
-                const d = new Date(notif.fecha_visto);
-                const pad = (n)=> String(n).padStart(2,'0');
-                const yyyy = d.getFullYear();
-                const mm = pad(d.getMonth()+1);
-                const dd = pad(d.getDate());
-                const hh = pad(d.getHours());
-                const mi = pad(d.getMinutes());
-                fechaVistoInput.value = `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
-            } catch(e) {
-                fechaVistoRow.style.display = 'block';
-            }
-        } else {
-            fechaVistoRow.style.display = 'none';
-            fechaVistoInput.value = '';
-        }
-
-        card.style.display = 'block';
-        card.classList.add('collapsed');
-        hideTable();
-        requestAnimationFrame(()=> {
-            card.classList.remove('collapsed');
-            card.scrollIntoView({behavior:'smooth', block:'center'});
-        });
-    }
-
-    if (btnNew) btnNew.addEventListener('click', openCreate);
-    if (btnCancel) btnCancel.addEventListener('click', function(){ closeModalAnimated(); });
-    document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeModalAnimated(); });
-
-    document.querySelectorAll('.btn-edit').forEach(btn=>{
-        btn.addEventListener('click', function(){
-            try {
-                const notif = JSON.parse(this.getAttribute('data-notif'));
-                openEdit(notif);
-            } catch(e) {
-                console.error('invalid notif json', e);
-                showNotification('Error interno: datos inválidos', 'error');
-            }
+    document.querySelectorAll('tbody[id^="tbody-"]').forEach(tbody=>{
+        const key = tbody.id.replace('tbody-', '');
+        tbody.dataset.page = tbody.dataset.page || '1';
+        renderTable(key, parseInt(tbody.dataset.page,10) || 1);
+    });
+    document.querySelectorAll('.table-pager').forEach(pager=>{
+        pager.addEventListener('click', function(ev){
+            const btn = ev.target.closest('button.pager-btn');
+            if(!btn) return;
+            const key = btn.getAttribute('data-target');
+            const tbody = document.getElementById('tbody-' + key);
+            if(!tbody) return;
+            let page = parseInt(tbody.dataset.page || '1', 10);
+            if(btn.classList.contains('prev')) page = Math.max(1, page - 1);
+            else page = page + 1;
+            tbody.dataset.page = String(page);
+            renderTable(key, page);
         });
     });
-
-    if (form) {
-        form.addEventListener('submit', async function(evt){
-            evt.preventDefault();
-            const btn = document.getElementById('notif-save');
-            const original = btn ? btn.textContent : null;
-            if (btn) { btn.disabled = true; btn.textContent = 'Guardando...'; }
-
-            const fd = new FormData(form);
-            const method = methodInput.value || 'POST';
-            if (method.toUpperCase() === 'PUT') fd.append('_method', 'PUT');
-
-            try {
-                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-                const resp = await fetch(form.action, {
-                    method: 'POST',
-                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': csrfToken },
-                    body: fd,
-                    credentials: 'include'
-                });
-
-                const contentType = resp.headers.get('content-type') || '';
-                let data = null;
-                if (contentType.includes('application/json')) data = await resp.json();
-                else data = await resp.text();
-
-                if (resp.ok) {
-                    showNotification('Operación realizada correctamente.', 'success', 1400);
-                    closeModalAnimated();
-                    setTimeout(()=> window.location.href = "{{ url('/notificaciones') }}", 700);
-                    return;
-                }
-
-                if (resp.status === 422 && data && data.errors) {
-                    const messages = Object.values(data.errors).flat().join('\n');
-                    showNotification('Errores de validación: ' + messages, 'error', 5000);
-                } else {
-                    const msg = (data && data.message) ? data.message : 'Error al guardar.';
-                    showNotification(msg, 'error', 4000);
-                }
-            } catch (err) {
-                console.error(err);
-                showNotification('Error de red o del servidor.', 'error', 4000);
-            } finally {
-                if (btn) { btn.disabled = false; if (original) btn.textContent = original; }
-            }
-        });
-    }
+    document.querySelectorAll('tbody[id^="tbody-"]').forEach(tbody=>{
+        const key = tbody.id.replace('tbody-', '');
+        const page = parseInt(tbody.dataset.page || '1', 10) || 1;
+        renderTable(key, page);
+    });
+    window.renderTable = renderTable;
 });
 </script>
-
-<style>
-.notif { min-width:220px; max-width:420px; padding:10px 14px; border-radius:10px; color:#fff; font-weight:700; transform:translateY(-6px); opacity:0; transition:transform .28s, opacity .28s; box-shadow:0 8px 24px rgba(2,6,23,0.08); }
-.notif.visible { transform:none; opacity:1; }
-</style>
 @endsection
 </body>
 </html>

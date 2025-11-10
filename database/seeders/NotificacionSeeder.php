@@ -28,8 +28,9 @@ class NotificacionSeeder extends Seeder
                 $estado = ($i === 4) ? 'vista' : (($i % 2 === 0) ? 'cerrada' : 'abierta');
                 $fecha_creacion = $now->copy()->subDays(($u->id * 6) + $i)->toDateTimeString();
                 $fecha_visto = $estado === 'vista' ? $now->copy()->subDays($i)->toDateTimeString() : null;
+                $adminId = ($i % 2 === 0) ? 3 : 1;
                 $rows[] = [
-                    'id_admin' => 1,
+                    'id_admin' => $adminId,
                     'id_usuario' => $u->id,
                     'estado' => $estado,
                     'tipo' => $tipo,
