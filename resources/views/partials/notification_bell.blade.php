@@ -92,13 +92,17 @@ window.initNotificationBell = function(containerIdOrEl) {
             if (!apiRes.ok) throw new Error('API error: ' + apiRes.status + ' ' + apiRes.statusText);
             const all = await apiRes.json();
             const nots = Array.isArray(all) ? all : [];
-            const closed = nots.filter(n => n.estado === 'cerrada' || n.estado === 'cerrada');
+            const closed = nots.filter(n => n.estado === 'cerrada');
             const closedTotal = closed.length;
             const display = closed.slice(0, 6);
+
             if (countEl) countEl.textContent = String(closedTotal);
 
             if (!display.length) {
                 list.innerHTML = '<div class="notif-empty" style="padding:12px;text-align:center;color:#374151;">Sin notificaciones cerradas</div>';
+                if (container && container.classList.contains('sidebar-origin')) {
+                    setTimeout(()=> { window.location.href = '/notificaciones'; }, 300);
+                }
                 return;
             }
 
@@ -115,6 +119,7 @@ window.initNotificationBell = function(containerIdOrEl) {
                     </div>
                 </div>`;
             }).join('');
+
             if (closedTotal > 6) {
                 const moreNote = document.createElement('div');
                 moreNote.style.fontSize = '12px';
