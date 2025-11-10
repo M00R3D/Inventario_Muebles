@@ -27,63 +27,59 @@
         <nav class="sidebar-nav" aria-label="Navegación principal">
             <ul>
                 <li>
-                  <a href="{{ url('/dashboard') }}">
+                  <a href="{{ url('/dashboard') }}" title="dashboard">
                     {!! _sidebar_icon_html('icon_dashboard','🏠') !!}
                     <span class="label">Dashboard</span>
                   </a>
                 </li>
-
                 @if($isAdmin)
                     <li>
-                      <a href="{{ url('/usuarios') }}">
+                      <a href="{{ url('/usuarios') }}" title="usuarios">
                         {!! _sidebar_icon_html('icon_usuarios','👥') !!}
                         <span class="label">Usuarios</span>
                       </a>
                     </li>
-                    <li>
-                      <a href="{{ url('/categorias') }}">
-                        {!! _sidebar_icon_html('icon_categorias','🗂️') !!}
-                        <span class="label">Categorías</span>
-                      </a>
-                    </li>
                 @endif
-
                 <li>
-                  <a href="{{ url('/muebles') }}">
+                  <a href="{{ url('/muebles') }}" title="muebles">
                     {!! _sidebar_icon_html('icon_muebles','🪑') !!}
                     <span class="label">Inventario</span>
                   </a>
                 </li>
-
-                @if($isAdmin)
-                    <li>
-                      <a href="{{ url('/imagenes') }}">
-                        {!! _sidebar_icon_html('icon_imagenes','🖼️') !!}
-                        <span class="label">Imágenes</span>
-                      </a>
-                    </li>
-
-                    <li>
-                      <a href="{{ url('/notificaciones') }}">
-                        {!! _sidebar_icon_html('icon_notificaciones','🔔') !!}
-                        <span class="label">Notificaciones</span>
-                      </a>
-                    </li>
-
-                    <li>
-                      <a href="{{ route('configuracion.index') }}" style="--icon-color:#f59e0b;">
-                        {!! _sidebar_icon_html('icon_configuracion','⚙️') !!}
-                        <span class="label">Configuración</span>
-                      </a>
-                    </li>
-                @endif
-
                 <li>
-                  <a href="{{ url('/solicitudes') }}">
+                  <a href="{{ url('/solicitudes') }}" title="solicitudes">
                     {!! _sidebar_icon_html('icon_solicitudes','📩') !!}
                     <span class="label">Solicitudes</span>
                   </a>
                 </li>
+                @if($isAdmin)
+                    <li>
+                      <a href="{{ url('/imagenes') }}" title="imagenes">
+                        {!! _sidebar_icon_html('icon_imagenes','🖼️') !!}
+                        <span class="label">Imágenes</span>
+                      </a>
+                    </li>
+                    <li>
+                      <a href="{{ url('/notificaciones') }}" title="notificaciones">
+                        {!! _sidebar_icon_html('icon_notificaciones','🔔') !!}
+                        <span class="label">Notificaciones</span>
+                      </a>
+                    </li>
+                @endif
+                @if($isAdmin)
+                <li>
+                      <a href="{{ url('/categorias') }}" title="categorias">
+                        {!! _sidebar_icon_html('icon_categorias','🗂️') !!}
+                        <span class="label">Categorías</span>
+                      </a>
+                </li>
+                <li>
+                  <a href="{{ route('configuracion.index') }}" title="configuracion" style="--icon-color:#f59e0b;">
+                    {!! _sidebar_icon_html('icon_configuracion','⚙️') !!}
+                    <span class="label">Configuración</span>
+                  </a>
+                </li>
+                @endif
             </ul>
         </nav>
     </div>
