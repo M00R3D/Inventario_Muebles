@@ -134,4 +134,11 @@
   opacity: 1 !important;
 }
 .btn-ghost:hover{ transform: translateY(-2px); background:#f8fafc; box-shadow:0 6px 18px rgba(2,6,23,0.04); }
+#user-form-card .modal-actions { justify-content: flex-end; }
+#user-form-card .btn-base { flex: 0 0 auto; min-width: 110px; }
+#user-form-card .btn-save { min-width: 120px; }
+#user-form-card .btn-cancel { min-width: 110px; }
+@media (max-width:640px){
+  #user-form-card .btn-base { min-width: 90px; padding:6px 10px; font-size:0.92rem; }
+}
 </style>

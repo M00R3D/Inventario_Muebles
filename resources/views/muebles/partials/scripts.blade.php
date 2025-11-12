@@ -358,6 +358,10 @@ document.addEventListener('DOMContentLoaded', function(){
       form.action = "{{ url('/muebles') }}";
       methodInput.value = 'POST';
       idInput.value = '';
+      const modalCommentMueble = document.getElementById('modal-comment-mueble-id');
+      if (modalCommentMueble) modalCommentMueble.value = '';
+      const modalCommentsList = document.getElementById('modal-comments-list');
+      if (modalCommentsList) modalCommentsList.innerHTML = '<div class="small-muted" id="modal-no-comments">No hay comentarios.</div>';
       clearFormFields(form);
       form.dataset.originalCodigo = '';
       const ruta = document.getElementById('f-ruta-img'); if (ruta) ruta.value = '';
@@ -399,6 +403,50 @@ document.addEventListener('DOMContentLoaded', function(){
       if (marcaModal) marcaModal.value = m.marca ?? '';
       populateModalModeloOptions(m.marca ?? '', m.modelo ?? '');
       if (m.ruta_img) setPreviewFromRuta(m.ruta_img);
+
+      const modalCommentMueble = document.getElementById('modal-comment-mueble-id');
+      if (modalCommentMueble) modalCommentMueble.value = m.id;
+      const modalCommentsList = document.getElementById('modal-comments-list');
+      if (modalCommentsList) {
+        modalCommentsList.innerHTML = '<div class="small-muted">Cargando comentarios…</div>';
+        fetch("{{ url('/comentarios') }}?mueble_id=" + encodeURIComponent(m.id), { credentials:'same-origin', headers:{'Accept':'application/json','X-Requested-With':'XMLHttpRequest'} })
+          .then(r => r.ok ? r.json() : Promise.reject(r))
+          .then(arr => {
+            modalCommentsList.innerHTML = '';
+            if (!Array.isArray(arr) || arr.length === 0) {
+              modalCommentsList.innerHTML = '<div class="small-muted" id="modal-no-comments">No hay comentarios.</div>';
+            } else {
+              arr.forEach(c => {
+                const div = document.createElement('div');
+                div.className = 'comment';
+                div.dataset.id = c.id;
+                const who = (c.usuario && (c.usuario.nombre || c.usuario.apellido)) ? ((c.usuario.nombre||'') + ' ' + (c.usuario.apellido||'')) : 'Anon';
+                const when = c.created_at ? new Date(c.created_at).toLocaleString() : '';
+                div.innerHTML = `<div class="who">${esc(who)}<div class="small-muted" style="font-weight:600">${esc(when)}</div></div><div class="what">${esc(c.comentario||'')}</div>`;
+                @if(!empty($isAdmin) && $isAdmin)
+                  const ctrl = document.createElement('div');
+                  ctrl.style.marginLeft = '8px';
+                  ctrl.style.display = 'flex';
+                  ctrl.style.alignItems = 'flex-start';
+                  ctrl.style.gap = '6px';
+                  const btn = document.createElement('button');
+                  btn.type = 'button';
+                  btn.className = 'btn-delete-comment btn-delete';
+                  btn.textContent = 'Eliminar';
+                  btn.setAttribute('aria-label','Eliminar comentario');
+                  btn.setAttribute('data-confirm','¿Eliminar comentario?');
+                  btn.dataset.id = c.id;
+                  ctrl.appendChild(btn);
+                  div.appendChild(ctrl);
+                @endif
+                modalCommentsList.appendChild(div);
+              });
+            }
+          }).catch(err => {
+            console.error('Error cargando comentarios modal', err);
+            modalCommentsList.innerHTML = '<div class="small-muted">Error cargando comentarios.</div>';
+          });
+      }
     }
     hideModalControls();
     const card = document.getElementById('user-form-card');

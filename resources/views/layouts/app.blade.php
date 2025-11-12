@@ -242,6 +242,18 @@
       try {
         const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
         const frm = el.closest('form');
+        const urlBaseAttr = el.getAttribute('data-base') || '';
+        const isComentarios = urlBaseAttr.includes('/comentarios') || (frm && (frm.action || '').includes('/comentarios'));
+
+        const candidateId = el.getAttribute('data-id') || '';
+        if (candidateId && String(candidateId).startsWith('new-')) {
+          const elDom = document.querySelector('.comment[data-id="'+candidateId+'"]');
+          if (elDom) elDom.remove();
+          const modalEl = document.querySelector('#modal-comments-list .comment[data-id="'+candidateId+'"]');
+          if (modalEl) modalEl.remove();
+          return;
+        }
+
         if (frm) {
           const action = frm.action;
           const fd = new FormData(frm);
@@ -256,7 +268,22 @@
             },
             body: fd
           });
-          if (resp.ok) { location.reload(); return; }
+          if (resp.ok) {
+            if (isComentarios) {
+              const id = el.getAttribute('data-id') || form.dataset.id || null;
+              if (id) {
+                const elDom = document.querySelector('.comment[data-id="'+id+'"]');
+                if (elDom) elDom.remove();
+                const modalEl = document.querySelector('#modal-comments-list .comment[data-id="'+id+'"]');
+                if (modalEl) modalEl.remove();
+              } else {
+                location.reload();
+              }
+              return;
+            }
+            location.reload();
+            return;
+          }
           const ct = resp.headers.get('content-type') || '';
           const data = ct.includes('application/json') ? await resp.json() : await resp.text();
           console.error('Error al eliminar (form):', resp.status, data);
@@ -275,7 +302,17 @@
             'Accept': 'application/json'
           }
         });
-        if (resp2.ok) { location.reload(); return; }
+        if (resp2.ok) {
+          if (urlBase.includes('/comentarios')) {
+            const elDom = document.querySelector('.comment[data-id="'+id+'"]');
+            if (elDom) elDom.remove();
+            const modalEl = document.querySelector('#modal-comments-list .comment[data-id="'+id+'"]');
+            if (modalEl) modalEl.remove();
+            return;
+          }
+          location.reload();
+          return;
+        }
         const ct2 = resp2.headers.get('content-type') || '';
         const data2 = ct2.includes('application/json') ? await resp2.json() : await resp2.text();
         console.error('Error al eliminar (direct):', resp2.status, data2);
