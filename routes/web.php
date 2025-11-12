@@ -50,6 +50,7 @@ Route::delete('/solicitudes/{solicitud}', [SolicitudController::class, 'destroy'
 Route::post('/solicitudes/{solicitud}/estado', [SolicitudController::class, 'changeEstado'])->name('solicitudes.changeEstado');
 
 Route::get('/notificaciones', [NotificacionController::class, 'index']);
+Route::get('/notificaciones/{notificacion}', [NotificacionController::class, 'show']);
 Route::get('/notificaciones/create', [NotificacionController::class, 'create']);
 Route::post('/notificaciones', [NotificacionController::class, 'store']);
 Route::get('/notificaciones/{notificacion}/edit', [NotificacionController::class, 'edit']);

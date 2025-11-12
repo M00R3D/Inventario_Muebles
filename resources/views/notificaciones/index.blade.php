@@ -97,7 +97,7 @@
 .table-pager .page-indicator { min-width:90px; text-align:center; color:#374151; font-weight:700; }
 </style>
 
-<div style="padding:16px;max-width:1100px;margin:0 auto;">
+<div id="notifs-lists" style="padding:16px;max-width:1100px;margin:0 auto;">
     <header style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap;">
         <div>
             <h1 style="margin:0;font-size:1.25rem;">Notificaciones</h1>
@@ -367,11 +367,157 @@ document.addEventListener('DOMContentLoaded', function(){
     const icons = @json($icons);
 
     function escapeHtml(s){ if(!s && s!==0) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    function formatDate(d){ if(!d) return '-'; try { const dt = new Date(d); if(isNaN(dt)) return escapeHtml(d); return dt.toLocaleString('es-ES', { weekday:'long', year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit' }); } catch(e){ return escapeHtml(d); } }
+    const modalCard = document.getElementById('notif-form-card');
+    const modalForm = document.getElementById('notif-form');
+    const notifFormMethod = document.getElementById('notif-form-method');
+    const notifIdInput = document.getElementById('notif-id');
+    const formTitle = document.getElementById('notif-form-title');
+    const btnSave = document.getElementById('notif-save');
+    const btnCancel = document.getElementById('notif-cancel');
+    const btnNew = document.getElementById('btn-new');
+    const listsContainer = document.getElementById('notifs-lists');
+    const notificationsFloat = document.getElementById('notifications');
 
-    function formatDate(d){
-        if(!d) return '-';
-        try { const dt = new Date(d); if(isNaN(dt)) return escapeHtml(d); return dt.toLocaleString('es-ES', { weekday:'long', year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit' }); }
-        catch(e){ return escapeHtml(d); }
+    function showToast(msg, type = 'info', timeout = 2200) {
+        if(!notificationsFloat) return alert(msg);
+        const el = document.createElement('div');
+        el.className = 'notif notif-' + (type === 'success' ? 'success' : (type === 'error' ? 'error' : 'info'));
+        el.textContent = msg;
+        el.style.padding = '10px 14px';
+        el.style.borderRadius = '10px';
+        el.style.color = '#fff';
+        el.style.fontWeight = '700';
+        el.style.boxShadow = '0 8px 24px rgba(2,6,23,0.08)';
+        el.style.transform = 'translateY(-6px)';
+        el.style.opacity = '0';
+        notificationsFloat.appendChild(el);
+        requestAnimationFrame(()=> { el.classList.add('visible'); el.style.opacity='1'; el.style.transform='none'; });
+        setTimeout(()=> {
+            el.classList.remove('visible');
+            el.addEventListener('transitionend', ()=> el.remove(), { once: true });
+        }, timeout);
+    }
+
+    function showModal() {
+        if (!modalCard) return;
+        if (listsContainer) listsContainer.style.display = 'none';
+        modalCard.style.display = 'block';
+        modalCard.classList.remove('collapsed','closing');
+        setTimeout(()=> modalCard.style.transform = '', 20);
+        modalCard.scrollIntoView({behavior:'smooth', block:'center'});
+    }
+    function hideModal() {
+        if (!modalCard) return;
+        modalCard.classList.add('closing');
+        setTimeout(()=>{ modalCard.style.display = 'none'; modalCard.classList.remove('closing'); if (listsContainer) listsContainer.style.display = ''; }, 260);
+    }
+
+    if (btnNew) {
+        btnNew.addEventListener('click', function(){
+            notifFormMethod.value = 'POST';
+            notifIdInput.value = '';
+            modalForm.action = '{{ url('/notificaciones') }}';
+            formTitle.textContent = 'Nueva notificación';
+            ['f-id_usuario','f-estado','f-tipo','f-ruta','f-descripcion','f-fecha_visto'].forEach(id=>{
+                const el = document.getElementById(id);
+                if (!el) return;
+                if (el.tagName === 'SELECT' || el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') el.value = '';
+            });
+            const selE = document.getElementById('f-estado');
+            if (selE) selE.value = 'cerrada';
+            showModal();
+        });
+    }
+    window.openEdit = function(notif){
+        if(!notif || !modalForm) return;
+        formTitle.textContent = 'Editar notificación #' + (notif.id ?? '');
+        notifFormMethod.value = 'PUT';
+        notifIdInput.value = notif.id ?? '';
+        modalForm.action = '/notificaciones/' + (notif.id ?? '');
+        const selUsuario = document.getElementById('f-id_usuario');
+        const selEstado = document.getElementById('f-estado');
+        const selTipo = document.getElementById('f-tipo');
+        const inpRuta = document.getElementById('f-ruta');
+        const txtDesc = document.getElementById('f-descripcion');
+        const fechaRow = document.getElementById('f-fecha_visto_row');
+        const fechaInp = document.getElementById('f-fecha_visto');
+        if (selUsuario) { selUsuario.value = notif.id_usuario ?? ''; }
+        if (selEstado) { selEstado.value = notif.estado ?? 'cerrada'; }
+        if (selTipo) { selTipo.value = notif.tipo ?? 'prueba'; }
+        if (inpRuta) { inpRuta.value = notif.ruta ?? ''; }
+        if (txtDesc) { txtDesc.value = notif.descripcion ?? ''; }
+        if (fechaInp) {
+            if (notif.fecha_visto) {
+                try {
+                    const d = new Date(notif.fecha_visto);
+                    const pad = n => String(n).padStart(2,'0');
+                    const isoLocal = d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+                    fechaInp.value = isoLocal;
+                } catch(e){ fechaInp.value = ''; }
+            } else fechaInp.value = '';
+        }
+        if (fechaRow) {
+            fechaRow.style.display = (notif.estado === 'vista') ? 'block' : 'none';
+        }
+        showModal();
+    };
+    if (btnCancel) {
+        btnCancel.addEventListener('click', function(ev){
+            ev.preventDefault();
+            notifFormMethod.value = 'POST';
+            notifIdInput.value = '';
+            modalForm.action = '{{ url('/notificaciones') }}';
+            formTitle.textContent = 'Nueva notificación';
+            hideModal();
+        });
+    }
+    if (modalForm) {
+        modalForm.addEventListener('submit', async function(ev){
+            ev.preventDefault();
+            try {
+                const url = modalForm.action;
+                const method = (notifFormMethod.value === 'PUT') ? 'POST' : (notifFormMethod.value === 'POST' ? 'POST' : 'POST');
+                const data = new FormData(modalForm);
+                const resp = await fetch(url, {
+                    method: method,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                    body: data
+                });
+                if (resp.ok) {
+                    const json = await resp.json().catch(()=> null);
+                    hideModal();
+                    showToast('Notificación guardada correctamente', 'success');
+                    setTimeout(()=> location.reload(), 900);
+                } else {
+                    let errText = 'Error al guardar';
+                    try {
+                        const j = await resp.json();
+                        if (j && j.errors) {
+                            const first = Object.values(j.errors)[0];
+                            errText = Array.isArray(first) ? first[0] : String(first);
+                        } else if (j && j.message) errText = j.message;
+                    } catch(e){}
+                    hideModal();
+                    showToast(errText, 'error');
+                    if (listsContainer) listsContainer.style.display = '';
+                }
+            } catch (e) {
+                hideModal();
+                showToast('Error de red al guardar', 'error');
+                if (listsContainer) listsContainer.style.display = '';
+                console.error('save notif error', e);
+            }
+        });
+    }
+
+    const selEstadoGlobal = document.getElementById('f-estado');
+    if (selEstadoGlobal) {
+        selEstadoGlobal.addEventListener('change', function(){
+            const fechaRow = document.getElementById('f-fecha_visto_row');
+            if (!fechaRow) return;
+            fechaRow.style.display = (this.value === 'vista') ? 'block' : 'none';
+        });
     }
 
     function renderRow(n){
@@ -379,7 +525,6 @@ document.addEventListener('DOMContentLoaded', function(){
         const usuarioNombre = (n.usuario && n.usuario.nombre) ? (escapeHtml(n.usuario.nombre) + ' ' + escapeHtml(n.usuario.apellido ?? '')) : 'Todos';
         const descripcion = escapeHtml(n.descripcion || '');
         const fecha = n.fecha_creacion ? formatDate(n.fecha_creacion) : '-';
-        const ruta = n.ruta ? escapeHtml(n.ruta) : '';
         return `<tr style="border-bottom:1px solid #f3f4f6;">
             <td style="padding:10px 12px;">${escapeHtml(n.id)}</td>
             <td style="padding:10px 12px;">
@@ -392,12 +537,15 @@ document.addEventListener('DOMContentLoaded', function(){
             <td style="padding:10px 12px;">${fecha}</td>
             <td style="padding:10px 12px;">${usuarioNombre}</td>
             <td style="padding:10px 12px;width:190px;">
+                <button type="button" class="btn-view-route" onclick="window.location.href='${'/notificaciones/' + escapeHtml(n.id)}'" style="background:linear-gradient(90deg,#10b981,#059669);color:#fff;padding:6px 8px;border-radius:8px;border:0;font-weight:700;margin-right:6px;cursor:pointer;">Ver Detalle</button>
+                @if($isAdmin)
                 <button type="button" class="btn-edit" data-notif='${escapeHtml(JSON.stringify(n))}' style="background:linear-gradient(90deg,#6366f1,#06b6d4);color:#fff;padding:6px 8px;border-radius:8px;border:0;font-weight:700;margin-right:6px;cursor:pointer;">Editar</button>
                 <form action="/notificaciones/${escapeHtml(n.id)}" method="POST" style="display:inline">
-                    <input type="hidden" name="_token" value="{{ csrf_token() }}">
-                    <input type="hidden" name="_method" value="DELETE">
-                    <button type="submit" data-confirm="¿Eliminar notificación #${escapeHtml(n.id)}?" style="background:linear-gradient(90deg,#ef4444,#f97316);color:#fff;padding:6px 8px;border-radius:8px;border:0;cursor:pointer;" data-confirm-type="delete">Eliminar</button>
+                <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="_method" value="DELETE">
+                <button type="submit" data-confirm="¿Eliminar notificación #${escapeHtml(n.id)}?" style="background:linear-gradient(90deg,#ef4444,#f97316);color:#fff;padding:6px 8px;border-radius:8px;border:0;cursor:pointer;" data-confirm-type="delete">Eliminar</button>
                 </form>
+                @endif 
             </td>
         </tr>`;
     }
@@ -432,6 +580,7 @@ document.addEventListener('DOMContentLoaded', function(){
             btn.addEventListener('click', handler);
         });
     }
+
     document.querySelectorAll('tbody[id^="tbody-"]').forEach(tbody=>{
         const key = tbody.id.replace('tbody-', '');
         tbody.dataset.page = tbody.dataset.page || '1';
