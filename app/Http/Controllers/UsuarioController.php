@@ -54,7 +54,7 @@ class UsuarioController extends Controller
             $actorId = session('usuario_id') ?? null;
             $actor = $actorId ? Usuario::find($actorId) : null;
             $actorName = $actor ? ($actor->nombre . ' ' . $actor->apellido) : 'Sistema';
-            Notificacion::create([
+            $adminNotif = Notificacion::create([
                 'id_admin' => $actorId,
                 'id_usuario' => null,
                 'audiencia' => 'admins',
@@ -63,9 +63,14 @@ class UsuarioController extends Controller
                 'descripcion' => "Usuario creado: {$usuario->nombre} {$usuario->apellido} (ID {$usuario->id}). Creado por: {$actorName}",
                 'fecha_creacion' => Carbon::now()->toDateTimeString(),
                 'fecha_visto' => null,
-                'ruta' => url("/usuarios/{$usuario->id}")
+                'ruta' => null,
             ]);
-            Notificacion::create([
+            if ($adminNotif) {
+                $adminNotif->ruta = url("/notificaciones/{$adminNotif->id}");
+                $adminNotif->save();
+            }
+
+            $userNotif = Notificacion::create([
                 'id_admin' => $actorId,
                 'id_usuario' => $usuario->id,
                 'audiencia' => 'usuarios',
@@ -123,7 +128,7 @@ class UsuarioController extends Controller
             $actor = $actorId ? Usuario::find($actorId) : null;
             $actorName = $actor ? ($actor->nombre . ' ' . $actor->apellido) : 'Sistema';
             if (!empty($changed)) {
-                Notificacion::create([
+                $adminNotif = Notificacion::create([
                     'id_admin' => $actorId,
                     'id_usuario' => null,
                     'audiencia' => 'admins',
@@ -132,9 +137,14 @@ class UsuarioController extends Controller
                     'descripcion' => "Usuario actualizado: {$usuario->nombre} {$usuario->apellido} (ID {$usuario->id}). Realizado por: {$actorName}. Cambios: " . implode('; ', $changed),
                     'fecha_creacion' => Carbon::now()->toDateTimeString(),
                     'fecha_visto' => null,
-                    'ruta' => url("/usuarios/{$usuario->id}")
+                    'ruta' => null,
                 ]);
-                Notificacion::create([
+                if ($adminNotif) {
+                    $adminNotif->ruta = url("/notificaciones/{$adminNotif->id}");
+                    $adminNotif->save();
+                }
+
+                $userNotif = Notificacion::create([
                     'id_admin' => $actorId,
                     'id_usuario' => $usuario->id,
                     'audiencia' => 'usuarios',
@@ -143,8 +153,12 @@ class UsuarioController extends Controller
                     'descripcion' => "Tus datos fueron actualizados por: {$actorName}. Cambios: " . implode('; ', $changed),
                     'fecha_creacion' => Carbon::now()->toDateTimeString(),
                     'fecha_visto' => null,
-                    'ruta' => url("/usuarios/{$usuario->id}/edit")
+                    'ruta' => null,
                 ]);
+                if ($userNotif) {
+                    $userNotif->ruta = url("/notificaciones/{$userNotif->id}");
+                    $userNotif->save();
+                }
             }
         } catch (\Throwable $e) {
             \Log::error('Error creando notificaciones en UsuarioController@update: ' . $e->getMessage());

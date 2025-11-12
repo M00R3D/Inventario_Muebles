@@ -72,7 +72,7 @@ if ($notificacion) {
     <div class="notif-card">
       <h2 style="margin:0 0 8px 0">Notificación no encontrada</h2>
       <p style="color:#6b7280">No se encontró la notificación solicitada (id: {{ $routeId ?? 'N/A' }}).</p>
-      <p><a href="{{ url('/notificaciones') }}" class="btn-return">Volver a notificaciones</a></p>
+      <p><a href="{{ url('/..') }}" class="btn-return">Volver a notificaciones</a></p>
     </div>
   </div>
 @else
@@ -80,7 +80,7 @@ if ($notificacion) {
     <div class="notif-card" role="region" aria-labelledby="notif-title">
       <div class="notif-header">
         <div id="notif-title" class="notif-title">Notificación — {{ ucfirst($notificacion->tipo ?? 'detalle') }}</div>
-        <div><a href="{{ url('/notificaciones') }}" class="btn-return" aria-label="Cerrar">Volver</a></div>
+        <div><a href="javascript:history.back()" class="btn-return" aria-label="Cerrar">Volver</a></div>
       </div>
 
       <div class="notif-body">
