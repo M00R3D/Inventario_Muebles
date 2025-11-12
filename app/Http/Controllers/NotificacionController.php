@@ -15,33 +15,55 @@ class NotificacionController extends Controller
 
     public function index(Request $request)
     {
-        $query = Notificacion::with(['admin', 'usuario'])->orderBy('id', 'asc');
-
-        if ($request->filled('estado')) {$query->where('estado', $request->input('estado'));}
-        if ($request->filled('tipo')) {$query->where('tipo', $request->input('tipo'));}
-        if ($request->filled('id_usuario')) {$query->where('id_usuario', $request->input('id_usuario'));}
-        if ($request->filled('id_admin')) {$query->where('id_admin', $request->input('id_admin'));}
-        if ($request->filled('fecha_creacion')) {$query->whereDate('fecha_creacion', $request->input('fecha_creacion'));}
-        if ($request->filled('fecha_visto')) {$query->whereDate('fecha_visto', $request->input('fecha_visto'));}
-        if ($request->filled('descripcion')) {$desc = $request->input('descripcion');$query->where('descripcion', 'like', "%{$desc}%");}
-
+        $query = Notificacion::with(['admin','usuario'])->orderBy('fecha_creacion','desc');
         $current = null;
         if (session()->has('usuario_id')) {$current = Usuario::find(session('usuario_id'));}
-        if ($current && $current->rol !== 'admin') {
-            $query->where('id_usuario', $current->id);
+        $isAdmin = $current && ($current->rol === 'admin');
+        if ($request->filled('id')) {$query->where('id', $request->input('id'));}
+        if ($request->filled('id_admin') && $isAdmin) {$query->where('id_admin', $request->input('id_admin'));}
+        if ($request->filled('id_usuario')) {
+            if ($isAdmin) {
+                if ($request->input('id_usuario') === 'none') {
+                    $query->whereNull('id_usuario');
+                } else {$query->where('id_usuario', $request->input('id_usuario'));}
+            } else {if ($current) $query->where('id_usuario', $current->id);}
+        } else {
+            if (! $isAdmin && $current) {$query->where('id_usuario', $current->id);}
         }
-        if (!($request->wantsJson() || $request->is('api/*'))) {
-            $visibilityQ = Notificacion::query();
-            if ($current && $current->rol !== 'admin') {
-                $visibilityQ->where('id_usuario', $current->id);
-            }
-            $visibilityQ->where('estado', 'cerrada')->update(['estado' => 'abierta', 'fecha_visto' => null]);
+        if ($request->filled('estado')) {
+            $estado = $request->input('estado');
+            if (in_array($estado, $this->estados, true)) $query->where('estado', $estado);
         }
+        if ($request->filled('tipo')) {
+            $tipo = $request->input('tipo');
+            if (in_array($tipo, $this->tipos, true)) $query->where('tipo', $tipo);
+        }
+        if ($request->filled('audiencia')) {
+            $aud = $request->input('audiencia');
+            $query->where('audiencia', $aud);
+        }
+        if ($request->filled('descripcion')) {
+            $desc = trim($request->input('descripcion'));
+            if ($desc !== '') $query->where('descripcion', 'like', "%{$desc}%");
+        }
+        if ($request->filled('ruta')) {
+            $ruta = trim($request->input('ruta'));
+            if ($ruta !== '') $query->where('ruta', 'like', "%{$ruta}%");
+        }
+        if ($request->filled('fecha_creacion_from')) {$query->whereDate('fecha_creacion', '>=', $request->input('fecha_creacion_from'));}
+        if ($request->filled('fecha_creacion_to')) {$query->whereDate('fecha_creacion', '<=', $request->input('fecha_creacion_to'));}
+        if ($request->filled('fecha_visto_from')) {$query->whereDate('fecha_visto', '>=', $request->input('fecha_visto_from'));}
+        if ($request->filled('fecha_visto_to')) {$query->whereDate('fecha_visto', '<=', $request->input('fecha_visto_to'));}
+        if (!($request->wantsJson() || $request->is('api/*'))) {}
 
         $notificaciones = $query->get();
-        if ($request->wantsJson() || $request->is('api/*')) {return response()->json($notificaciones);}
+
+        if ($request->wantsJson() || $request->is('api/*')) {
+            return response()->json($notificaciones);
+        }
+
         $usuarios = Usuario::all();
-        return view('notificaciones.index', compact('notificaciones', 'usuarios'));
+        return view('notificaciones.index', compact('notificaciones','usuarios','current','isAdmin'));
     }
 
     public function create()

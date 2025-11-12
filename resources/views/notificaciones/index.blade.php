@@ -57,6 +57,41 @@
 @endphp
 
 <style>
+:root{
+  --notif-row-h:48px; 
+  --notif-thead-h:56px;
+  --notif-visible-rows:10;
+}
+.list-card {
+  min-height: calc(var(--notif-row-h) * var(--notif-visible-rows) + var(--notif-thead-h));
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-start;
+  box-sizing:border-box;
+}
+.list-card table thead tr th,
+.list-card table thead tr td {
+  height: var(--notif-thead-h);
+  vertical-align: middle;
+}
+
+.list-card table tbody tr {
+  height: var(--notif-row-h);
+  min-height: var(--notif-row-h);
+  box-sizing: border-box;
+}
+.list-card table {
+  table-layout: fixed;
+}
+.list-card > table { height: auto; }
+.list-card {
+  overflow:auto;
+}
+@media (max-width:640px){
+  :root { --notif-row-h:44px; --notif-thead-h:48px; }
+  .list-card { min-height: calc(var(--notif-row-h) * var(--notif-visible-rows) + var(--notif-thead-h)); }
+}
+
 .modal-card { transition: transform .28s cubic-bezier(.16,.84,.44,1), opacity .28s ease, max-height .28s ease, padding .28s ease; transform-origin: top center; opacity:1; max-height:1200px; overflow:hidden; }
 .modal-card.closing { transform: scaleY(0.86) translateY(-6px); opacity:0; padding-top:2px; padding-bottom:2px; max-height:0; overflow:hidden; }
 .modal-card.collapsed { transform: scaleY(0.98); opacity:0; max-height:0; padding-top:0; padding-bottom:0; overflow:hidden; }
@@ -91,10 +126,71 @@
 #notifications .notif-success { background: linear-gradient(90deg,#10b981,#059669); }
 #notifications .notif-error { background: linear-gradient(90deg,#ef4444,#b91c1c); }
 #notifications .notif-info { background: linear-gradient(90deg,#6366f1,#06b6d4); }
-.table-pager { text-align:right;color:#6b7280;font-size:0.85rem;margin-top:6px;margin-bottom:12px; display:flex; gap:8px; align-items:center; justify-content:flex-end; }
-.table-pager button.pager-btn { background:#f3f4f6;border:1px solid #e5e7eb;padding:6px 8px;border-radius:6px;cursor:pointer;font-weight:700; }
-.table-pager button.pager-btn:disabled { opacity:0.5; cursor:default; }
-.table-pager .page-indicator { min-width:90px; text-align:center; color:#374151; font-weight:700; }
+.table-row { transition: background .12s ease, color .12s ease, filter .12s ease, opacity .12s ease; }
+.table-row td { padding:10px 12px; vertical-align:middle; }
+.estado-cerrada, .estado-abierta { filter: none; opacity: 1; }
+.estado-vista { filter: none; opacity: 0.88; color: #374151; background-color: rgba(0,0,0,0.02); }
+.tipo-prueba { background: linear-gradient(90deg, #f0f9ff, #eef2ff); }
+.tipo-aprobada { background: linear-gradient(90deg, #ecfdf5, #e6f7ea); }
+.tipo-rechazada { background: linear-gradient(90deg, #fff1f2, #fff4f6); }
+.tipo-otra { background: linear-gradient(90deg, #f8fafc, #f1f5f9); }
+.estado-vista.tipo-prueba,
+.estado-vista.tipo-aprobada,
+.estado-vista.tipo-rechazada,
+.estado-vista.tipo-otra {
+    background-blend-mode: multiply;
+    background-color: rgba(0,0,0,0.02);
+}
+.table-row:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(2,6,23,0.04); }
+.page-indicator { min-width:90px; text-align:center; color:#374151; font-weight:700; }
+.table-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 10px 0 18px;
+  column-gap: 12px;
+  flex-wrap: nowrap;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.table-pager .pager-btn {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 700;
+  min-width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.table-pager .pager-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.table-pager .page-indicator {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  min-width: 120px;
+  text-align: center;
+  color: #374151;
+  font-weight: 700;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: transparent;
+}
+@media (max-width: 640px) {
+  .table-pager { gap: 6px; column-gap: 6px; }
+  .table-pager .page-indicator { min-width: 100px; font-size: 0.85rem; }
+  .table-pager .pager-btn { padding: 6px 8px; min-width: 32px; height: 32px; }
+}
 </style>
 
 <div id="notifs-lists" style="padding:16px;max-width:1100px;margin:0 auto;">
@@ -295,6 +391,105 @@
     @endif
 </div>
 
+<div id="notifs-filters" style="max-width:1100px;margin:0 auto 12px;padding:12px;background:#fff;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,0.04);">
+  <form id="notifs-filters-form" method="GET" action="{{ url('/notificaciones') }}" style="display:flex;flex-wrap:wrap;gap:8px;align-items:end;">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+      <div>
+        <label style="display:block;font-weight:700">ID</label>
+        <input type="search" name="id" value="{{ request('id') }}" placeholder="id" style="padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
+      </div>
+
+      @if($isAdmin)
+        <div>
+          <label style="display:block;font-weight:700">ID admin</label>
+          <select name="id_admin" style="padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
+            <option value="">Cualquiera</option>
+            @foreach($usuarios as $u)
+              <option value="{{ $u->id }}" {{ request('id_admin') == $u->id ? 'selected' : '' }}>{{ $u->nombre }} {{ $u->apellido }}</option>
+            @endforeach
+          </select>
+        </div>
+
+        <div>
+          <label style="display:block;font-weight:700">ID usuario</label>
+          <select name="id_usuario" style="padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
+            <option value="">Cualquiera</option>
+            <option value="none" {{ request('id_usuario') === 'none' ? 'selected' : '' }}>Ninguno</option>
+            @foreach($usuarios as $u)
+              <option value="{{ $u->id }}" {{ (string)request('id_usuario') === (string)$u->id ? 'selected' : '' }}>{{ $u->nombre }} {{ $u->apellido }}</option>
+            @endforeach
+          </select>
+        </div>
+      @else
+        <input type="hidden" name="id_usuario" value="{{ $current ? $current->id : '' }}">
+      @endif
+
+      <div>
+        <label style="display:block;font-weight:700">Estado</label>
+        <select name="estado" style="padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
+          <option value="">Todos</option>
+          @foreach(['cerrada','abierta','vista'] as $e)
+            <option value="{{ $e }}" {{ request('estado') == $e ? 'selected' : '' }}>{{ $e }}</option>
+          @endforeach
+        </select>
+      </div>
+
+      <div>
+        <label style="display:block;font-weight:700">Tipo</label>
+        <select name="tipo" style="padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
+          <option value="">Todos</option>
+          @foreach(['prueba','aprobada','rechazada','otra'] as $t)
+            <option value="{{ $t }}" {{ request('tipo') == $t ? 'selected' : '' }}>{{ $t }}</option>
+          @endforeach
+        </select>
+      </div>
+
+      <div>
+        <label style="display:block;font-weight:700">Audiencia</label>
+        <select name="audiencia" style="padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
+          <option value="">Cualquiera</option>
+          <option value="todos" {{ request('audiencia')=='todos' ? 'selected' : '' }}>todos</option>
+          <option value="admins" {{ request('audiencia')=='admins' ? 'selected' : '' }}>admins</option>
+          <option value="usuarios" {{ request('audiencia')=='usuarios' ? 'selected' : '' }}>usuarios</option>
+        </select>
+      </div>
+
+      <div>
+        <label style="display:block;font-weight:700">Descripción (contiene)</label>
+        <input type="search" name="descripcion" value="{{ request('descripcion') }}" placeholder="texto" style="padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
+      </div>
+
+      <div>
+        <label style="display:block;font-weight:700">Ruta (contiene)</label>
+        <input type="search" name="ruta" value="{{ request('ruta') }}" placeholder="/solicitudes/..." style="padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
+      </div>
+
+      <div>
+        <label style="display:block;font-weight:700">Fecha creación desde</label>
+        <input type="date" name="fecha_creacion_from" value="{{ request('fecha_creacion_from') }}" style="padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
+      </div>
+      <div>
+        <label style="display:block;font-weight:700">Fecha creación hasta</label>
+        <input type="date" name="fecha_creacion_to" value="{{ request('fecha_creacion_to') }}" style="padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
+      </div>
+
+      <div>
+        <label style="display:block;font-weight:700">Fecha visto desde</label>
+        <input type="date" name="fecha_visto_from" value="{{ request('fecha_visto_from') }}" style="padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
+      </div>
+      <div>
+        <label style="display:block;font-weight:700">Fecha visto hasta</label>
+        <input type="date" name="fecha_visto_to" value="{{ request('fecha_visto_to') }}" style="padding:8px;border-radius:8px;border:1px solid #e5e7eb;">
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px;">
+      <button type="submit" class="btn-edit" style="background:#06b6d4;color:#fff;padding:8px 12px;border-radius:8px;border:0;font-weight:700;">Aplicar</button>
+      <button type="button" id="notifs-clear-filters" class="btn-delete" style="background:#ef4444;color:#fff;padding:8px 12px;border-radius:8px;border:0;font-weight:700;">Limpiar</button>
+    </div>
+  </form>
+</div>
+
 <div id="notif-form-card" class="modal-card collapsed" style="display:none;background:#fff;border-radius:10px;padding:12px;box-shadow:0 6px 18px rgba(0,0,0,0.06);margin:16px auto;max-width:1100px;">
     <h2 id="notif-form-title" style="margin:0 0 8px 0;font-size:1.05rem;">Nueva notificación</h2>
     <form id="notif-form" method="POST" action="{{ url('/notificaciones') }}">
@@ -360,6 +555,58 @@
 @endsection
 
 @section('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  (function(){
+    const lists = Array.from(document.querySelectorAll('.list-card'));
+    if (!lists.length) return;
+    const supportedRO = typeof ResizeObserver !== 'undefined';
+    const lastHeights = new WeakMap();
+
+    function isVisible(el){
+      const r = el.getBoundingClientRect();
+      return !(r.bottom < 0 || r.top > window.innerHeight);
+    }
+
+    function compensateScroll(el, oldH, newH){
+      const delta = newH - oldH;
+      if (delta === 0) return;
+      if (!isVisible(el)) return;
+      const shift = oldH - newH;
+      if (Math.abs(shift) < 1) return;
+      const maxDown = document.documentElement.scrollHeight - window.innerHeight - window.scrollY;
+      const clamped = Math.max(-window.scrollY, Math.min(shift, maxDown));
+      if (Math.abs(clamped) < 1) return;
+      window.scrollBy({ top: clamped, left: 0, behavior: 'smooth' });
+    }
+
+    if (supportedRO) {
+      const ro = new ResizeObserver(entries => {
+        entries.forEach(entry => {
+          const el = entry.target;
+          const prev = lastHeights.get(el) ?? (entry.contentRect ? entry.contentRect.height : el.offsetHeight);
+          const curr = entry.contentRect ? entry.contentRect.height : el.offsetHeight;
+          lastHeights.set(el, curr);
+          setTimeout(() => compensateScroll(el, prev, curr), 30);
+        });
+      });
+      lists.forEach(l => { lastHeights.set(l, l.offsetHeight); ro.observe(l); });
+    } else {
+      lists.forEach(l => lastHeights.set(l, l.offsetHeight));
+      setInterval(() => {
+        lists.forEach(l => {
+          const prev = lastHeights.get(l) || l.offsetHeight;
+          const curr = l.offsetHeight;
+          if (curr !== prev) {
+            lastHeights.set(l, curr);
+            compensateScroll(l, prev, curr);
+          }
+        });
+      }, 250);
+    }
+  })();
+});
+</script>
 <script>
 document.addEventListener('DOMContentLoaded', function(){
     const perPage = {{ $perPage }};
@@ -525,7 +772,9 @@ document.addEventListener('DOMContentLoaded', function(){
         const usuarioNombre = (n.usuario && n.usuario.nombre) ? (escapeHtml(n.usuario.nombre) + ' ' + escapeHtml(n.usuario.apellido ?? '')) : 'Todos';
         const descripcion = escapeHtml(n.descripcion || '');
         const fecha = n.fecha_creacion ? formatDate(n.fecha_creacion) : '-';
-        return `<tr style="border-bottom:1px solid #f3f4f6;">
+        const estadoCls = escapeHtml(n.estado || 'cerrada');
+        const tipoCls = escapeHtml(n.tipo || 'otra');
+        return `<tr class="table-row estado-${estadoCls} tipo-${tipoCls}" data-estado="${estadoCls}" data-tipo="${tipoCls}" style="border-bottom:1px solid #f3f4f6;">
             <td style="padding:10px 12px;">${escapeHtml(n.id)}</td>
             <td style="padding:10px 12px;">
                 <span style="display:inline-flex;gap:8px;align-items:center;">
@@ -560,12 +809,18 @@ document.addEventListener('DOMContentLoaded', function(){
         const start = (page -1) * perPage;
         const slice = items.slice(start, start + perPage);
         tbody.innerHTML = slice.map(n => renderRow(n)).join('') || `<tr><td colspan="${isAdmin ? 6 : 4}" style="padding:12px;">No hay resultados.</td></tr>`;
+
         const indicator = document.getElementById('indicator-' + key);
         if(indicator) indicator.innerHTML = `Página <strong>${page}</strong> de <strong>${totalPages}</strong> — total ${total}`;
         document.querySelectorAll(`.pager-btn[data-target="${key}"]`).forEach(btn=>{
-            const dir = btn.classList.contains('prev') ? 'prev' : 'next';
-            if(dir === 'prev') btn.disabled = (page <= 1);
-            else btn.disabled = (page >= totalPages);
+            const isPrev = btn.classList.contains('prev');
+            const shouldDisable = isPrev ? (page <= 1) : (page >= totalPages);
+            btn.disabled = shouldDisable;
+            btn.classList.toggle('disabled', shouldDisable);
+            btn.style.opacity = shouldDisable ? '0.45' : '1';
+            btn.style.cursor = shouldDisable ? 'default' : 'pointer';
+            btn.setAttribute('aria-disabled', shouldDisable ? 'true' : 'false');
+            if (shouldDisable) {btn.setAttribute('title', isPrev ? 'No hay página anterior' : 'No hay página siguiente');} else {btn.removeAttribute('title');}
         });
         document.querySelectorAll(`#tbody-${key} .btn-edit`).forEach(btn=>{
             btn.removeEventListener('click', btn._handler);
@@ -593,11 +848,24 @@ document.addEventListener('DOMContentLoaded', function(){
             const key = btn.getAttribute('data-target');
             const tbody = document.getElementById('tbody-' + key);
             if(!tbody) return;
+            const pagerElem = pager;
+            const beforeRect = pagerElem.getBoundingClientRect();
+            const beforeDistBottom = window.innerHeight - beforeRect.bottom;
+
             let page = parseInt(tbody.dataset.page || '1', 10);
             if(btn.classList.contains('prev')) page = Math.max(1, page - 1);
             else page = page + 1;
             tbody.dataset.page = String(page);
+
             renderTable(key, page);
+            setTimeout(() => {
+                const afterRect = pagerElem.getBoundingClientRect();
+                const desiredAfterBottom = window.innerHeight - beforeDistBottom;
+                const deltaViewport = afterRect.bottom - desiredAfterBottom;
+                if (Math.abs(deltaViewport) > 1) {
+                    window.scrollBy({ top: deltaViewport, left: 0, behavior: 'smooth' });
+                }
+            }, 40);
         });
     });
     document.querySelectorAll('tbody[id^="tbody-"]').forEach(tbody=>{
